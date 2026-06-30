@@ -37,6 +37,7 @@ env/
 # Jupyter Notebook
 .ipynb_checkpoints/
 *.ipynb
+*.ipynb의 사본
 !base.ipynb
 .matplotlib-cache/
 
@@ -81,6 +82,7 @@ Thumbs.db
 *.tmp
 *.temp
 *~
+.Rhistory
 
 # Presentation & Documentation (local drafts)
 # Uncomment if needed:
