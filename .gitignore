@@ -69,6 +69,7 @@ checkpoints/
 *.log
 logs/
 outputs/
+outputs_paper_exact/
 results/
 *.txt
 
