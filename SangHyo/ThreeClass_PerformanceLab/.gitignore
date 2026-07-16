@@ -1,0 +1,21 @@
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Colab outputs and resumable checkpoints belong on Drive, not in Git.
+runs/
+checkpoints/
+*.joblib
+*.pt
+*.pth
+*.ckpt
+*.parquet
+
+# Aggregate, privacy-safe local audit artifacts are intentionally retained.
+artifacts/*
+!artifacts/local_eda/
+artifacts/local_eda/*
+!artifacts/local_eda/data_audit.json
+!artifacts/local_eda/class_feature_summary.csv
+!artifacts/local_eda/EDA_REPORT_KO.md
+!artifacts/local_eda/feature_contract_smoke.json

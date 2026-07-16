@@ -1,0 +1,95 @@
+{
+  "activity_event_sequence": {
+    "feature_count": 50,
+    "feature_name_contract_sha256": "c2b0e36f6e4ef27f7cc16697039b22ee7fbf654b6d53eaacbbb28339076e09f0",
+    "finite_values": 197400,
+    "nonfinite_fraction": 0.0,
+    "nonfinite_values": 0,
+    "shape": [
+      141,
+      28,
+      50
+    ]
+  },
+  "class_counts": {
+    "CN": 85,
+    "DEM": 9,
+    "MCI": 47
+  },
+  "contract_checks": {
+    "feature_bundle_validated": true,
+    "mmse_opened": false,
+    "primary_forbidden_feature_check_passed": true,
+    "raw_or_hashed_subject_ids_persisted": false,
+    "subject_level_rows_persisted": false,
+    "subject_order_aligned_in_memory": true,
+    "validation_source_or_labels_opened": false
+  },
+  "coverage_negative_control": {
+    "feature_count": 12,
+    "finite_values": 1692,
+    "nonfinite_fraction": 0.0,
+    "nonfinite_values": 0,
+    "selection_eligible": false,
+    "shape": [
+      141,
+      12
+    ]
+  },
+  "diagnostics": {
+    "activity_daily_events": 9705,
+    "activity_post_index_raw_episodes_excluded": 0,
+    "activity_raw_rows": 9705,
+    "design_version": "performance_lab_preregistered_v1",
+    "legacy_contract": "chronology-corrected historical 49-feature comparator; calendar grid ends on last activity event start-local-date",
+    "legacy_value_features": 49,
+    "prediction_index": "last valid activity_day_end timestamp (+09:00)",
+    "primary_explicit_coverage_signals": 0,
+    "sleep_main_events_before_anchor": 9694,
+    "sleep_post_index_raw_episodes_excluded": 0,
+    "sleep_raw_rows": 9705,
+    "subjects": 141
+  },
+  "event_summary": {
+    "feature_count": 880,
+    "feature_name_contract_sha256": "15611f3853bd54b1703c00a88d22b9d8ee92b57b5a17c2f18883074157bbf51d",
+    "finite_values": 124080,
+    "nonfinite_fraction": 0.0,
+    "nonfinite_values": 0,
+    "shape": [
+      141,
+      880
+    ]
+  },
+  "generated_at_utc": "2026-07-15T18:05:08.946431+00:00",
+  "legacy_comparator": {
+    "feature_count": 49,
+    "finite_values": 210834,
+    "nonfinite_fraction": 0.12811860306432604,
+    "nonfinite_values": 30981,
+    "selection_eligible": false,
+    "shape": [
+      141,
+      35,
+      49
+    ]
+  },
+  "raw_rows": {
+    "activity": 9705,
+    "sleep": 9705
+  },
+  "scope": "Data/1.Training deterministic feature construction only",
+  "sleep_event_sequence": {
+    "feature_count": 60,
+    "feature_name_contract_sha256": "7f48305dafdfb32ea8bc41d0ea74c8bece2581904520d06ff051e7509590d429",
+    "finite_values": 236880,
+    "nonfinite_fraction": 0.0,
+    "nonfinite_values": 0,
+    "shape": [
+      141,
+      28,
+      60
+    ]
+  },
+  "subjects": 141
+}

@@ -1,0 +1,1084 @@
+{
+  "class_coverage_summary": [
+    {
+      "class_id": 0,
+      "class_name": "CN",
+      "protocol_activity_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 85,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_activity_span_days": {
+        "iqr": 18.0,
+        "median": 72.0,
+        "n": 85,
+        "q25": 65.0,
+        "q75": 83.0
+      },
+      "protocol_activity_valid_days": {
+        "iqr": 17.0,
+        "median": 65.0,
+        "n": 85,
+        "q25": 57.0,
+        "q75": 74.0
+      },
+      "protocol_matched_day_ratio": {
+        "iqr": 0.0,
+        "median": 1.0,
+        "n": 85,
+        "q25": 1.0,
+        "q75": 1.0
+      },
+      "protocol_sleep_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 85,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_sleep_span_days": {
+        "iqr": 18.0,
+        "median": 72.0,
+        "n": 85,
+        "q25": 65.0,
+        "q75": 83.0
+      },
+      "protocol_sleep_valid_days": {
+        "iqr": 18.0,
+        "median": 64.0,
+        "n": 85,
+        "q25": 56.0,
+        "q75": 74.0
+      },
+      "subjects": 85
+    },
+    {
+      "class_id": 1,
+      "class_name": "MCI",
+      "protocol_activity_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 47,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_activity_span_days": {
+        "iqr": 26.0,
+        "median": 75.0,
+        "n": 47,
+        "q25": 68.0,
+        "q75": 94.0
+      },
+      "protocol_activity_valid_days": {
+        "iqr": 14.0,
+        "median": 67.0,
+        "n": 47,
+        "q25": 63.0,
+        "q75": 77.0
+      },
+      "protocol_matched_day_ratio": {
+        "iqr": 0.0,
+        "median": 1.0,
+        "n": 47,
+        "q25": 1.0,
+        "q75": 1.0
+      },
+      "protocol_sleep_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 47,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_sleep_span_days": {
+        "iqr": 26.0,
+        "median": 75.0,
+        "n": 47,
+        "q25": 68.0,
+        "q75": 94.0
+      },
+      "protocol_sleep_valid_days": {
+        "iqr": 14.0,
+        "median": 67.0,
+        "n": 47,
+        "q25": 63.0,
+        "q75": 77.0
+      },
+      "subjects": 47
+    },
+    {
+      "class_id": 2,
+      "class_name": "DEM",
+      "protocol_activity_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 9,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_activity_span_days": {
+        "iqr": 7.0,
+        "median": 76.0,
+        "n": 9,
+        "q25": 73.0,
+        "q75": 80.0
+      },
+      "protocol_activity_valid_days": {
+        "iqr": 23.0,
+        "median": 61.0,
+        "n": 9,
+        "q25": 51.0,
+        "q75": 74.0
+      },
+      "protocol_matched_day_ratio": {
+        "iqr": 0.0,
+        "median": 1.0,
+        "n": 9,
+        "q25": 1.0,
+        "q75": 1.0
+      },
+      "protocol_sleep_mean_scalar_missing_fraction": {
+        "iqr": 0.0,
+        "median": 0.0,
+        "n": 9,
+        "q25": 0.0,
+        "q75": 0.0
+      },
+      "protocol_sleep_span_days": {
+        "iqr": 7.0,
+        "median": 76.0,
+        "n": 9,
+        "q25": 73.0,
+        "q75": 80.0
+      },
+      "protocol_sleep_valid_days": {
+        "iqr": 23.0,
+        "median": 61.0,
+        "n": 9,
+        "q25": 51.0,
+        "q75": 74.0
+      },
+      "subjects": 9
+    }
+  ],
+  "class_mapping": {
+    "0": "CN",
+    "1": "MCI",
+    "2": "DEM"
+  },
+  "feature_summary": {
+    "aggregate_rows_in_class_feature_summary": 1293,
+    "candidate_feature_count": 232,
+    "effect_size_methods": [
+      "Cliff's delta",
+      "median difference",
+      "robust SMD"
+    ],
+    "effect_size_reference": "CN",
+    "effect_size_unit": "subject",
+    "engineered_subject_feature_count": 431,
+    "negative_control_feature_count": 199
+  },
+  "generated_at_utc": "2026-07-15T16:29:49.115875+00:00",
+  "mmse_exclusion": {
+    "reason": "MMSE sources contain diagnosis/clinical-test fields that are target-adjacent. They are excluded until prediction-index chronology and diagnostic circularity are explicitly resolved.",
+    "training_mmse_file_exists": true,
+    "training_mmse_file_opened": false,
+    "training_mmse_values_used": false,
+    "validation_mmse_feature_values_opened": false,
+    "validation_mmse_identifier_column_opened_for_overlap_only": true
+  },
+  "negative_control_diagnostics": {
+    "interpretation": "Coverage, missingness, valid-length, duplicate-day, and collection-date effects are negative controls. They can reveal protocol leakage and are not recommended model features without a pre-specified stability justification.",
+    "moderate_or_larger_feature_count_abs_cliffs_delta_ge_0_33": 14,
+    "strong_feature_count_abs_cliffs_delta_ge_0_474": 0,
+    "strongest": [
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.4588235294117647,
+        "feature": "sleep__sleep_hr_5min__valid_count__subject_median",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.4588235294117647,
+        "feature": "sleep__sleep_rmssd_5min__valid_count__subject_median",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.4562091503267974,
+        "feature": "sleep__sleep_hypnogram_5min__valid_count__subject_median",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": -0.4326797385620915,
+        "feature": "protocol_sleep_date_coverage_ratio",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": -0.41830065359477125,
+        "feature": "protocol_activity_date_coverage_ratio",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "MCI",
+        "cliffs_delta_vs_cn": -0.4142678347934919,
+        "feature": "protocol_sleep_first_date_offset_days",
+        "n_nonmissing": 47
+      },
+      {
+        "class_name": "MCI",
+        "cliffs_delta_vs_cn": -0.4142678347934919,
+        "feature": "protocol_activity_first_date_offset_days",
+        "n_nonmissing": 47
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.40261437908496733,
+        "feature": "sleep__sleep_hr_5min__nonzero_count__subject_median",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.40261437908496733,
+        "feature": "sleep__sleep_rmssd_5min__nonzero_count__subject_median",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.36209150326797385,
+        "feature": "sleep__sleep_rmssd_5min__valid_count__subject_day_iqr",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.36209150326797385,
+        "feature": "sleep__sleep_hr_5min__valid_count__subject_day_iqr",
+        "n_nonmissing": 9
+      },
+      {
+        "class_name": "DEM",
+        "cliffs_delta_vs_cn": 0.35947712418300654,
+        "feature": "sleep__sleep_rmssd_5min__nonzero_count__subject_day_iqr",
+        "n_nonmissing": 9
+      }
+    ]
+  },
+  "privacy_contract": {
+    "artifacts_are_aggregate_only": true,
+    "identifier_hashes_created_or_persisted": false,
+    "identifier_values_persisted": false,
+    "identifier_values_printed": false,
+    "subject_level_rows_persisted": false
+  },
+  "scientific_limitations": [
+    "Only nine Training DEM subjects are available; effect sizes are exploratory.",
+    "No Validation labels were opened, so this report contains no benchmark performance.",
+    "Protocol negative controls are leakage diagnostics, not recommended predictors.",
+    "Associations are not clinical causal effects."
+  ],
+  "task": "three_class_cognitive_status_training_only_eda",
+  "training_cross_modality": {
+    "activity_only_subject_count": 0,
+    "activity_only_subject_dates": 32,
+    "activity_sleep_subject_overlap_count": 141,
+    "activity_subject_count": 141,
+    "activity_unique_subject_dates": 9705,
+    "matched_subject_dates": 9673,
+    "sleep_only_subject_count": 0,
+    "sleep_only_subject_dates": 21,
+    "sleep_subject_count": 141,
+    "sleep_unique_subject_dates": 9694,
+    "union_subject_dates": 9726
+  },
+  "training_labels": {
+    "all_label_values_equal": true,
+    "all_subject_sets_equal": true,
+    "canonical_copy": "gait",
+    "class_counts": {
+      "CN": 85,
+      "DEM": 9,
+      "MCI": 47
+    },
+    "copies": {
+      "cognitive": {
+        "columns": 2,
+        "duplicate_subject_rows_excess": 0,
+        "missing_identifier_rows": 0,
+        "path": "Data/1.Training/LabelingData/3.CognitiveFunction/training_label.csv",
+        "rows": 141,
+        "unique_subjects": 141,
+        "unknown_or_missing_label_rows": 0,
+        "within_copy_label_conflict_subjects": 0
+      },
+      "gait": {
+        "columns": 2,
+        "duplicate_subject_rows_excess": 0,
+        "missing_identifier_rows": 0,
+        "path": "Data/1.Training/LabelingData/1.Gait/training_label.csv",
+        "rows": 141,
+        "unique_subjects": 141,
+        "unknown_or_missing_label_rows": 0,
+        "within_copy_label_conflict_subjects": 0
+      },
+      "sleep": {
+        "columns": 2,
+        "duplicate_subject_rows_excess": 0,
+        "missing_identifier_rows": 0,
+        "path": "Data/1.Training/LabelingData/2.Sleep/training_label.csv",
+        "rows": 141,
+        "unique_subjects": 141,
+        "unknown_or_missing_label_rows": 0,
+        "within_copy_label_conflict_subjects": 0
+      }
+    },
+    "cross_copy_comparison": {
+      "cognitive": {
+        "agreeing_label_count_on_overlap": 141,
+        "copy_only_subject_count": 0,
+        "disagreeing_label_count_on_overlap": 0,
+        "gait_only_subject_count": 0,
+        "label_values_equal_to_gait": true,
+        "overlap_subject_count": 141,
+        "subject_sets_equal_to_gait": true
+      },
+      "gait": {
+        "agreeing_label_count_on_overlap": 141,
+        "copy_only_subject_count": 0,
+        "disagreeing_label_count_on_overlap": 0,
+        "gait_only_subject_count": 0,
+        "label_values_equal_to_gait": true,
+        "overlap_subject_count": 141,
+        "subject_sets_equal_to_gait": true
+      },
+      "sleep": {
+        "agreeing_label_count_on_overlap": 141,
+        "copy_only_subject_count": 0,
+        "disagreeing_label_count_on_overlap": 0,
+        "gait_only_subject_count": 0,
+        "label_values_equal_to_gait": true,
+        "overlap_subject_count": 141,
+        "subject_sets_equal_to_gait": true
+      }
+    },
+    "subject_count": 141
+  },
+  "training_sources": {
+    "activity": {
+      "columns": 31,
+      "daily_selection": {
+        "daily_representative_policy": "longest timestamp duration",
+        "duplicate_subject_date_groups": 0,
+        "duplicate_subject_date_rows_excess": 0,
+        "rows_after_daily_representative_selection": 9705
+      },
+      "date": {
+        "max": "2021-02-17",
+        "min": "2020-10-17",
+        "missing_rows": 0,
+        "valid_rows": 9705
+      },
+      "exact_duplicate_rows_excess": 0,
+      "label_only_subject_count": 0,
+      "missingness": {
+        "columns_with_any_raw_missing": 0,
+        "overall_raw_cell_missing_fraction_excluding_identifier": 0.0,
+        "top_numeric_zero_fraction_columns": [
+          {
+            "column": "activity_inactivity_alerts",
+            "fraction": 0.6809891808346213
+          },
+          {
+            "column": "activity_non_wear",
+            "fraction": 0.4960329726944874
+          },
+          {
+            "column": "activity_high",
+            "fraction": 0.45337454920144254
+          },
+          {
+            "column": "activity_met_min_high",
+            "fraction": 0.45337454920144254
+          },
+          {
+            "column": "activity_met_min_medium",
+            "fraction": 0.02009273570324575
+          },
+          {
+            "column": "activity_medium",
+            "fraction": 0.01988665636269964
+          },
+          {
+            "column": "activity_met_min_inactive",
+            "fraction": 0.0012364760432766616
+          },
+          {
+            "column": "activity_score",
+            "fraction": 0.0009273570324574962
+          },
+          {
+            "column": "activity_score_training_frequency",
+            "fraction": 0.0009273570324574962
+          },
+          {
+            "column": "activity_score_stay_active",
+            "fraction": 0.0009273570324574962
+          }
+        ],
+        "top_raw_missing_columns": [
+          {
+            "column": "activity_average_met",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_cal_active",
+            "fraction": 0.0
+          },
+          {
+            "column": "CONVERT(activity_class_5min USING utf8)",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_total",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_steps",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_score_training_volume",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_score_training_frequency",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_score_stay_active",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_score_recovery_time",
+            "fraction": 0.0
+          },
+          {
+            "column": "activity_score_move_every_hour",
+            "fraction": 0.0
+          }
+        ]
+      },
+      "numeric_conversion_audit": {
+        "activity_average_met": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_cal_active": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_cal_total": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_daily_movement": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_high": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_inactive": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_inactivity_alerts": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_low": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_medium": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_met_min_high": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_met_min_inactive": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_met_min_low": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_met_min_medium": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_non_wear": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_rest": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_meet_daily_targets": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_move_every_hour": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_recovery_time": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_stay_active": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_training_frequency": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_score_training_volume": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_steps": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        },
+        "activity_total": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9705,
+          "original_nonmissing": 9705
+        }
+      },
+      "parsed_sequence_audit": {
+        "activity_class_5min": {
+          "column_present": true,
+          "column_used": "CONVERT(activity_class_5min USING utf8)",
+          "empty_or_unparseable_rows": 0,
+          "rows": 9705,
+          "valid_length": {
+            "iqr": 0.0,
+            "median": 288.0,
+            "n": 9705,
+            "q25": 288.0,
+            "q75": 288.0
+          }
+        },
+        "activity_met_1min": {
+          "column_present": true,
+          "column_used": "CONVERT(activity_met_1min USING utf8)",
+          "empty_or_unparseable_rows": 0,
+          "rows": 9705,
+          "valid_length": {
+            "iqr": 0.0,
+            "median": 1440.0,
+            "n": 9705,
+            "q25": 1440.0,
+            "q75": 1440.0
+          }
+        }
+      },
+      "path": "Data/1.Training/SourceData/1.Gait/train_activity.csv",
+      "rows": 9705,
+      "rows_used_for_daily_feature_aggregation": 9705,
+      "rows_without_training_label": 0,
+      "scalar_numeric_feature_count": 27,
+      "source_only_subject_count": 0,
+      "subjects_with_training_label": 141,
+      "unique_subjects": 141
+    },
+    "sleep": {
+      "columns": 36,
+      "daily_selection": {
+        "daily_representative_policy": "longest-flag then duration",
+        "duplicate_subject_date_groups": 11,
+        "duplicate_subject_date_rows_excess": 11,
+        "rows_after_daily_representative_selection": 9694
+      },
+      "date": {
+        "max": "2021-02-17",
+        "min": "2020-10-17",
+        "missing_rows": 0,
+        "valid_rows": 9705
+      },
+      "exact_duplicate_rows_excess": 0,
+      "label_only_subject_count": 0,
+      "missingness": {
+        "columns_with_any_raw_missing": 0,
+        "overall_raw_cell_missing_fraction_excluding_identifier": 0.0,
+        "top_numeric_zero_fraction_columns": [
+          {
+            "column": "sleep_temperature_deviation",
+            "fraction": 0.014545079430575614
+          },
+          {
+            "column": "sleep_temperature_delta",
+            "fraction": 0.014545079430575614
+          },
+          {
+            "column": "sleep_rem",
+            "fraction": 0.010831442129152052
+          },
+          {
+            "column": "sleep_deep",
+            "fraction": 0.0005157829585310501
+          },
+          {
+            "column": "sleep_midpoint_at_delta",
+            "fraction": 0.00020631318341242006
+          },
+          {
+            "column": "sleep_onset_latency",
+            "fraction": 0.00010315659170621003
+          },
+          {
+            "column": "sleep_awake",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_deep",
+            "fraction": 0.0
+          },
+          {
+            "column": "derived_bedtime_end_hour",
+            "fraction": 0.0
+          },
+          {
+            "column": "derived_bedtime_start_hour",
+            "fraction": 0.0
+          }
+        ],
+        "top_raw_missing_columns": [
+          {
+            "column": "sleep_awake",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_latency",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_rmssd_5min",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_alignment",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_deep",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_disturbances",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_efficiency",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_score_rem",
+            "fraction": 0.0
+          },
+          {
+            "column": "sleep_restless",
+            "fraction": 0.0
+          }
+        ]
+      },
+      "numeric_conversion_audit": {
+        "sleep_awake": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_breath_average": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_deep": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_duration": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_efficiency": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_hr_average": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_hr_lowest": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_light": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_midpoint_at_delta": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_midpoint_time": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_onset_latency": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_rem": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_restless": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_rmssd": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_alignment": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_deep": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_disturbances": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_efficiency": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_latency": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_rem": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_score_total": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_temperature_delta": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_temperature_deviation": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        },
+        "sleep_total": {
+          "numeric_conversion_fraction": 1.0,
+          "numeric_nonmissing": 9694,
+          "original_nonmissing": 9694
+        }
+      },
+      "parsed_sequence_audit": {
+        "sleep_hr_5min": {
+          "column_present": true,
+          "column_used": "CONVERT(sleep_hr_5min USING utf8)",
+          "empty_or_unparseable_rows": 0,
+          "rows": 9694,
+          "valid_length": {
+            "iqr": 30.0,
+            "median": 97.0,
+            "n": 9694,
+            "q25": 82.0,
+            "q75": 112.0
+          }
+        },
+        "sleep_hypnogram_5min": {
+          "column_present": true,
+          "column_used": "CONVERT(sleep_hypnogram_5min USING utf8)",
+          "empty_or_unparseable_rows": 0,
+          "rows": 9694,
+          "valid_length": {
+            "iqr": 30.0,
+            "median": 96.0,
+            "n": 9694,
+            "q25": 82.0,
+            "q75": 112.0
+          }
+        },
+        "sleep_rmssd_5min": {
+          "column_present": true,
+          "column_used": "CONVERT(sleep_rmssd_5min USING utf8)",
+          "empty_or_unparseable_rows": 0,
+          "rows": 9694,
+          "valid_length": {
+            "iqr": 30.0,
+            "median": 97.0,
+            "n": 9694,
+            "q25": 82.0,
+            "q75": 112.0
+          }
+        }
+      },
+      "path": "Data/1.Training/SourceData/2.Sleep/train_sleep.csv",
+      "rows": 9705,
+      "rows_used_for_daily_feature_aggregation": 9694,
+      "rows_without_training_label": 0,
+      "scalar_numeric_feature_count": 28,
+      "source_only_subject_count": 0,
+      "subjects_with_training_label": 141,
+      "unique_subjects": 141
+    }
+  },
+  "validation_isolation": {
+    "validation_label_files_opened": false,
+    "validation_label_values_used": false,
+    "validation_source_access_scope": "header plus identifier column for schema/overlap only",
+    "validation_source_non_identifier_values_opened": false
+  },
+  "validation_source_schema_and_overlap_only": {
+    "activity": {
+      "column_count": 31,
+      "columns": [
+        "EMAIL",
+        "activity_average_met",
+        "activity_cal_active",
+        "activity_cal_total",
+        "activity_class_5min",
+        "activity_daily_movement",
+        "activity_day_end",
+        "activity_day_start",
+        "activity_high",
+        "activity_inactive",
+        "activity_inactivity_alerts",
+        "activity_low",
+        "activity_medium",
+        "activity_met_1min",
+        "activity_met_min_high",
+        "activity_met_min_inactive",
+        "activity_met_min_low",
+        "activity_met_min_medium",
+        "activity_non_wear",
+        "activity_rest",
+        "activity_score",
+        "activity_score_meet_daily_targets",
+        "activity_score_move_every_hour",
+        "activity_score_recovery_time",
+        "activity_score_stay_active",
+        "activity_score_training_frequency",
+        "activity_score_training_volume",
+        "activity_steps",
+        "activity_total",
+        "CONVERT(activity_class_5min USING utf8)",
+        "CONVERT(activity_met_1min USING utf8)"
+      ],
+      "identifier_column_read_for_overlap_only": "EMAIL",
+      "non_identifier_feature_values_opened": false,
+      "overlap_with_training_label_subject_count": 0,
+      "overlap_with_training_source_subject_count": 0,
+      "path": "Data/2.Validation/SourceData/1.Gait/val_activity.csv",
+      "rows_counted_from_identifier_column_only": 2478,
+      "schema_exact_match_to_training_source": true,
+      "target_like_columns_present_in_schema": [
+        "activity_score_meet_daily_targets"
+      ],
+      "training_only_columns": [],
+      "unique_subjects": 33,
+      "validation_only_columns": []
+    },
+    "mmse": {
+      "column_count": 38,
+      "columns": [
+        "SAMPLE_EMAIL",
+        "DIAG_SEQ",
+        "DIAG_NM",
+        "DOCTOR_NM",
+        "MMSE_NUM",
+        "MMSE_KIND",
+        "Q01",
+        "Q02",
+        "Q03",
+        "Q04",
+        "Q05",
+        "Q06",
+        "Q07",
+        "Q08",
+        "Q09",
+        "Q10",
+        "Q11_1",
+        "Q11_2",
+        "Q11_3",
+        "Q12_1",
+        "Q12_2",
+        "Q12_3",
+        "Q12_4",
+        "Q12_5",
+        "Q12_TOTAL",
+        "Q13_1",
+        "Q13_2",
+        "Q13_3",
+        "Q14_1",
+        "Q14_2",
+        "Q15",
+        "Q16_1",
+        "Q16_2",
+        "Q16_3",
+        "Q17",
+        "Q18",
+        "Q19",
+        "TOTAL"
+      ],
+      "identifier_column_read_for_overlap_only": "SAMPLE_EMAIL",
+      "non_identifier_feature_values_opened": false,
+      "overlap_with_training_label_subject_count": 0,
+      "overlap_with_training_source_subject_count": 0,
+      "path": "Data/2.Validation/SourceData/3.CognitiveFunction/val_mmse.csv",
+      "rows_counted_from_identifier_column_only": 33,
+      "schema_exact_match_to_training_source": null,
+      "target_like_columns_present_in_schema": [
+        "DIAG_SEQ",
+        "DIAG_NM",
+        "DOCTOR_NM"
+      ],
+      "training_only_columns": [],
+      "unique_subjects": 33,
+      "validation_only_columns": []
+    },
+    "sleep": {
+      "column_count": 36,
+      "columns": [
+        "EMAIL",
+        "sleep_awake",
+        "sleep_bedtime_end",
+        "sleep_bedtime_start",
+        "sleep_breath_average",
+        "sleep_deep",
+        "sleep_duration",
+        "sleep_efficiency",
+        "sleep_hr_5min",
+        "sleep_hr_average",
+        "sleep_hr_lowest",
+        "sleep_hypnogram_5min",
+        "sleep_is_longest",
+        "sleep_light",
+        "sleep_midpoint_at_delta",
+        "sleep_midpoint_time",
+        "sleep_onset_latency",
+        "sleep_period_id",
+        "sleep_rem",
+        "sleep_restless",
+        "sleep_rmssd",
+        "sleep_rmssd_5min",
+        "sleep_score",
+        "sleep_score_alignment",
+        "sleep_score_deep",
+        "sleep_score_disturbances",
+        "sleep_score_efficiency",
+        "sleep_score_latency",
+        "sleep_score_rem",
+        "sleep_score_total",
+        "sleep_temperature_delta",
+        "sleep_temperature_deviation",
+        "sleep_total",
+        "CONVERT(sleep_hr_5min USING utf8)",
+        "CONVERT(sleep_hypnogram_5min USING utf8)",
+        "CONVERT(sleep_rmssd_5min USING utf8)"
+      ],
+      "identifier_column_read_for_overlap_only": "EMAIL",
+      "non_identifier_feature_values_opened": false,
+      "overlap_with_training_label_subject_count": 0,
+      "overlap_with_training_source_subject_count": 0,
+      "path": "Data/2.Validation/SourceData/2.Sleep/val_sleep.csv",
+      "rows_counted_from_identifier_column_only": 2478,
+      "schema_exact_match_to_training_source": true,
+      "target_like_columns_present_in_schema": [],
+      "training_only_columns": [],
+      "unique_subjects": 33,
+      "validation_only_columns": []
+    }
+  }
+}
