@@ -1,0 +1,169 @@
+{
+  "generated_at_utc": "2026-07-19T13:45:38.138029+00:00",
+  "scope": "Training only; no model fitting; no Validation label access",
+  "raw": {
+    "training_subjects": 141,
+    "class_counts": {
+      "CN": 85,
+      "MCI": 47,
+      "DEM": 9
+    },
+    "label_copy_consistency": {
+      "copies_checked": 3,
+      "subject_sets_equal": true,
+      "targets_equal": true
+    },
+    "activity": {
+      "rows": 9705,
+      "subjects": 141,
+      "duplicate_subject_dates": 0,
+      "date_min": "2020-10-17",
+      "date_max": "2021-02-17"
+    },
+    "sleep": {
+      "rows": 9705,
+      "subjects": 141,
+      "duplicate_subject_dates": 11,
+      "date_min": "2020-10-17",
+      "date_max": "2021-02-17"
+    },
+    "cross_modality_dates": {
+      "matched": 9673,
+      "activity_only": 32,
+      "sleep_only": 21
+    },
+    "coverage_by_class": {
+      "CN": {
+        "activity_days": {
+          "n": 85,
+          "median": 65.0,
+          "q25": 57.0,
+          "q75": 74.0,
+          "min": 35.0,
+          "max": 115.0
+        },
+        "sleep_days": {
+          "n": 85,
+          "median": 64.0,
+          "q25": 56.0,
+          "q75": 74.0,
+          "min": 35.0,
+          "max": 115.0
+        }
+      },
+      "MCI": {
+        "activity_days": {
+          "n": 47,
+          "median": 67.0,
+          "q25": 63.0,
+          "q75": 77.0,
+          "min": 37.0,
+          "max": 120.0
+        },
+        "sleep_days": {
+          "n": 47,
+          "median": 67.0,
+          "q25": 63.0,
+          "q75": 77.0,
+          "min": 37.0,
+          "max": 120.0
+        }
+      },
+      "DEM": {
+        "activity_days": {
+          "n": 9,
+          "median": 61.0,
+          "q25": 51.0,
+          "q75": 74.0,
+          "min": 44.0,
+          "max": 87.0
+        },
+        "sleep_days": {
+          "n": 9,
+          "median": 61.0,
+          "q25": 51.0,
+          "q75": 74.0,
+          "min": 44.0,
+          "max": 87.0
+        }
+      }
+    },
+    "mmse": {
+      "rows": 141,
+      "subjects": 141,
+      "direct_DIAG_NM_agreement_with_target": 1.0,
+      "direct_DIAG_NM_used_as_feature": false,
+      "total_by_class": {
+        "CN": {
+          "n": 85,
+          "median": 28.0,
+          "q25": 27.0,
+          "q75": 29.0,
+          "min": 20.0,
+          "max": 30.0
+        },
+        "MCI": {
+          "n": 47,
+          "median": 26.0,
+          "q25": 24.0,
+          "q75": 28.0,
+          "min": 17.0,
+          "max": 29.0
+        },
+        "DEM": {
+          "n": 9,
+          "median": 22.0,
+          "q25": 16.0,
+          "q75": 23.0,
+          "min": 5.0,
+          "max": 27.0
+        }
+      }
+    }
+  },
+  "engineered_dataset": {
+    "split_root": "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Data/1.Training",
+    "feature_mode": "clinical_plus_lifelog",
+    "subjects": 141,
+    "features": 754,
+    "overall_missing_fraction": 0.0,
+    "subjects_missing_activity": 0,
+    "subjects_missing_sleep": 0,
+    "subjects_missing_mmse": 0,
+    "activity": {
+      "rows": 9705,
+      "subjects": 141,
+      "duplicate_subject_timestamp_rows": 0,
+      "feature_columns_per_day": 39
+    },
+    "sleep": {
+      "raw_rows": 9705,
+      "rows_after_time_guard_and_main_sleep": 9694,
+      "subjects": 141,
+      "future_rows_excluded": 0,
+      "duplicate_subject_wake_date_rows_before_dedup": 22,
+      "feature_columns_per_day": 51
+    },
+    "mmse": {
+      "rows": 141,
+      "subjects": 141,
+      "records_per_subject_max": 1,
+      "answer_feature_count": 34,
+      "forbidden_source_columns_present_but_excluded": [
+        "DIAG_NM",
+        "DIAG_SEQ",
+        "DOCTOR_NM",
+        "MMSE_KIND",
+        "MMSE_NUM"
+      ]
+    },
+    "direct_diagnosis_columns_used": false,
+    "identifier_columns_used_as_features": false,
+    "calendar_date_columns_used_as_features": false,
+    "coverage_count_or_gap_features_used": false
+  },
+  "privacy": {
+    "subject_identifiers_persisted": false,
+    "aggregate_outputs_only": true
+  }
+}
