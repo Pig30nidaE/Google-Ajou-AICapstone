@@ -1,0 +1,41 @@
+{
+  "split_root": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training",
+  "feature_mode": "clinical_plus_lifelog",
+  "subjects": 141,
+  "features": 754,
+  "overall_missing_fraction": 0.0,
+  "subjects_missing_activity": 0,
+  "subjects_missing_sleep": 0,
+  "subjects_missing_mmse": 0,
+  "activity": {
+    "rows": 9705,
+    "subjects": 141,
+    "duplicate_subject_timestamp_rows": 0,
+    "feature_columns_per_day": 39
+  },
+  "sleep": {
+    "raw_rows": 9705,
+    "rows_after_time_guard_and_main_sleep": 9694,
+    "subjects": 141,
+    "future_rows_excluded": 0,
+    "duplicate_subject_wake_date_rows_before_dedup": 22,
+    "feature_columns_per_day": 51
+  },
+  "mmse": {
+    "rows": 141,
+    "subjects": 141,
+    "records_per_subject_max": 1,
+    "answer_feature_count": 34,
+    "forbidden_source_columns_present_but_excluded": [
+      "DIAG_NM",
+      "DIAG_SEQ",
+      "DOCTOR_NM",
+      "MMSE_KIND",
+      "MMSE_NUM"
+    ]
+  },
+  "direct_diagnosis_columns_used": false,
+  "identifier_columns_used_as_features": false,
+  "calendar_date_columns_used_as_features": false,
+  "coverage_count_or_gap_features_used": false
+}

@@ -340,7 +340,6 @@ def fit_ydf(
         validation_ratio=0.0,
         random_seed=seed,
         num_threads=int(params.get("num_threads", 32)),
-        verbose=0,
     )
     model = learner.train(frame)
     return YDFAdapter(model, feature_names=feature_names)

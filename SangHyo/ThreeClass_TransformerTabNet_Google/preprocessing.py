@@ -34,7 +34,7 @@ class FoldPreprocessor:
         frame = frame[self.base_columns_]
 
         self.medians_ = frame.median(axis=0).fillna(0.0)
-        filled = frame.fillna(self.medians_)
+        filled = frame.fillna(self.medians_).astype(np.float64, copy=False)
         self.lower_ = filled.quantile(0.01)
         self.upper_ = filled.quantile(0.99)
         clipped = filled.clip(self.lower_, self.upper_, axis=1)
@@ -85,7 +85,7 @@ class FoldPreprocessor:
         if missing:
             raise ValueError(f"Input is missing fitted columns: {missing[:10]}")
         frame = X[self.base_columns_].replace([np.inf, -np.inf], np.nan)
-        frame = frame.fillna(self.medians_)
+        frame = frame.fillna(self.medians_).astype(np.float64, copy=False)
         frame = frame.clip(self.lower_, self.upper_, axis=1)
         frame = (frame - self.centers_) / self.scales_
         values = frame[self.selected_columns_].to_numpy(dtype=np.float32)
@@ -104,4 +104,3 @@ class FoldPreprocessor:
     def selected_feature_names(self) -> list[str]:
         self._check_fitted()
         return list(self.selected_columns_)
-

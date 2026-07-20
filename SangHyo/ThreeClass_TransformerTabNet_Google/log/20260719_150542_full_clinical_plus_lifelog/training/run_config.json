@@ -1,0 +1,14 @@
+{
+  "training_root": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training",
+  "validation_root": "/content/drive/MyDrive/GoogleAI_contest/Data/2.Validation",
+  "output_dir": "/content/drive/MyDrive/SangHyo_CN_MCI_DEM_Results/20260719_150542_full_clinical_plus_lifelog/training",
+  "feature_mode": "clinical_plus_lifelog",
+  "outer_folds": 3,
+  "outer_repeats": 2,
+  "inner_folds": 3,
+  "trials_transformer": 24,
+  "trials_tabnet": 24,
+  "trials_ydf": 40,
+  "seed": 20260719,
+  "fast": false
+}

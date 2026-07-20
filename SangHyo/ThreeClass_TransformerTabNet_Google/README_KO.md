@@ -2,7 +2,7 @@
 
 이 폴더는 한 사람의 활동, 수면, 인지검사 정보를 모아 `CN / MCI / DEM`을
 구분하는 새 실험입니다. 기존 `SangHyo` 실험은 수정하지 않았고,
-`base_sanghyo.ipynb`만 이 폴더를 실행하도록 바꿨습니다.
+`SangHyo/base.ipynb`만 이 폴더를 실행하도록 바꿨습니다.
 
 코드는 준비했지만 **모델 학습은 실행하지 않았습니다.** 학습은 Colab A100에서
 사용자가 직접 실행하도록 구성했습니다.
@@ -129,7 +129,7 @@ Validation은 위 선택에 참여하지 않습니다. 모든 바깥 모델의 l
 ## 실행 방법
 
 1. Google Drive에 이 저장소 전체를 둡니다.
-2. Colab에서 [`../base_sanghyo.ipynb`](../base_sanghyo.ipynb)를 엽니다.
+2. Colab에서 [`../base.ipynb`](../base.ipynb)를 엽니다.
 3. 런타임을 A100 GPU와 High-RAM으로 설정합니다.
 4. 경로 셀의 자동 탐색이 실패하면 `PROJECT_ROOT_OVERRIDE`만 수정합니다.
 5. 먼저 `RUN_MODE = "smoke"`로 실행 흐름을 확인합니다.
@@ -155,6 +155,17 @@ EDA, 모델, 설정, 예측표가 모두 이 폴더에 직접 기록되고 마�
 
 시간을 줄이기 위해 탐색 횟수를 줄일 수는 있지만, 그러면 같은 실험으로 비교하기
 어렵습니다. Full 결과를 정식 결과로 쓸 때는 기본값을 유지하는 편이 좋습니다.
+
+## 오류가 났을 때
+
+노트북은 실행할 때마다 GitHub 저장소를 새로 내려받습니다. 따라서 로컬에서 고친
+파일이 있어도 GitHub에 push하지 않으면 Colab은 계속 이전 코드를 실행합니다.
+
+YDF는 이 실험에서 확인한 `0.16.1`로 고정했습니다. 오류 메시지에
+`unexpected keyword argument 'verbose'`가 보이면, Colab이 아직 수정 전
+`models.py`를 받은 것입니다. 변경 사항을 push한 뒤 새 Colab 런타임에서 처음부터
+다시 실행합니다. 실패 폴더의 `FAILED_TRACEBACK.log`는 원인 확인을 위해 그대로
+보관해도 됩니다.
 
 ## 주요 파일
 
@@ -208,4 +219,3 @@ Validation 목표는 `validation_report.json`에서 따로 확인합니다. OOF�
 
 이 제한이 있어야 실제로 새 사람을 만났을 때의 성능에 조금 더 가까운 값을 얻을 수
 있습니다.
-
