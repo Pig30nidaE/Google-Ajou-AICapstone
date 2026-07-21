@@ -107,7 +107,7 @@ def resolve_base_settings(namespace: Mapping[str, Any] | None = None) -> dict[st
     }
 
 
-def main(namespace: Mapping[str, Any] | None = None) -> None:
+def main(namespace: Mapping[str, Any] | None = None) -> Path:
     settings = resolve_base_settings(namespace)
     fast = settings["mode"] == "smoke"
     outer_seeds = DEFAULT_OUTER_SEEDS[:1] if fast else DEFAULT_OUTER_SEEDS
@@ -128,6 +128,7 @@ def main(namespace: Mapping[str, Any] | None = None) -> None:
     print(f"Run mode     : {settings['mode']}")
     print(f"Output       : {settings['output_dir']}")
     run(config)
+    return Path(config.output_dir)
 
 
 if __name__ == "__main__":

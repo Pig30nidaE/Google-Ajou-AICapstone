@@ -58,6 +58,13 @@ Colab에서도 같은 명령을 사용할 수 있습니다. 데이터 루트만 
 
 ## 실행
 
+### 전용 노트북
+
+[`NaiveBayes_Colab.ipynb`](NaiveBayes_Colab.ipynb)는 나이브 베이즈만을 위한
+독립 실행 노트북입니다. Colab 또는 로컬 Jupyter에서 위에서 아래로 실행하면
+경로 설정, 의존성 설치, 학습, 결과 요약을 순서대로 처리합니다. 기본 `RUN_MODE`는
+짧은 점검용 `smoke`이므로 성능 보고 전에는 `full`로 바꿉니다.
+
 ### 공통 `base.ipynb`에서 실행
 
 `USER_FOLDER`와 `RUN_FILE`을 받는 공통 스켈레톤에서는 다음처럼 지정합니다.

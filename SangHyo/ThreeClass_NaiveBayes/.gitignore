@@ -1,5 +1,6 @@
 # Keep the reproducible dependency contract despite the repository-wide *.txt rule.
 !requirements_colab.txt
+!NaiveBayes_Colab.ipynb
 
 # Generated training artifacts are intentionally local/Drive-only.
 training_outputs/

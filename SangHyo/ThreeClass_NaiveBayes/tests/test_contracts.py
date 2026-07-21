@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -27,7 +29,7 @@ from modeling import (  # noqa: E402
     validate_split_count,
 )
 from train import assert_disjoint_subjects, prepare_output_dir  # noqa: E402
-from run_base import resolve_base_settings  # noqa: E402
+from run_base import main as run_base_main, resolve_base_settings  # noqa: E402
 
 
 class StaticContracts(unittest.TestCase):
@@ -60,6 +62,17 @@ class StaticContracts(unittest.TestCase):
         frozen = source.index('output / "VALIDATION_PREDICTIONS_FROZEN.json"')
         labels = source.index("validation_y = load_aligned_labels")
         self.assertLess(frozen, labels)
+
+    def test_dedicated_notebook_has_expected_cells(self) -> None:
+        notebook = json.loads((ROOT / "NaiveBayes_Colab.ipynb").read_text(encoding="utf-8"))
+        self.assertEqual(notebook["nbformat"], 4)
+        source = "\n".join(
+            "".join(cell.get("source", [])) for cell in notebook["cells"]
+        )
+        self.assertIn("import run_base", source)
+        self.assertIn("NAIVE_BAYES_RUN_MODE", source)
+        self.assertIn("if run_result is not None", source)
+        self.assertIn("FINAL_REPORT.json", source)
 
 
 class ModelingContracts(unittest.TestCase):
@@ -143,6 +156,20 @@ class ModelingContracts(unittest.TestCase):
         self.assertEqual(settings["mode"], "smoke")
         self.assertEqual(settings["training_root"], project_root / "Data/1.Training")
         self.assertEqual(settings["validation_root"], project_root / "Data/2.Validation")
+
+    def test_base_launcher_returns_output_path(self) -> None:
+        project_root = ROOT.parents[1]
+        with tempfile.TemporaryDirectory() as temporary, patch("run_base.run") as train_run:
+            output = run_base_main(
+                {
+                    "PROJECT_ROOT": project_root,
+                    "DATA_ROOT": project_root / "Data",
+                    "NAIVE_BAYES_RUN_MODE": "smoke",
+                    "NAIVE_BAYES_RESULTS_ROOT": Path(temporary),
+                }
+            )
+        self.assertEqual(output.parent, Path(temporary).resolve())
+        self.assertTrue(train_run.called)
 
 
 if __name__ == "__main__":
