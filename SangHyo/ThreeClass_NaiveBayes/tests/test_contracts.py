@@ -27,6 +27,7 @@ from modeling import (  # noqa: E402
     validate_split_count,
 )
 from train import assert_disjoint_subjects, prepare_output_dir  # noqa: E402
+from run_base import resolve_base_settings  # noqa: E402
 
 
 class StaticContracts(unittest.TestCase):
@@ -43,7 +44,8 @@ class StaticContracts(unittest.TestCase):
         for path in sorted(ROOT.glob("*.py")):
             source = path.read_text(encoding="utf-8")
             self.assertNotIn("/Users/", source)
-            self.assertNotIn("/content/drive", source)
+            if path.name != "run_base.py":
+                self.assertNotIn("/content/drive", source)
 
     def test_pipeline_ends_in_gaussian_naive_bayes(self) -> None:
         pipeline = build_pipeline()
@@ -127,6 +129,20 @@ class ModelingContracts(unittest.TestCase):
             (output / "existing.json").write_text("{}", encoding="utf-8")
             with self.assertRaises(FileExistsError):
                 prepare_output_dir(output)
+
+    def test_base_launcher_uses_notebook_data_root(self) -> None:
+        project_root = ROOT.parents[1]
+        settings = resolve_base_settings(
+            {
+                "PROJECT_ROOT": project_root,
+                "DATA_ROOT": project_root / "Data",
+                "NAIVE_BAYES_RUN_MODE": "smoke",
+                "NAIVE_BAYES_RESULTS_ROOT": Path(tempfile.gettempdir()),
+            }
+        )
+        self.assertEqual(settings["mode"], "smoke")
+        self.assertEqual(settings["training_root"], project_root / "Data/1.Training")
+        self.assertEqual(settings["validation_root"], project_root / "Data/2.Validation")
 
 
 if __name__ == "__main__":

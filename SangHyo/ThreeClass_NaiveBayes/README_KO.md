@@ -58,6 +58,30 @@ Colab에서도 같은 명령을 사용할 수 있습니다. 데이터 루트만 
 
 ## 실행
 
+### 공통 `base.ipynb`에서 실행
+
+`USER_FOLDER`와 `RUN_FILE`을 받는 공통 스켈레톤에서는 다음처럼 지정합니다.
+
+```python
+USER_FOLDER = "SangHyo"
+RUN_FILE = "ThreeClass_NaiveBayes/run_base.py"
+```
+
+지정할 파일은 `train.py`가 아니라 **`run_base.py`**입니다. `train.py`는
+`--training-root`, `--output-dir` 같은 CLI 인자가 필요하고, `run_base.py`가
+노트북의 `DATA_ROOT`를 이용해 그 인자를 구성합니다. 기본값은 정식 `full` 실행입니다.
+스켈레톤에 추가 설정 셀이 있다면 빠른 확인은 아래 값을 함께 지정할 수 있습니다.
+
+```python
+NAIVE_BAYES_RUN_MODE = "smoke"  # 정식 실행은 "full"
+```
+
+현재 저장소 루트의 `base.ipynb` 내용이 `USER_FOLDER`/`RUN_FILE` 스켈레톤이 아니라
+특정 LSTM 경로를 직접 실행하는 버전이라면, 위 두 변수를 사용하는 공통 스켈레톤
+버전에서 실행해야 합니다.
+
+### CLI에서 직접 실행
+
 짧은 동작 확인:
 
 ```bash
