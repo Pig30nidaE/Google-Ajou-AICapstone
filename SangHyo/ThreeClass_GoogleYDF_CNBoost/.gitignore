@@ -1,0 +1,8 @@
+# Repository-wide patterns ignore CSV/TXT files; these are intentional inputs
+# to the reproducible experiment and aggregated Training-only EDA artifacts.
+!requirements_colab.txt
+!eda_outputs/*.csv
+
+# Large local training products belong in Google Drive, not Git.
+training_outputs/
+

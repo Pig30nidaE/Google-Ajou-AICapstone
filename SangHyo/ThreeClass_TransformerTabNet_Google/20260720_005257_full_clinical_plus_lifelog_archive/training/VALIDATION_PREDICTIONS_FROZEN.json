@@ -1,0 +1,5 @@
+{
+  "prediction_file": "validation_predictions_label_free_hashed.csv",
+  "rows": 33,
+  "labels_opened_before_prediction_write": false
+}

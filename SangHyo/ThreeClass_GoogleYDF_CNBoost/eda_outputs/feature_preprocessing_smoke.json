@@ -1,0 +1,371 @@
+{
+  "model_training_executed": false,
+  "training_subjects": 141,
+  "validation_subjects": 33,
+  "raw_feature_count": 2640,
+  "selected_feature_count": 48,
+  "training_shape": [
+    141,
+    48
+  ],
+  "validation_shape": [
+    33,
+    48
+  ],
+  "mmse_source_opened": false,
+  "mmse_values_used": false,
+  "validation_labels_opened": false,
+  "finite_values": true,
+  "selector_manifest": {
+    "selection_task": "multiclass",
+    "positive_class": null,
+    "max_features": 48,
+    "selected_feature_count": 48,
+    "selected_features": [
+      "cn_abs__activity__event28__activity__met__median__p90",
+      "activity__event7__activity__class__wear_state_entropy__theil_sen_rank_slope",
+      "cn_abs__activity__event28__activity__raw__activity_score__p10",
+      "activity__event7__activity__raw__activity_daily_movement__mad",
+      "cn_abs__activity__event7__activity__circadian__m10__theil_sen_rank_slope",
+      "activity__event7__activity__class__wear_state_entropy__late_half_minus_early_half",
+      "cn_abs__activity__event7__activity__raw__activity_score__p10",
+      "cn_abs__activity__event14__activity__class__wear_state_entropy__late_half_minus_early_half",
+      "activity__event14__activity__raw__activity_rest__median",
+      "cn_abs__activity__event28__activity__raw__activity_score__median",
+      "cn_abs__activity__event28__activity__raw__activity_met_min_inactive__theil_sen_rank_slope",
+      "cn_abs__activity__event7__activity__raw__activity_score__trimmed_mean_10",
+      "sleep__event7__sleep__raw__sleep_light__p90",
+      "cn_abs__sleep__event14__sleep__stage__light_longest_run_ratio__p10",
+      "sleep__event28__sleep__raw__sleep_score_deep__mad",
+      "cn_abs__sleep__event28__sleep__stage__transition_rate__p10",
+      "sleep__event28__sleep__stage__entropy__mad",
+      "sleep__event14__sleep__raw__sleep_light__p90",
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_deep__iqr",
+      "sleep__event14__sleep__raw__sleep_light__median",
+      "sleep__event28__sleep__stage__entropy__iqr",
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_latency__mad",
+      "sleep__event7__sleep__raw__sleep_light__trimmed_mean_10",
+      "sleep__event14__sleep__raw__sleep_duration__p90",
+      "cn_abs__sleep__event14__sleep__raw__sleep_score_deep__iqr",
+      "sleep__event14__sleep__clock__bedtime_sin__p10",
+      "cn_abs__sleep__event28__sleep__stage__light_longest_run_ratio__p10",
+      "cn_abs__sleep__event14__sleep__stage__light_longest_run_ratio__median",
+      "sleep__event14__sleep__raw__sleep_duration__trimmed_mean_10",
+      "sleep__event28__sleep__raw__sleep_light__p90",
+      "cn_abs__sleep__event14__sleep__raw__sleep_score_alignment__late_half_minus_early_half",
+      "sleep__event28__sleep__stage__deep_longest_run_ratio__p10",
+      "sleep__event14__sleep__stage__rem_ratio__theil_sen_rank_slope",
+      "sleep__event14__sleep__stage__awake_longest_run_ratio__theil_sen_rank_slope",
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_deep__p10",
+      "sleep__event28__sleep__hr__mad__mad",
+      "sleep__event28__sleep__raw__sleep_awake__median",
+      "sleep__event14__sleep__stage__deep_ratio__p90",
+      "sleep__event14__sleep__raw__sleep_awake__trimmed_mean_10",
+      "sleep__event7__sleep__clock__bedtime_sin__p10",
+      "sleep__event14__sleep__duration__deep_ratio__median",
+      "sleep__event7__sleep__raw__sleep_restless__p90",
+      "cn_abs__sleep__event7__sleep__raw__sleep_score_alignment__median",
+      "sleep__event28__sleep__raw__sleep_duration__p90",
+      "sleep__event28__sleep__raw__sleep_score_deep__p10",
+      "cn_abs__sleep__event7__sleep__raw__sleep_temperature_delta__theil_sen_rank_slope",
+      "cn_abs__sleep__event7__sleep__stage__rem_ratio__iqr",
+      "sleep__event14__sleep__raw__sleep_score_disturbances__mad"
+    ],
+    "selected_feature_scores": {
+      "cn_abs__activity__event28__activity__met__median__p90": {
+        "combined_rank_score": 0.9858734997142313,
+        "task_f_score": 5.161458633561498,
+        "binary_auc_effect": 0.24495798319327733,
+        "family": "activity:level"
+      },
+      "activity__event7__activity__class__wear_state_entropy__theil_sen_rank_slope": {
+        "combined_rank_score": 0.9775481044008383,
+        "task_f_score": 5.802122385778691,
+        "binary_auc_effect": 0.20756302521008396,
+        "family": "activity:variability"
+      },
+      "cn_abs__activity__event28__activity__raw__activity_score__p10": {
+        "combined_rank_score": 0.975566774623738,
+        "task_f_score": 4.807924616751443,
+        "binary_auc_effect": 0.22142857142857153,
+        "family": "activity:level"
+      },
+      "activity__event7__activity__raw__activity_daily_movement__mad": {
+        "combined_rank_score": 0.9748047247094686,
+        "task_f_score": 4.036062932198493,
+        "binary_auc_effect": 0.2552521008403361,
+        "family": "activity:variability"
+      },
+      "cn_abs__activity__event7__activity__circadian__m10__theil_sen_rank_slope": {
+        "combined_rank_score": 0.9735092398552105,
+        "task_f_score": 4.149308199782225,
+        "binary_auc_effect": 0.23907563025210088,
+        "family": "activity:change"
+      },
+      "activity__event7__activity__class__wear_state_entropy__late_half_minus_early_half": {
+        "combined_rank_score": 0.9730520099066489,
+        "task_f_score": 7.0897177486543494,
+        "binary_auc_effect": 0.19159663865546217,
+        "family": "activity:variability"
+      },
+      "cn_abs__activity__event7__activity__raw__activity_score__p10": {
+        "combined_rank_score": 0.972975804915222,
+        "task_f_score": 5.565725699999854,
+        "binary_auc_effect": 0.20336134453781507,
+        "family": "activity:level"
+      },
+      "cn_abs__activity__event14__activity__class__wear_state_entropy__late_half_minus_early_half": {
+        "combined_rank_score": 0.971756525052391,
+        "task_f_score": 3.8583015475290576,
+        "binary_auc_effect": 0.263235294117647,
+        "family": "activity:variability"
+      },
+      "activity__event14__activity__raw__activity_rest__median": {
+        "combined_rank_score": 0.9584301771766051,
+        "task_f_score": 4.9278411291293,
+        "binary_auc_effect": 0.18109243697478994,
+        "family": "activity:level"
+      },
+      "cn_abs__activity__event28__activity__raw__activity_score__median": {
+        "combined_rank_score": 0.9539531339302725,
+        "task_f_score": 4.167049834363168,
+        "binary_auc_effect": 0.18907563025210083,
+        "family": "activity:level"
+      },
+      "cn_abs__activity__event28__activity__raw__activity_met_min_inactive__theil_sen_rank_slope": {
+        "combined_rank_score": 0.9528195846827967,
+        "task_f_score": 3.3839214579558567,
+        "binary_auc_effect": 0.2264705882352942,
+        "family": "activity:change"
+      },
+      "cn_abs__activity__event7__activity__raw__activity_score__trimmed_mean_10": {
+        "combined_rank_score": 0.9489045532482379,
+        "task_f_score": 4.6824212461026775,
+        "binary_auc_effect": 0.17037815126050426,
+        "family": "activity:level"
+      },
+      "sleep__event7__sleep__raw__sleep_light__p90": {
+        "combined_rank_score": 0.9947609068393981,
+        "task_f_score": 6.282300769212708,
+        "binary_auc_effect": 0.31365546218487395,
+        "family": "sleep:sleep_stage"
+      },
+      "cn_abs__sleep__event14__sleep__stage__light_longest_run_ratio__p10": {
+        "combined_rank_score": 0.9937892931987046,
+        "task_f_score": 5.83460320695576,
+        "binary_auc_effect": 0.2970588235294118,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event28__sleep__raw__sleep_score_deep__mad": {
+        "combined_rank_score": 0.9931796532672891,
+        "task_f_score": 6.503621110384607,
+        "binary_auc_effect": 0.25357142857142856,
+        "family": "sleep:variability"
+      },
+      "cn_abs__sleep__event28__sleep__stage__transition_rate__p10": {
+        "combined_rank_score": 0.9924557058487331,
+        "task_f_score": 5.677904111950489,
+        "binary_auc_effect": 0.2749999999999999,
+        "family": "sleep:variability"
+      },
+      "sleep__event28__sleep__stage__entropy__mad": {
+        "combined_rank_score": 0.9923604496094494,
+        "task_f_score": 5.656255385692324,
+        "binary_auc_effect": 0.28172268907563036,
+        "family": "sleep:variability"
+      },
+      "sleep__event14__sleep__raw__sleep_light__p90": {
+        "combined_rank_score": 0.9923318727376644,
+        "task_f_score": 6.790571700743414,
+        "binary_auc_effect": 0.24642857142857144,
+        "family": "sleep:sleep_stage"
+      },
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_deep__iqr": {
+        "combined_rank_score": 0.9917698609258907,
+        "task_f_score": 6.854296654973161,
+        "binary_auc_effect": 0.24096638655462188,
+        "family": "sleep:variability"
+      },
+      "sleep__event14__sleep__raw__sleep_light__median": {
+        "combined_rank_score": 0.9911887978662604,
+        "task_f_score": 7.429773983713317,
+        "binary_auc_effect": 0.2344537815126051,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event28__sleep__stage__entropy__iqr": {
+        "combined_rank_score": 0.9904172223280625,
+        "task_f_score": 5.38480542981498,
+        "binary_auc_effect": 0.3002100840336135,
+        "family": "sleep:variability"
+      },
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_latency__mad": {
+        "combined_rank_score": 0.9891503143455896,
+        "task_f_score": 6.06644485888996,
+        "binary_auc_effect": 0.23739495798319332,
+        "family": "sleep:variability"
+      },
+      "sleep__event7__sleep__raw__sleep_light__trimmed_mean_10": {
+        "combined_rank_score": 0.9878072013716899,
+        "task_f_score": 5.321713304245495,
+        "binary_auc_effect": 0.2504201680672269,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event14__sleep__raw__sleep_duration__p90": {
+        "combined_rank_score": 0.9823585444846639,
+        "task_f_score": 4.810980727575094,
+        "binary_auc_effect": 0.24663865546218489,
+        "family": "sleep:level"
+      },
+      "cn_abs__sleep__event14__sleep__raw__sleep_score_deep__iqr": {
+        "combined_rank_score": 0.982282339493237,
+        "task_f_score": 4.847006841426768,
+        "binary_auc_effect": 0.242436974789916,
+        "family": "sleep:variability"
+      },
+      "sleep__event14__sleep__clock__bedtime_sin__p10": {
+        "combined_rank_score": 0.981948942655744,
+        "task_f_score": 4.5359074193496625,
+        "binary_auc_effect": 0.2655462184873949,
+        "family": "sleep:circadian"
+      },
+      "cn_abs__sleep__event28__sleep__stage__light_longest_run_ratio__p10": {
+        "combined_rank_score": 0.9807391884168413,
+        "task_f_score": 4.276165025091501,
+        "binary_auc_effect": 0.3069327731092437,
+        "family": "sleep:sleep_stage"
+      },
+      "cn_abs__sleep__event14__sleep__stage__light_longest_run_ratio__median": {
+        "combined_rank_score": 0.9805867784339874,
+        "task_f_score": 5.671911922687399,
+        "binary_auc_effect": 0.21701680672268897,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event14__sleep__raw__sleep_duration__trimmed_mean_10": {
+        "combined_rank_score": 0.9803010097161364,
+        "task_f_score": 5.0606700475861945,
+        "binary_auc_effect": 0.22710084033613454,
+        "family": "sleep:level"
+      },
+      "sleep__event28__sleep__raw__sleep_light__p90": {
+        "combined_rank_score": 0.9795199085540104,
+        "task_f_score": 8.29443435265436,
+        "binary_auc_effect": 0.2016806722689075,
+        "family": "sleep:sleep_stage"
+      },
+      "cn_abs__sleep__event14__sleep__raw__sleep_score_alignment__late_half_minus_early_half": {
+        "combined_rank_score": 0.9795008573061535,
+        "task_f_score": 4.709591849367135,
+        "binary_auc_effect": 0.2359243697478992,
+        "family": "sleep:change"
+      },
+      "sleep__event28__sleep__stage__deep_longest_run_ratio__p10": {
+        "combined_rank_score": 0.9790912554772339,
+        "task_f_score": 4.453091423647358,
+        "binary_auc_effect": 0.24684873949579833,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event14__sleep__stage__rem_ratio__theil_sen_rank_slope": {
+        "combined_rank_score": 0.9786530767765289,
+        "task_f_score": 5.577246882506557,
+        "binary_auc_effect": 0.2157563025210083,
+        "family": "sleep:change"
+      },
+      "sleep__event14__sleep__stage__awake_longest_run_ratio__theil_sen_rank_slope": {
+        "combined_rank_score": 0.978138693084397,
+        "task_f_score": 4.3971001398962,
+        "binary_auc_effect": 0.24495798319327733,
+        "family": "sleep:change"
+      },
+      "cn_abs__sleep__event28__sleep__raw__sleep_score_deep__p10": {
+        "combined_rank_score": 0.9771861306915604,
+        "task_f_score": 4.841126850855333,
+        "binary_auc_effect": 0.2250000000000001,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event28__sleep__hr__mad__mad": {
+        "combined_rank_score": 0.9764050295294342,
+        "task_f_score": 5.141542068463264,
+        "binary_auc_effect": 0.2153361344537814,
+        "family": "sleep:variability"
+      },
+      "sleep__event28__sleep__raw__sleep_awake__median": {
+        "combined_rank_score": 0.9754619927605259,
+        "task_f_score": 4.2541265657242215,
+        "binary_auc_effect": 0.23991596638655466,
+        "family": "sleep:level"
+      },
+      "sleep__event14__sleep__stage__deep_ratio__p90": {
+        "combined_rank_score": 0.975052390931606,
+        "task_f_score": 3.985641343992564,
+        "binary_auc_effect": 0.26491596638655457,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event14__sleep__raw__sleep_awake__trimmed_mean_10": {
+        "combined_rank_score": 0.974919032196609,
+        "task_f_score": 4.002245003765104,
+        "binary_auc_effect": 0.2598739495798319,
+        "family": "sleep:level"
+      },
+      "sleep__event7__sleep__clock__bedtime_sin__p10": {
+        "combined_rank_score": 0.9745189559916175,
+        "task_f_score": 4.05566184847392,
+        "binary_auc_effect": 0.2504201680672269,
+        "family": "sleep:circadian"
+      },
+      "sleep__event14__sleep__duration__deep_ratio__median": {
+        "combined_rank_score": 0.9738616879405602,
+        "task_f_score": 4.078605057748669,
+        "binary_auc_effect": 0.24495798319327733,
+        "family": "sleep:sleep_stage"
+      },
+      "sleep__event7__sleep__raw__sleep_restless__p90": {
+        "combined_rank_score": 0.9729377024195085,
+        "task_f_score": 5.0364752687564955,
+        "binary_auc_effect": 0.20945378151260496,
+        "family": "sleep:level"
+      },
+      "cn_abs__sleep__event7__sleep__raw__sleep_score_alignment__median": {
+        "combined_rank_score": 0.972328062488093,
+        "task_f_score": 4.064955458568197,
+        "binary_auc_effect": 0.2378151260504202,
+        "family": "sleep:level"
+      },
+      "sleep__event28__sleep__raw__sleep_duration__p90": {
+        "combined_rank_score": 0.9704134120784912,
+        "task_f_score": 4.021554560287334,
+        "binary_auc_effect": 0.23277310924369754,
+        "family": "sleep:level"
+      },
+      "sleep__event28__sleep__raw__sleep_score_deep__p10": {
+        "combined_rank_score": 0.9697085159077921,
+        "task_f_score": 4.0125463868173235,
+        "binary_auc_effect": 0.23151260504201676,
+        "family": "sleep:sleep_stage"
+      },
+      "cn_abs__sleep__event7__sleep__raw__sleep_temperature_delta__theil_sen_rank_slope": {
+        "combined_rank_score": 0.9689178891217376,
+        "task_f_score": 4.2568190275862605,
+        "binary_auc_effect": 0.21932773109243697,
+        "family": "sleep:change"
+      },
+      "cn_abs__sleep__event7__sleep__stage__rem_ratio__iqr": {
+        "combined_rank_score": 0.9680224804724711,
+        "task_f_score": 3.6538656270644205,
+        "binary_auc_effect": 0.27647058823529413,
+        "family": "sleep:variability"
+      },
+      "sleep__event14__sleep__raw__sleep_score_disturbances__mad": {
+        "combined_rank_score": 0.9679653267289008,
+        "task_f_score": 3.7458484385053348,
+        "binary_auc_effect": 0.2529411764705882,
+        "family": "sleep:variability"
+      }
+    },
+    "preprocessing_fit_scope": "current training fold only",
+    "imputation": "training-fold median",
+    "clipping": "training-fold 1st/99th percentile",
+    "scaling": "training-fold median/IQR",
+    "cn_reference_absolute_deviation": true,
+    "cn_reference_fit_scope": "current training fold CN subjects only"
+  }
+}

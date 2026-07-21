@@ -1,0 +1,123 @@
+{
+  "nested_oof": {
+    "accuracy": 0.6099290780141844,
+    "balanced_accuracy": 0.4778194965929634,
+    "macro_f1": 0.4912649250381542,
+    "weighted_f1": 0.5841576366723777,
+    "roc_auc_ovr_macro": 0.7064428327753939,
+    "log_loss": 0.9170965517428114,
+    "confusion_matrix": [
+      [
+        70,
+        15,
+        0
+      ],
+      [
+        31,
+        13,
+        3
+      ],
+      [
+        2,
+        4,
+        3
+      ]
+    ],
+    "per_class": {
+      "CN": {
+        "precision": 0.6796116504854369,
+        "recall": 0.8235294117647058,
+        "f1-score": 0.7446808510638298,
+        "support": 85.0
+      },
+      "MCI": {
+        "precision": 0.40625,
+        "recall": 0.2765957446808511,
+        "f1-score": 0.3291139240506329,
+        "support": 47.0
+      },
+      "DEM": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.4,
+        "support": 9.0
+      }
+    },
+    "support": {
+      "CN": 85,
+      "MCI": 47,
+      "DEM": 9
+    }
+  },
+  "validation": {
+    "accuracy": 0.8484848484848485,
+    "balanced_accuracy": 0.6538461538461539,
+    "macro_f1": 0.6363636363636364,
+    "weighted_f1": 0.8071625344352618,
+    "roc_auc_ovr_macro": 0.72789566755084,
+    "log_loss": 0.46357228067012896,
+    "confusion_matrix": [
+      [
+        25,
+        1,
+        0
+      ],
+      [
+        4,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        3
+      ]
+    ],
+    "per_class": {
+      "CN": {
+        "precision": 0.8620689655172413,
+        "recall": 0.9615384615384616,
+        "f1-score": 0.9090909090909091,
+        "support": 26.0
+      },
+      "MCI": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 4.0
+      },
+      "DEM": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 3.0
+      }
+    },
+    "support": {
+      "CN": 26,
+      "MCI": 4,
+      "DEM": 3
+    }
+  },
+  "target_check_nested_oof": {
+    "thresholds": {
+      "accuracy": 0.8,
+      "macro_f1": 0.7,
+      "roc_auc_ovr_macro": 0.85
+    },
+    "checks": {
+      "accuracy": false,
+      "macro_f1": false,
+      "roc_auc_ovr_macro": false
+    },
+    "all_targets_met": false,
+    "note": "목표값은 희망 기준이며 데이터가 보장하는 값이 아닙니다."
+  },
+  "models": [
+    "transformer",
+    "tabnet",
+    "ydf"
+  ],
+  "feature_mode": "clinical_plus_lifelog",
+  "direct_label_leakage_blocked": true
+}
