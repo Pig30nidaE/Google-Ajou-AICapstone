@@ -1,0 +1,109 @@
+{
+  "best_params": {
+    "transformer": {
+      "max_features": 96,
+      "d_token": 32,
+      "n_heads": 4,
+      "n_layers": 3,
+      "ff_multiplier": 2.0,
+      "dropout": 0.06919985111442722,
+      "lr": 0.0005157952691647543,
+      "weight_decay": 6.050997668190895e-05,
+      "epochs": 180,
+      "batch_size": 32,
+      "label_smoothing": 0.01847013950673694,
+      "noise_std": 0.022524929476150705,
+      "class_weight_power": 0.4464726190348146
+    },
+    "tabnet": {
+      "max_features": 128,
+      "n_d": 16,
+      "n_steps": 6,
+      "gamma": 1.5622993600001458,
+      "lambda_sparse": 2.5372617916059744e-06,
+      "mask_type": "entmax",
+      "lr": 0.011309281542848677,
+      "weight_decay": 0.00022122159105366666,
+      "epochs": 500,
+      "batch_size": 256,
+      "virtual_batch_size": 64,
+      "class_weight_power": 0.17935707133068096
+    },
+    "ydf": {
+      "max_features": 192,
+      "num_trees": 1000,
+      "max_depth": 3,
+      "min_examples": 3,
+      "shrinkage": 0.1,
+      "subsample": 1.0,
+      "use_hessian_gain": false,
+      "l2_regularization": 3.703057045288647,
+      "class_weight_power": 0.7261126061180645,
+      "num_threads": 32
+    }
+  },
+  "inner_blend": {
+    "score": 0.6771603897274235,
+    "log_loss": 0.8795981318759005,
+    "weights": {
+      "transformer": 0.0,
+      "tabnet": 0.2,
+      "ydf": 0.8
+    },
+    "class_scales": [
+      1.0,
+      1.75,
+      1.75
+    ],
+    "metrics": {
+      "accuracy": 0.6914893617021277,
+      "balanced_accuracy": 0.6273344651952462,
+      "macro_f1": 0.6705529058470234,
+      "weighted_f1": 0.6954300984338532,
+      "roc_auc_ovr_macro": 0.7061647410756069,
+      "log_loss": 0.8795981318759005,
+      "confusion_matrix": [
+        [
+          42,
+          15,
+          0
+        ],
+        [
+          11,
+          20,
+          0
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ],
+      "per_class": {
+        "CN": {
+          "precision": 0.7777777777777778,
+          "recall": 0.7368421052631579,
+          "f1-score": 0.7567567567567568,
+          "support": 57.0
+        },
+        "MCI": {
+          "precision": 0.5405405405405406,
+          "recall": 0.6451612903225806,
+          "f1-score": 0.5882352941176471,
+          "support": 31.0
+        },
+        "DEM": {
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1-score": 0.6666666666666666,
+          "support": 6.0
+        }
+      },
+      "support": {
+        "CN": 57,
+        "MCI": 31,
+        "DEM": 6
+      }
+    }
+  }
+}

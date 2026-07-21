@@ -1,0 +1,15 @@
+{
+  "max_features": 96,
+  "d_token": 32,
+  "n_heads": 4,
+  "n_layers": 3,
+  "ff_multiplier": 2.0,
+  "dropout": 0.06919985111442722,
+  "lr": 0.0005157952691647543,
+  "weight_decay": 6.050997668190895e-05,
+  "epochs": 180,
+  "batch_size": 32,
+  "label_smoothing": 0.01847013950673694,
+  "noise_std": 0.022524929476150705,
+  "class_weight_power": 0.4464726190348146
+}

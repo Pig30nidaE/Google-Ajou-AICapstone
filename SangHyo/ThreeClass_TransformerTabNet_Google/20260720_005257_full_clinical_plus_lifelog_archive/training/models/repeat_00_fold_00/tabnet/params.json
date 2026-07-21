@@ -1,0 +1,14 @@
+{
+  "max_features": 96,
+  "n_d": 16,
+  "n_steps": 6,
+  "gamma": 1.0501279972218258,
+  "lambda_sparse": 2.4354812088647794e-06,
+  "mask_type": "entmax",
+  "lr": 0.009049926619114732,
+  "weight_decay": 0.00045405774332614706,
+  "epochs": 350,
+  "batch_size": 128,
+  "virtual_batch_size": 32,
+  "class_weight_power": 0.39479284768309825
+}

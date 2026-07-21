@@ -1,0 +1,5 @@
+# Keep the reproducible dependency contract despite the repository-wide *.txt rule.
+!requirements_colab.txt
+
+# Generated training artifacts are intentionally local/Drive-only.
+training_outputs/

@@ -1,0 +1,12 @@
+{
+  "max_features": 96,
+  "num_trees": 600,
+  "max_depth": 6,
+  "min_examples": 10,
+  "shrinkage": 0.03,
+  "subsample": 1.0,
+  "use_hessian_gain": false,
+  "l2_regularization": 0.9530152851997075,
+  "class_weight_power": 0.42718270949234965,
+  "num_threads": 32
+}

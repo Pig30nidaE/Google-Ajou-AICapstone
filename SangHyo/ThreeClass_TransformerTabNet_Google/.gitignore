@@ -6,3 +6,6 @@ training_outputs/
 !requirements_colab.txt
 !eda_outputs/feature_quality.csv
 !eda_outputs/top_effects.csv
+
+# Keep the six TabNet archives that belong to the preserved 0.848 ensemble.
+!20260720_005257_full_clinical_plus_lifelog_archive/training/models/**/tabnet/model.zip
