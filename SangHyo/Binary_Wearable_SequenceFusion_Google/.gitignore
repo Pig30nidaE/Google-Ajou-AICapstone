@@ -1,0 +1,9 @@
+outputs/
+cache/
+checkpoints/
+*.pt
+*.joblib
+__pycache__/
+*.py[cod]
+!.gitignore
+!requirements_colab.txt
