@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import json
 from pathlib import Path
 import re
 
@@ -222,6 +223,17 @@ def test_base_notebook_needs_only_one_run_file_path() -> None:
     expected = "SangHyo/Binary_Wearable_SequenceFusion_Google/run.py"
     assert (REPOSITORY_ROOT / expected).is_file()
     assert expected.endswith("/run.py")
+
+
+def test_base_notebook_fresh_clones_main_in_colab() -> None:
+    notebook = json.loads((REPOSITORY_ROOT / "base.ipynb").read_text(encoding="utf-8"))
+    setup_cell = next(cell for cell in notebook["cells"] if cell.get("id") == "63dc880f")
+    source = "".join(setup_cell["source"])
+    assert "shutil.rmtree(clone_path)" in source
+    assert '"--depth", "1", "--branch", "main"' in source
+    assert '"--single-branch"' in source
+    assert "sys.modules.pop(module_name, None)" in source
+    assert '"rev-parse", "--short", "HEAD"' in source
 
 
 def test_default_results_root_is_versioned_on_colab_mydrive() -> None:
