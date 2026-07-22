@@ -20,6 +20,9 @@ from typing import Any, Mapping
 EXPERIMENT_NAME = "Binary_Wearable_SequenceFusion_Google"
 EXPERIMENT_ROOT = Path(__file__).resolve().parent
 REQUIREMENTS_FILE = EXPERIMENT_ROOT / "requirements_colab.txt"
+DEFAULT_COLAB_RESULTS_ROOT = Path(
+    "/content/drive/MyDrive/Binary_Wearable_SequenceFusion_Google_result"
+)
 SOFT_RUNTIME_SECONDS = 20_700  # 5 h 45 m
 HARD_RUNTIME_SECONDS = 21_600  # 6 h
 
@@ -134,6 +137,24 @@ def _write_launcher_status(output: Path, payload: dict[str, Any]) -> None:
     )
 
 
+def _resolve_output_dir(explicit: str | None) -> Path:
+    """Resolve an override or a collision-safe run directory on Google Drive."""
+
+    if explicit:
+        return Path(explicit).expanduser().resolve()
+    environment_override = os.environ.get("BINARY_SEQUENCE_OUTPUT_DIR")
+    if environment_override:
+        return Path(environment_override).expanduser().resolve()
+    drive_root = DEFAULT_COLAB_RESULTS_ROOT.parent
+    if not drive_root.is_dir():
+        raise FileNotFoundError(
+            "Google Drive is not mounted at /content/drive/MyDrive. Mount Drive "
+            "in base.ipynb before running, or pass --output-dir explicitly."
+        )
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_utc")
+    return (DEFAULT_COLAB_RESULTS_ROOT / run_id).resolve()
+
+
 def run_pipeline(
     *,
     namespace: Mapping[str, Any] | None = None,
@@ -160,13 +181,7 @@ def run_pipeline(
                 "or set BINARY_ALLOW_CPU_FULL=1 only if a much slower CPU run is intended."
             )
     resolved_data = _resolve_data_root(namespace, data_root)
-    if output_dir:
-        output = Path(output_dir).expanduser().resolve()
-    elif os.environ.get("BINARY_SEQUENCE_OUTPUT_DIR"):
-        output = Path(os.environ["BINARY_SEQUENCE_OUTPUT_DIR"]).expanduser().resolve()
-    else:
-        run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_utc")
-        output = EXPERIMENT_ROOT / "outputs" / run_id
+    output = _resolve_output_dir(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLCONFIGDIR", str(output / ".matplotlib_cache"))
     started = time.monotonic()

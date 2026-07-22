@@ -111,6 +111,10 @@ smoke 결과는 성능으로 보고하지 않습니다. 10-fold 전체 full 실�
 별도 TPU는 필요하지 않습니다. YDF 때문에 CPU도 일부 사용되지만 A100 런타임에
 포함된 CPU면 충분합니다. soft limit는 5시간 45분, hard limit는 6시간입니다.
 
-결과는 매 실행마다 `outputs/<UTC run id>/`에 저장됩니다. 핵심 파일은
+결과는 매 실행마다 Google Drive의
+`/content/drive/MyDrive/Binary_Wearable_SequenceFusion_Google_result/<UTC run id>/`
+에 저장됩니다. UTC 실행 ID를 분리하므로 이전 결과를 덮어쓰지 않습니다. Drive가
+마운트되지 않았으면 로컬 런타임에 잘못 저장하지 않고 즉시 중단합니다. 핵심 파일은
 `training/FINAL_REPORT.json`, `training/oof_report.json`,
-`training/historical_validation_report.json`과 hashed prediction CSV입니다.
+`training/historical_validation_report.json`, hashed prediction CSV와
+`training/models/final_full_training_refits/` 아래의 최종 체크포인트입니다.

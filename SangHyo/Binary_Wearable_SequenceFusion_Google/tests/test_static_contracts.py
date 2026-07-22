@@ -222,3 +222,14 @@ def test_base_notebook_needs_only_one_run_file_path() -> None:
     expected = "SangHyo/Binary_Wearable_SequenceFusion_Google/run.py"
     assert (REPOSITORY_ROOT / expected).is_file()
     assert expected.endswith("/run.py")
+
+
+def test_default_results_root_is_versioned_on_colab_mydrive() -> None:
+    launcher = (PACKAGE_ROOT / "run.py").read_text(encoding="utf-8")
+    expected = (
+        "/content/drive/MyDrive/"
+        "Binary_Wearable_SequenceFusion_Google_result"
+    )
+    assert expected in launcher
+    assert "DEFAULT_COLAB_RESULTS_ROOT / run_id" in launcher
+    assert "Google Drive is not mounted" in launcher
