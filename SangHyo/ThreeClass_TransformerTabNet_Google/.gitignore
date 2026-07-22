@@ -9,3 +9,10 @@ training_outputs/
 
 # Keep the six TabNet archives that belong to the preserved 0.848 ensemble.
 !20260720_005257_full_clinical_plus_lifelog_archive/training/models/**/tabnet/model.zip
+
+# Keep the small, pseudonymized audit tables referenced by the 0.848 model guide.
+!20260720_005257_full_clinical_plus_lifelog_archive/training/validation_predictions_evaluated_hashed.csv
+!20260720_005257_full_clinical_plus_lifelog_archive/training/validation_predictions_label_free_hashed.csv
+!20260720_005257_full_clinical_plus_lifelog_archive/training/nested_oof_predictions_hashed.csv
+!20260720_005257_full_clinical_plus_lifelog_archive/training/selected_features_by_fold.csv
+!20260720_005257_full_clinical_plus_lifelog_archive/training/outer_fold_metrics.csv

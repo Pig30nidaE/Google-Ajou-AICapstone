@@ -97,5 +97,11 @@ Thumbs.db
 Model_LSTM_Guide/
 archives/
 
+# Preserve the complete 2026-07-20 validation-accuracy-0.848 ensemble snapshot.
+# This narrow exception keeps its 6 fold preprocessors and Transformer/TabNet/YDF
+# checkpoints reproducible without enabling generated models from other runs.
+!SangHyo/ThreeClass_TransformerTabNet_Google/20260720_005257_full_clinical_plus_lifelog_archive/training/models/
+!SangHyo/ThreeClass_TransformerTabNet_Google/20260720_005257_full_clinical_plus_lifelog_archive/training/models/**
+
 Codex.md
 docs/
