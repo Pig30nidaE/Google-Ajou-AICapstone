@@ -761,12 +761,10 @@ def save_checkpoint_bundle(
     # the original probe on CPU as well so the reload check measures storage,
     # not expected bfloat16-vs-float32 device arithmetic differences.
     models["transformer"].device = "cpu"
-    import torch
-
-    original_tabnet = models["tabnet"].model
-    original_tabnet.device = torch.device("cpu")
-    original_tabnet.network.to("cpu")
-    original_tabnet.pin_memory = False
+    # pytorch-tabnet has plain (unregistered) group-matrix tensors, so a bare
+    # ``network.to("cpu")`` is insufficient and caused the Colab mixed-device
+    # failure reproduced from the first full run.
+    models["tabnet"].move_to_cpu_for_inference()
     original_raw = _predict_all(models, pipeline, probe_views)
     reloaded_models = {
         name: _load_model(name, temporary, reloaded_paths[name])

@@ -318,9 +318,32 @@ class TabNetAdapter:
     def __init__(self, model: Any):
         self.model = model
 
+    def _assert_binary_class_contract(self) -> None:
+        """Validate the output-column-to-label mapping saved by TabNet.
+
+        ``pytorch-tabnet==4.1.0`` does not restore ``classes_`` from a
+        checkpoint, but it does persist ``preds_mapper``.  The latter is the
+        durable contract that output column 1 represents the impaired class.
+        """
+
+        mapper = getattr(self.model, "preds_mapper", None)
+        if not isinstance(mapper, dict):
+            raise ValueError(
+                "TabNet checkpoint is missing preds_mapper; binary class order "
+                "cannot be verified"
+            )
+        try:
+            normalized = {str(key): int(value) for key, value in mapper.items()}
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Invalid TabNet preds_mapper: {mapper!r}") from error
+        expected = {"0": 0, "1": 1}
+        if normalized != expected:
+            raise ValueError(
+                f"Unexpected TabNet class mapping: {normalized}; expected {expected}"
+            )
+
     def predict_score(self, X: np.ndarray) -> np.ndarray:
-        if not np.array_equal(np.asarray(self.model.classes_), np.asarray([0, 1])):
-            raise ValueError(f"Unexpected TabNet class order: {self.model.classes_}")
+        self._assert_binary_class_contract()
         probability = np.asarray(
             self.model.predict_proba(np.asarray(X, dtype=np.float32)),
             dtype=np.float64,
@@ -337,13 +360,64 @@ class TabNetAdapter:
             raise FileNotFoundError(f"TabNet checkpoint not created: {stored}")
         return stored
 
+    def move_to_cpu_for_inference(self) -> "TabNetAdapter":
+        """Move parameters and TabNet's unregistered matrix tensors to CPU.
+
+        ``pytorch-tabnet==4.1.0`` keeps ``group_attention_matrix`` and
+        ``embedding_group_matrix`` as plain tensor attributes instead of
+        registered buffers.  ``network.to("cpu")`` therefore does not move
+        them.  Walking direct tensor attributes prevents a mixed CPU/CUDA
+        checkpoint probe.
+        """
+
+        import torch
+
+        cpu = torch.device("cpu")
+        self.model.network.to(cpu)
+        owners = [self.model, *self.model.network.modules()]
+        for owner in owners:
+            for attribute, value in list(vars(owner).items()):
+                if attribute.startswith("_"):
+                    continue
+                if isinstance(value, torch.Tensor):
+                    setattr(owner, attribute, value.to(cpu))
+        self.model.device = cpu
+        self.model.device_name = "cpu"
+        self.model.pin_memory = False
+        remaining = [
+            f"{type(owner).__name__}.{attribute}"
+            for owner in owners
+            for attribute, value in vars(owner).items()
+            if not attribute.startswith("_")
+            and isinstance(value, torch.Tensor)
+            and value.device.type != "cpu"
+        ]
+        remaining += [
+            f"parameter:{name}"
+            for name, value in self.model.network.named_parameters()
+            if value.device.type != "cpu"
+        ]
+        remaining += [
+            f"buffer:{name}"
+            for name, value in self.model.network.named_buffers()
+            if value.device.type != "cpu"
+        ]
+        if remaining:
+            raise RuntimeError(
+                "TabNet CPU inference migration left device tensors: "
+                + ", ".join(remaining[:20])
+            )
+        return self
+
     @classmethod
     def load(cls, path: str | Path) -> "TabNetAdapter":
         from pytorch_tabnet.tab_model import TabNetClassifier
 
         model = TabNetClassifier(device_name="cpu", verbose=0)
         model.load_model(str(path))
-        return cls(model)
+        adapter = cls(model)
+        adapter._assert_binary_class_contract()
+        return adapter
 
 
 def _new_tabnet(seed: int, device_name: str):

@@ -107,6 +107,14 @@ training/TRAINING_COMPLETE.json
 예상 시간은 A100에서 수 시간 이내이며 5시간 40분 soft limit, 6시간 hard limit을
 둡니다. 실제 시간은 Colab CPU 할당과 YDF 실행 속도에 따라 달라질 수 있습니다.
 
+## 실행 로그 참고
+
+`ConvergenceWarning`, TabNet의 “No early stopping”, Transformer의
+`enable_nested_tensor` 메시지는 경고이며 실행 중단 원인이 아닙니다. 초기 버전에서
+체크포인트 검증 중 TabNet 본체만 CPU로 옮기고 내부 group matrix가 CUDA에 남아
+발생했던 mixed-device 오류는, 등록되지 않은 matrix tensor까지 함께 CPU로 이동하고
+남은 비-CPU tensor를 검사하도록 수정했습니다.
+
 ## 해석상 추가 주의
 
 코드 내부의 outer test 누수는 막았지만, 같은 141명 코호트의 이전 실험과 EDA를

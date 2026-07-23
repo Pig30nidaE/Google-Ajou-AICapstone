@@ -27,6 +27,7 @@ from SangHyo.Binary_Wearable_BalancedFusion_Google.features import (
 )
 from SangHyo.Binary_Wearable_BalancedFusion_Google.models import (
     MODEL_NAMES,
+    TabNetAdapter,
     balanced_class_weights,
 )
 from SangHyo.Binary_Wearable_BalancedFusion_Google.train import (
@@ -170,6 +171,65 @@ def test_rank_normalizer_uses_midrank_for_ties() -> None:
     assert np.isclose(fitted.transform(np.asarray([0.4]))[0], 0.5)
 
 
+def test_tabnet_cpu_move_includes_unregistered_group_matrices() -> None:
+    import torch
+    from torch import nn
+
+    class MatrixHolder(nn.Module):
+        def __init__(self, attribute: str) -> None:
+            super().__init__()
+            setattr(self, attribute, torch.ones(2, 2))
+
+    class FakeNetwork(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.encoder = MatrixHolder("group_attention_matrix")
+            self.embedder = MatrixHolder("embedding_group_matrix")
+            self.linear = nn.Linear(2, 2)
+
+    class FakeTabNet:
+        def __init__(self) -> None:
+            self.network = FakeNetwork()
+            self.group_matrix = torch.ones(2, 2)
+            self.device = torch.device("cuda")
+            self.device_name = "cuda"
+            self.pin_memory = True
+
+    fitted = TabNetAdapter(FakeTabNet()).move_to_cpu_for_inference()
+    assert fitted.model.device.type == "cpu"
+    assert fitted.model.device_name == "cpu"
+    assert fitted.model.pin_memory is False
+    assert fitted.model.group_matrix.device.type == "cpu"
+    assert fitted.model.network.encoder.group_attention_matrix.device.type == "cpu"
+    assert fitted.model.network.embedder.embedding_group_matrix.device.type == "cpu"
+
+
+def test_tabnet_reloaded_score_uses_persisted_mapper_without_classes() -> None:
+    class ReloadedLikeTabNet:
+        preds_mapper = {"0": 0, "1": 1}
+
+        @staticmethod
+        def predict_proba(X: np.ndarray) -> np.ndarray:
+            return np.tile(np.asarray([[0.7, 0.3]]), (len(X), 1))
+
+    model = ReloadedLikeTabNet()
+    assert not hasattr(model, "classes_")
+    score = TabNetAdapter(model).predict_score(np.zeros((3, 2)))
+    assert np.allclose(score, np.asarray([0.3, 0.3, 0.3]))
+
+
+def test_tabnet_rejects_reversed_persisted_class_mapping() -> None:
+    class ReversedTabNet:
+        preds_mapper = {"0": 1, "1": 0}
+
+        @staticmethod
+        def predict_proba(X: np.ndarray) -> np.ndarray:
+            return np.tile(np.asarray([[0.3, 0.7]]), (len(X), 1))
+
+    with pytest.raises(ValueError, match="Unexpected TabNet class mapping"):
+        TabNetAdapter(ReversedTabNet()).predict_score(np.zeros((2, 2)))
+
+
 def test_weak_google_models_are_allowed_zero_weight() -> None:
     y = np.asarray([0, 1] * 18)
     folds = np.tile(np.asarray([0, 1, 2]), 12)
@@ -279,7 +339,7 @@ def test_validation_freeze_precedes_label_open_and_checkpoints_reload() -> None:
     assert "roundtrip_verification.json" in training
     assert "CHECKPOINT_COMPLETE.json" in training
     assert "verify_checkpoint_tree" in training
-    assert 'original_tabnet.device = torch.device("cpu")' in training
+    assert 'models["tabnet"].move_to_cpu_for_inference()' in training
     assert "reloaded_selection = json.loads" in training
     assert "reloaded_paths = json.loads" in training
     assert "maximum_training_duration_seconds=20.0 if fast else 75.0" in models_source
