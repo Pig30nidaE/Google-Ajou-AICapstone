@@ -84,11 +84,26 @@ class _LoadedTabNet:
         return self.model.predict_proba(scaled)[:, 1]
 
 
+def _import_ydf():
+    """Import ydf, installing the pinned version on demand (fresh Colab session)."""
+
+    try:
+        import ydf
+        return ydf
+    except Exception:
+        import subprocess
+        print("[predict] ydf가 없어 설치합니다 (ydf==0.16.1)...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+                        "ydf==0.16.1"], check=True)
+        import ydf
+        return ydf
+
+
 def _load_learner(model_dir: Path):
     meta = json.loads((model_dir / "meta.json").read_text(encoding="utf-8"))
     if meta["type"] == "ydf_learner":
         if meta["engine"] == "ydf":
-            import ydf
+            ydf = _import_ydf()
             model = ydf.load_model(str(model_dir / "ydf_model"))
             return _LoadedYDF("ydf", model, meta["feature_names"], meta.get("pos_index"))
         return _LoadedYDF("sklearn_fallback", joblib.load(model_dir / "sklearn.joblib"),
@@ -179,18 +194,35 @@ def _resolve_deployment(explicit: str | None) -> Path:
     )
 
 
-def _resolve_data_root(explicit: str | None, injected) -> Path:
+def _resolve_data_root(explicit: str | None, namespace: dict) -> Path:
+    """Resolve the Data root the same way run.py does (robust candidate list)."""
+
+    candidates: list[Path] = []
     for value in (explicit, os.environ.get("PREDICT_DATA_ROOT"),
-                  os.environ.get("SANGHYO_DATA_ROOT"), injected):
+                  os.environ.get("SANGHYO_DATA_ROOT"), namespace.get("DATA_ROOT")):
         if value:
-            path = Path(os.fspath(value)).expanduser()
-            if path.exists():
-                return path
-    for candidate in (Path("/content/drive/Shareddrives/GoogleAI_contest/Data"),
-                      REPOSITORY_ROOT / "Data"):
-        if candidate.exists():
-            return candidate
-    raise FileNotFoundError("Could not resolve a data root; set --data-root or PREDICT_DATA_ROOT.")
+            candidates.append(Path(os.fspath(value)).expanduser())
+    project = namespace.get("PROJECT_ROOT")
+    if project:
+        candidates.append(Path(os.fspath(project)) / "Data")
+    candidates.extend([
+        REPOSITORY_ROOT / "Data",
+        Path("/content/drive/Shareddrives/GoogleAI_contest/Data"),
+        Path("/content/drive/MyDrive/GoogleAI_contest/Data"),
+    ])
+    # Prefer a candidate that actually contains the split directories.
+    for candidate in candidates:
+        resolved = candidate.expanduser().resolve()
+        if (resolved / "1.Training").is_dir() and (resolved / "2.Validation").is_dir():
+            return resolved
+    # Fall back to any existing candidate (e.g. a split root passed directly).
+    for candidate in candidates:
+        if candidate.expanduser().exists():
+            return candidate.expanduser().resolve()
+    raise FileNotFoundError(
+        "Could not resolve a data root; set --data-root or PREDICT_DATA_ROOT. "
+        f"Checked: {', '.join(str(c) for c in candidates)}"
+    )
 
 
 def main(namespace: dict | None = None) -> None:
@@ -207,7 +239,7 @@ def main(namespace: dict | None = None) -> None:
     args, _unknown = parser.parse_known_args()
 
     deployment_dir = _resolve_deployment(args.deployment_dir)
-    data_root = _resolve_data_root(args.data_root, namespace.get("DATA_ROOT"))
+    data_root = _resolve_data_root(args.data_root, namespace)
     split = args.split or os.environ.get("PREDICT_SPLIT", "val")
     if args.no_evaluate:
         evaluate = False
