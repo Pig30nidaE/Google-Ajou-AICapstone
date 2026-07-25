@@ -12,6 +12,10 @@ natively; TabNet gets fold-local median-impute + standardize.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -96,6 +100,20 @@ class YDFLearner:
             return raw[:, self._pos]
         return self.model_.predict_proba(X)[:, 1]
 
+    def save(self, path) -> None:
+        """Persist the fitted model so it can be reloaded without retraining."""
+
+        path = Path(path)
+        path.mkdir(parents=True, exist_ok=True)
+        meta = {"type": "ydf_learner", "kind": self.kind, "engine": self.engine_,
+                "feature_names": list(self.data.feature_names)}
+        if YDF_AVAILABLE:
+            self.model_.save(str(path / "ydf_model"))
+            meta["pos_index"] = int(self._pos)
+        else:
+            joblib.dump(self.model_, path / "sklearn.joblib")
+        (path / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
 
 class TabNetLearner:
     """Optional Google TabNet learner (GPU); fold-local impute + standardize."""
@@ -142,6 +160,16 @@ class TabNetLearner:
 
     def predict_proba_matrix(self, X: np.ndarray) -> np.ndarray:
         return self.model_.predict_proba(self._prep(np.asarray(X, float)))[:, 1]
+
+    def save(self, path) -> None:
+        path = Path(path)
+        path.mkdir(parents=True, exist_ok=True)
+        self.model_.save_model(str(path / "tabnet"))  # writes tabnet.zip
+        joblib.dump({"median": self._median, "mu": self._mu, "sd": self._sd},
+                    path / "prep.joblib")
+        (path / "meta.json").write_text(
+            json.dumps({"type": "tabnet_learner", "feature_names": list(self.data.feature_names)},
+                       ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 __all__ = ["CLASS_NAMES", "TabNetLearner", "YDFLearner", "YDF_AVAILABLE", "tabnet_available"]

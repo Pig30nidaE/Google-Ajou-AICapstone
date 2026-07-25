@@ -80,6 +80,44 @@ RUN_FILE = "Binary_Google_FinalBest/run.py"
 - `ydf` 미설치 시 sklearn로 폴백(엔진은 보고서에 기록). 결과:
   `/content/drive/MyDrive/Binary_Google_FinalBest_result/<UTC_실행ID>/`.
 
+## 모델 저장 & 재현 (재학습 없이 현재 성능 그대로)
+
+학습 실행이 끝나면 결과 폴더 아래에 **자체 완결형 배포 번들**이 저장됩니다.
+
+```text
+<결과폴더>/deployment/
+├── deployment.json            # 특징 목록·가중치·임계값 6종·추천 임계값·seed
+├── calibrator.joblib          # Platt 보정기
+├── model_ydf_gbt/             # 학습된 YDF GBT (ydf_model/ 디렉터리)
+└── model_ydf_rf/              # 학습된 YDF RF
+```
+
+이 번들만 있으면 **재학습 없이** 새 피험자를 예측하거나 검증 성능을 그대로
+재현할 수 있습니다.
+
+```bash
+# 검증셋을 다시 채점해 0.909(추천 임계값)를 재현
+python -m SangHyo.Binary_Google_FinalBest.predict \
+  --deployment-dir <결과폴더>/deployment \
+  --data-root /content/drive/Shareddrives/GoogleAI_contest/Data \
+  --split val --evaluate
+```
+
+코드에서 직접 쓰기:
+
+```python
+from SangHyo.Binary_Google_FinalBest.predict import Deployment
+dep = Deployment("<결과폴더>/deployment")
+prob = dep.predict_proba(X)          # 앙상블 위험도(임계값이 사는 공간)
+label = dep.predict(X)               # 추천 임계값(특이도95%)로 0/1 예측
+```
+
+- 저장된 모델은 **검증 예측을 만든 바로 그 모델**입니다(같은 seed로 141명 전체
+  재학습 → 결정론적). 재로딩 예측이 원본 동결 예측과 **오차 0** 으로 일치함을
+  확인했습니다.
+- `X`는 `features.load_split(..., feature_subset=deployment.feature_names)`로 만든
+  14개 특징 행렬과 같은 순서여야 합니다(`predict.py`가 자동 처리).
+
 ## 출처 (구글 모델)
 
 - [Google — Yggdrasil Decision Forests](https://github.com/google/yggdrasil-decision-forests)

@@ -210,10 +210,22 @@ def run_experiment(config: RunConfig) -> dict:
     oof_cal = calibrator.transform(cv["oof_prob"])
     oof_calibrated_metrics = binary_metrics(train.y, (oof_cal >= 0.5).astype(int), oof_cal)
 
+    # Refit the deployment models on all training subjects ONCE (deterministic
+    # with a fixed seed), then save a self-contained bundle.  The same fitted
+    # models are reused for the validation freeze, so the saved model reproduces
+    # the reported validation predictions exactly.
+    all_idx = np.arange(train.n_subjects)
+    fitted = {name: _make_learner(name, train, config.seed, config.tabnet_epochs).fit(all_idx)
+              for name in final_weights}
+    deployment_dir = _save_deployment(
+        output, fitted, final_weights, calibrator, thresholds, recommended,
+        train.feature_names, config,
+    )
+
     validation = None
     if config.evaluate_validation:
         validation = _freeze_and_evaluate(
-            config, train, final_weights, thresholds, recommended, calibrator, output
+            config, train, fitted, final_weights, thresholds, recommended, calibrator, output
         )
 
     final_report = {
@@ -228,6 +240,7 @@ def run_experiment(config: RunConfig) -> dict:
         "thresholds_from_training_oof": thresholds,
         "recommended_threshold": recommended,
         "nested_oof_calibrated_threshold_0.5": oof_calibrated_metrics,
+        "deployment_dir": str(deployment_dir),
         "validation": validation, "cognitive_test_used": True,
     }
     _write_json(output / "training" / "FINAL_REPORT.json", final_report)
@@ -236,16 +249,36 @@ def run_experiment(config: RunConfig) -> dict:
     return {"eda": eda, "nested_cv": nested_report, "validation": validation}
 
 
-def _freeze_and_evaluate(config, train, final_weights, thresholds, recommended, calibrator, output):
+def _save_deployment(output, fitted, final_weights, calibrator, thresholds, recommended,
+                     feature_names, config):
+    """Save a self-contained bundle that reproduces the model without retraining."""
+
+    import joblib
+
+    dep = Path(output) / "deployment"
+    dep.mkdir(parents=True, exist_ok=True)
+    for name, learner in fitted.items():
+        learner.save(dep / f"model_{name}")
+    joblib.dump(calibrator, dep / "calibrator.joblib")
+    _write_json(dep / "deployment.json", {
+        "experiment": EXPERIMENT_NAME,
+        "feature_names": list(feature_names),
+        "final_weights": final_weights,
+        "thresholds_from_training_oof": thresholds,
+        "recommended_threshold": recommended,
+        "class_mapping": {"0": "CN", "1": "MCI_DEM"},
+        "seed": config.seed,
+        "note": "Load with predict.py to reproduce validation predictions without retraining.",
+    })
+    return dep
+
+
+def _freeze_and_evaluate(config, train, fitted, final_weights, thresholds, recommended, calibrator, output):
     validation = load_split(config.validation_root, require_labels=False, split="val",
                             feature_subset=FINAL_FEATURES)
     assert_disjoint_subjects(train.subject_ids, validation.subject_ids)
 
-    all_idx = np.arange(train.n_subjects)
-    probs = {}
-    for name in final_weights:
-        learner = _make_learner(name, train, config.seed, config.tabnet_epochs).fit(all_idx)
-        probs[name] = learner.predict_proba_matrix(validation.X)
+    probs = {name: fitted[name].predict_proba_matrix(validation.X) for name in final_weights}
     combined = np.zeros(validation.n_subjects)
     for name, w in final_weights.items():
         combined += w * probs[name]
