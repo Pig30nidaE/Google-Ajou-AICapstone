@@ -13,6 +13,7 @@ natively; TabNet gets fold-local median-impute + standardize.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import joblib
@@ -23,6 +24,15 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from .features import SubjectData
 
 CLASS_NAMES = ("CN", "MCI_DEM")
+
+# Default YDF hyperparameters (used when no tuned params are supplied).
+DEFAULT_GBT_PARAMS = dict(
+    num_trees=400, max_depth=4, min_examples=8, shrinkage=0.04, subsample=0.85,
+    num_candidate_attributes_ratio=0.9, l2_regularization=1.0,
+)
+DEFAULT_RF_PARAMS = dict(
+    num_trees=600, max_depth=6, min_examples=5, num_candidate_attributes_ratio=0.6,
+)
 
 try:
     import ydf  # noqa: F401
@@ -50,40 +60,55 @@ def _balanced_class_weights(y: np.ndarray) -> dict:
 class YDFLearner:
     """Google YDF learner (kind='gbt' or 'rf'); sklearn fallback if ydf missing."""
 
-    def __init__(self, data: SubjectData, kind: str, *, seed: int = 0) -> None:
+    def __init__(self, data: SubjectData, kind: str, *, seed: int = 0,
+                 params: dict | None = None) -> None:
         self.data = data
         self.kind = kind
         self.seed = seed
+        self.params = dict(params) if params else {}
         self.engine_ = "ydf" if YDF_AVAILABLE else "sklearn_fallback"
+
+    def _merged_params(self) -> dict:
+        base = dict(DEFAULT_GBT_PARAMS if self.kind == "gbt" else DEFAULT_RF_PARAMS)
+        base.update(self.params)
+        return base
 
     def fit(self, train_idx: np.ndarray) -> "YDFLearner":
         y = self.data.y[train_idx]
+        p = self._merged_params()
         if YDF_AVAILABLE:
             import ydf
             frame = pd.DataFrame(self.data.X[train_idx], columns=list(self.data.feature_names))
             frame["label"] = [CLASS_NAMES[int(v)] for v in y]
             common = dict(label="label", label_classes=list(CLASS_NAMES),
-                          class_weights=_balanced_class_weights(y), random_seed=self.seed)
+                          class_weights=_balanced_class_weights(y), random_seed=self.seed,
+                          num_threads=int(os.cpu_count() or 4))
             if self.kind == "gbt":
                 learner = ydf.GradientBoostedTreesLearner(
-                    loss="BINOMIAL_LOG_LIKELIHOOD", num_trees=400, max_depth=4,
-                    min_examples=8, shrinkage=0.04, subsample=0.85,
-                    num_candidate_attributes_ratio=0.9, l2_regularization=1.0,
-                    validation_ratio=0.0, **common)
+                    loss="BINOMIAL_LOG_LIKELIHOOD", validation_ratio=0.0,
+                    num_trees=int(p["num_trees"]), max_depth=int(p["max_depth"]),
+                    min_examples=int(p["min_examples"]), shrinkage=float(p["shrinkage"]),
+                    subsample=float(p["subsample"]),
+                    num_candidate_attributes_ratio=float(p["num_candidate_attributes_ratio"]),
+                    l2_regularization=float(p["l2_regularization"]), **common)
             elif self.kind == "rf":
                 learner = ydf.RandomForestLearner(
-                    num_trees=600, max_depth=6, min_examples=5,
-                    num_candidate_attributes_ratio=0.6, **common)
+                    num_trees=int(p["num_trees"]), max_depth=int(p["max_depth"]),
+                    min_examples=int(p["min_examples"]),
+                    num_candidate_attributes_ratio=float(p["num_candidate_attributes_ratio"]),
+                    **common)
             else:
                 raise ValueError(self.kind)
             self.model_ = learner.train(frame)
             classes = tuple(str(c) for c in self.model_.label_classes())
             self._pos = classes.index("MCI_DEM")
         else:
-            depth = 4 if self.kind == "gbt" else 6
+            # NaN-tolerant sklearn fallback (local wiring only) mapped from YDF HP.
             self.model_ = HistGradientBoostingClassifier(
-                max_iter=400, learning_rate=0.04, max_depth=depth, min_samples_leaf=8,
-                l2_regularization=1.0, class_weight="balanced", random_state=self.seed
+                max_iter=int(p["num_trees"]), learning_rate=float(p.get("shrinkage", 0.05)),
+                max_depth=int(p["max_depth"]), min_samples_leaf=int(p["min_examples"]),
+                l2_regularization=float(p.get("l2_regularization", 1.0)),
+                class_weight="balanced", random_state=self.seed
             ).fit(self.data.X[train_idx], y)
         return self
 

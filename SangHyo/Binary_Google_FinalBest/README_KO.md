@@ -143,6 +143,60 @@ label = dep.predict(X)               # 추천 임계값(특이도95%)로 0/1 예
 - `X`는 `features.load_split(..., feature_subset=deployment.feature_names)`로 만든
   14개 특징 행렬과 같은 순서여야 합니다(`predict.py`가 자동 처리).
 
+## 하이퍼파라미터 튜닝 (tune 모드)
+
+구글 YDF(GBT+RF)의 하이퍼파라미터를 **랜덤 서치**로 탐색합니다. 각 후보는
+기존 **5×5 중첩 CV로 평가**하고 **OOF ROC-AUC가 가장 높은 후보를 선택**합니다.
+
+### 정직성
+- **하이퍼파라미터 선택은 학습 141명(OOF)에서만** 합니다. **검증 33명은 선택에
+  전혀 쓰지 않으므로** 튜닝 후에도 정직한 held-out 테스트로 남습니다.
+- 단, 여러 후보 중 최고를 고른 것이라 **선택된 후보의 OOF 점수는 낙관적**입니다
+  (`oof_is_selection_optimistic: true`). 진짜 성능은 **validation_report**를
+  보세요. `tuning_report.json`에 모든 후보와 선택 편향 주의가 기록됩니다.
+
+### 실행 (base.ipynb, base.ipynb는 수정 불필요)
+실행 전 셀에서 모드를 환경변수로 지정하고 run.py를 실행합니다.
+
+```python
+import os
+os.environ["FINALBEST_MODE"] = "tune"      # 튜닝 모드
+# (선택) os.environ["TUNE_N_CONFIGS"] = "150"          # 탐색 후보 수(기본 150)
+# (선택) os.environ["TUNE_SELECTION_METRIC"] = "roc_auc"  # 또는 balanced_accuracy
+```
+```python
+USER_FOLDER = "SangHyo"
+RUN_FILE = "Binary_Google_FinalBest/run.py"
+```
+
+### 실행 환경 (중요)
+- **Colab Pro+에서 "고용량 RAM(High-RAM) CPU 런타임"을 권장합니다. GPU는 필요
+  없습니다**(YDF는 CPU에서 돌고, 튜닝은 YDF만 대상 — TabNet은 이 데이터에서
+  실패했으므로 튜닝에서 제외). A100을 붙여도 낭비이니 CPU 고용량 RAM이 최선입니다.
+- YDF는 멀티스레드로 CPU 코어를 자동 활용합니다(`num_threads=코어수`). 코어가
+  많은 런타임일수록 빠릅니다.
+
+### 소요 시간 (20시간 상한 보장)
+- 실제 예상은 **약 2~4시간**입니다(150 후보 × 5×5 CV, YDF는 매우 빠름).
+- 안전장치: **soft 18시간에 탐색 중단**(그때까지의 최고 후보로 마무리), **hard
+  19.5시간에 프로세스 중단** → **20시간을 넘지 않습니다.**
+  (`TUNE_SOFT_BUDGET_SECONDS`로 soft 예산 조정 가능.)
+
+### 산출물
+```text
+training/tuning_report.json    # 모든 후보 + 최적 후보 + 선택 편향 주의
+training/FINAL_REPORT.json      # tuned_hyperparameters, 중첩 OOF, 검증 결과
+deployment/deployment.json      # tuned_hyperparameters 포함(재현·배포용)
+```
+튜닝 후에도 `deployment/`가 저장되므로 `predict.py`로 재학습 없이 재현/배포할 수
+있습니다.
+
+### 정직한 기대치
+- 앞선 분석에서 이 데이터의 판별력 천장(OOF AUC ≈0.71)이 전처리·모델을 바꿔도
+  일정하게 나타났습니다. 따라서 **튜닝은 "천장 안에서 가장 좋은 설정"을 찾는
+  것**이지, 천장을 크게 넘기기는 어렵습니다. 큰 도약보다는 소폭 개선을
+  기대하세요.
+
 ## 출처 (구글 모델)
 
 - [Google — Yggdrasil Decision Forests](https://github.com/google/yggdrasil-decision-forests)

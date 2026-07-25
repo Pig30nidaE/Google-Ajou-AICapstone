@@ -97,11 +97,12 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _make_learner(name, data, seed, tabnet_epochs):
+def _make_learner(name, data, seed, tabnet_epochs, config=None):
+    config = config or {}
     if name == "ydf_gbt":
-        return YDFLearner(data, "gbt", seed=seed)
+        return YDFLearner(data, "gbt", seed=seed, params=config.get("gbt"))
     if name == "ydf_rf":
-        return YDFLearner(data, "rf", seed=seed)
+        return YDFLearner(data, "rf", seed=seed, params=config.get("rf"))
     if name == "tabnet":
         return TabNetLearner(data, seed=seed, epochs=tabnet_epochs)
     raise ValueError(name)
@@ -262,7 +263,7 @@ def run_experiment(config: RunConfig) -> dict:
 
 
 def _save_deployment(output, fitted, final_weights, calibrator, thresholds, recommended,
-                     feature_names, config):
+                     feature_names, config, extra=None):
     """Save a self-contained bundle that reproduces the model without retraining."""
 
     import joblib
@@ -272,7 +273,7 @@ def _save_deployment(output, fitted, final_weights, calibrator, thresholds, reco
     for name, learner in fitted.items():
         learner.save(dep / f"model_{name}")
     joblib.dump(calibrator, dep / "calibrator.joblib")
-    _write_json(dep / "deployment.json", {
+    payload = {
         "experiment": EXPERIMENT_NAME,
         "feature_names": list(feature_names),
         "final_weights": final_weights,
@@ -281,7 +282,10 @@ def _save_deployment(output, fitted, final_weights, calibrator, thresholds, reco
         "class_mapping": {"0": "CN", "1": "MCI_DEM"},
         "seed": config.seed,
         "note": "Load with predict.py to reproduce validation predictions without retraining.",
-    })
+    }
+    if extra:
+        payload.update(extra)
+    _write_json(dep / "deployment.json", payload)
     return dep
 
 
@@ -333,4 +337,165 @@ def _freeze_and_evaluate(config, train, fitted, final_weights, thresholds, recom
     return report
 
 
-__all__ = ["RunConfig", "run_experiment", "EXPERIMENT_NAME"]
+# --------------------------------------------------------------------------- #
+# Hyperparameter tuning (random search over YDF params, selected by nested OOF).
+# --------------------------------------------------------------------------- #
+
+@dataclass
+class TuneConfig:
+    training_root: str
+    validation_root: str
+    output_dir: str
+    run_mode: str = "tune"
+    repeats: int = 5
+    outer_folds: int = 5
+    inner_folds: int = 3
+    weight_gate: float = 0.55
+    n_configs: int = 150
+    soft_budget_seconds: float = 64_800.0   # 18h; stop adding configs past this
+    selection_metric: str = "roc_auc"       # OOF metric to maximize (training only)
+    tabnet_epochs: int = 0                   # tuning is YDF-only (CPU)
+    evaluate_validation: bool = True
+    seed: int = 20260724
+    extra: dict[str, Any] = field(default_factory=dict)
+
+
+def _thresholds_from_oof(y, oof_prob):
+    thresholds = {
+        "threshold_0.5": 0.5,
+        "balanced": select_threshold(y, oof_prob, "balanced_accuracy"),
+        "accuracy": select_threshold(y, oof_prob, "accuracy"),
+    }
+    for target in SPECIFICITY_TARGETS:
+        thresholds[f"specificity_{target}"] = select_threshold_specificity(y, oof_prob, target)
+    return thresholds
+
+
+def _nested_cv_for_config(train, cfg, tc):
+    factories = [
+        ("ydf_gbt", lambda: _make_learner("ydf_gbt", train, tc.seed, 0, cfg)),
+        ("ydf_rf", lambda: _make_learner("ydf_rf", train, tc.seed, 0, cfg)),
+    ]
+    return nested_cv(train, factories, repeats=tc.repeats, outer_k=tc.outer_folds,
+                     inner_k=tc.inner_folds, weight_gate=tc.weight_gate, seed=tc.seed)
+
+
+def run_tuning_experiment(config: TuneConfig) -> dict:
+    """Random-search YDF hyperparameters; select by training OOF; test on validation."""
+
+    import time
+
+    from .learners import DEFAULT_GBT_PARAMS, DEFAULT_RF_PARAMS
+    from .tuning import config_key, sample_config
+
+    output = Path(config.output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    started = datetime.now(timezone.utc)
+    train = load_split(config.training_root, require_labels=True, split="train",
+                       feature_subset=FINAL_FEATURES)
+    _write_json(output / "eda" / "eda_summary.json", _eda(train))
+
+    rng = np.random.default_rng(config.seed)
+    deadline = time.monotonic() + float(config.soft_budget_seconds)
+    default_cfg = {"gbt": dict(DEFAULT_GBT_PARAMS), "rf": dict(DEFAULT_RF_PARAMS)}
+
+    trials: list[dict] = []
+    seen: set[str] = set()
+    best = None
+    for i in range(config.n_configs):
+        if time.monotonic() > deadline:
+            print(f"[tune] soft time budget reached at trial {i}; stopping search.", flush=True)
+            break
+        cfg = default_cfg if i == 0 else sample_config(rng)
+        key = config_key(cfg)
+        if key in seen:
+            continue
+        seen.add(key)
+        cv = _nested_cv_for_config(train, cfg, config)
+        m = cv["oof_metrics_threshold_0.5"]
+        record = {"trial": i, "config": cfg, "oof_roc_auc": m["roc_auc"],
+                  "oof_balanced_accuracy": m["balanced_accuracy"], "oof_accuracy": m["accuracy"]}
+        trials.append(record)
+        score = m["roc_auc"] if config.selection_metric == "roc_auc" else m["balanced_accuracy"]
+        if (best is None or score > best["score"]
+                or (score == best["score"]
+                    and m["balanced_accuracy"] > best["record"]["oof_balanced_accuracy"])):
+            best = {"score": score, "config": cfg, "cv": cv, "record": record}
+        print(f"[tune] trial {i:03d}: OOF AUC={m['roc_auc']:.3f} bal={m['balanced_accuracy']:.3f} "
+              f"| best={best['score']:.3f}", flush=True)
+
+    if best is None:
+        raise RuntimeError("No hyperparameter configuration was evaluated")
+
+    _write_json(output / "training" / "tuning_report.json", {
+        "run_mode": config.run_mode, "n_evaluated": len(trials),
+        "selection_metric": config.selection_metric,
+        "cv": {"repeats": config.repeats, "outer_folds": config.outer_folds,
+               "inner_folds": config.inner_folds},
+        "best_config": best["config"], "best_oof": best["record"],
+        "selection_bias_note": (
+            "best config chosen by max over trials on training OOF, so this OOF score "
+            "is selection-optimistic; the validation_report is the honest held-out test."),
+        "all_trials_sorted_by_oof_auc": sorted(trials, key=lambda r: -r["oof_roc_auc"]),
+    })
+
+    # ---- finalize with the best configuration (same honest pipeline) ----
+    cv, cfg = best["cv"], best["config"]
+    (output / "training").mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({
+        "subject_hash": [hash_subject_id(s) for s in train.subject_ids],
+        "y_true": train.y, "oof_prob": cv["oof_prob"],
+        "oof_margin": cv["oof_margin"], "oof_pred": cv["oof_pred"],
+    }).to_csv(output / "training" / "oof_predictions_hashed.csv", index=False)
+    pd.DataFrame(cv["fold_metrics"]).to_csv(output / "training" / "fold_metrics.csv", index=False)
+
+    ci = bootstrap_ci(train.y, cv["oof_prob"], cv["oof_margin"], seed=config.seed)
+    final_weights = _final_weights(cv["model_mean_weight"], cv["model_inner_balanced_accuracy"])
+    thresholds = _thresholds_from_oof(train.y, cv["oof_prob"])
+    recommended = "specificity_0.95"
+    calibrator = PlattCalibrator().fit(cv["oof_prob"], train.y)
+    oof_cal = calibrator.transform(cv["oof_prob"])
+    oof_calibrated_metrics = binary_metrics(train.y, (oof_cal >= 0.5).astype(int), oof_cal)
+
+    all_idx = np.arange(train.n_subjects)
+    fitted = {name: _make_learner(name, train, config.seed, 0, cfg).fit(all_idx) for name in final_weights}
+    deployment_dir, deployment_error = None, None
+    try:
+        deployment_dir = _save_deployment(
+            output, fitted, final_weights, calibrator, thresholds, recommended,
+            train.feature_names, config, extra={"tuned_hyperparameters": cfg})
+    except Exception as error:  # noqa: BLE001
+        import traceback
+        deployment_error = f"{type(error).__name__}: {error}"
+        print(f"[warn] deployment 저장 실패(무시하고 계속): {deployment_error}")
+        traceback.print_exc()
+
+    validation = None
+    if config.evaluate_validation:
+        validation = _freeze_and_evaluate(
+            config, train, fitted, final_weights, thresholds, recommended, calibrator, output)
+
+    final_report = {
+        "experiment": EXPERIMENT_NAME, "run_mode": config.run_mode,
+        "started_utc": started.isoformat(), "finished_utc": datetime.now(timezone.utc).isoformat(),
+        "targets": {"accuracy": 0.90, "balanced_accuracy": 0.80},
+        "ydf_engine_used": bool(YDF_AVAILABLE), "tabnet_used": False,
+        "tuned_hyperparameters": cfg, "n_configs_evaluated": len(trials),
+        "nested_oof_threshold_0.5": cv["oof_metrics_threshold_0.5"],
+        "nested_oof_balanced_threshold": cv["oof_metrics_selected_threshold"],
+        "nested_oof_accuracy_threshold": cv["oof_metrics_accuracy_threshold"],
+        "nested_oof_calibrated_threshold_0.5": oof_calibrated_metrics,
+        "oof_is_selection_optimistic": True,
+        "bootstrap_95ci": ci, "final_weights": final_weights,
+        "thresholds_from_training_oof": thresholds, "recommended_threshold": recommended,
+        "deployment_dir": (str(deployment_dir) if deployment_dir else None),
+        "deployment_error": deployment_error,
+        "validation": validation, "cognitive_test_used": True,
+    }
+    _write_json(output / "training" / "FINAL_REPORT.json", final_report)
+    _write_json(output / "training" / "TRAINING_COMPLETE.json",
+                {"status": "complete", "finished_utc": datetime.now(timezone.utc).isoformat()})
+    return {"best_config": cfg, "n_evaluated": len(trials), "validation": validation}
+
+
+__all__ = ["RunConfig", "TuneConfig", "run_experiment", "run_tuning_experiment", "EXPERIMENT_NAME"]

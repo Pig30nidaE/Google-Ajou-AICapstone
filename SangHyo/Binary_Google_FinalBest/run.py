@@ -30,7 +30,8 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 REQUIREMENTS_FILE = EXPERIMENT_ROOT / "requirements_colab.txt"
 DEFAULT_COLAB_RESULTS_ROOT = Path(f"/content/drive/MyDrive/{EXPERIMENT_NAME}_result")
-HARD_RUNTIME_SECONDS = 21_600
+HARD_RUNTIME_SECONDS = 21_600            # 6h hard limit for full/smoke
+TUNE_HARD_RUNTIME_SECONDS = 70_200       # 19.5h hard limit for tuning (< 20h cap)
 
 
 class HardDeadlineExceeded(TimeoutError):
@@ -98,8 +99,8 @@ def run_pipeline(*, namespace=None, data_root=None, output_dir=None, mode=None,
                  skip_install=False, evaluate_validation=True) -> dict:
     namespace = globals() if namespace is None else namespace
     run_mode = (mode or "full").strip().lower()
-    if run_mode not in {"full", "smoke"}:
-        raise ValueError("mode must be 'full' or 'smoke'")
+    if run_mode not in {"full", "smoke", "tune"}:
+        raise ValueError("mode must be 'full', 'smoke', or 'tune'")
     _ensure_dependencies(skip_install)
 
     resolved_data = _resolve_data_root(namespace, data_root)
@@ -112,7 +113,34 @@ def run_pipeline(*, namespace=None, data_root=None, output_dir=None, mode=None,
     started = time.monotonic()
     _write_status(output, {"status": "starting", "experiment": EXPERIMENT_NAME,
                            "mode": run_mode, "data_root": str(resolved_data),
-                           "output_dir": str(output), "compute_note": "Google YDF (+optional TabNet on GPU); best feature set."})
+                           "output_dir": str(output), "compute_note": "Google YDF; CPU (no GPU needed for tuning)."})
+
+    if run_mode == "tune":
+        from SangHyo.Binary_Google_FinalBest.train import TuneConfig, run_tuning_experiment
+        n_configs = int(os.environ.get("TUNE_N_CONFIGS", "150"))
+        soft_budget = float(os.environ.get("TUNE_SOFT_BUDGET_SECONDS", str(18 * 3600)))
+        config = TuneConfig(
+            training_root=str(resolved_data / "1.Training"),
+            validation_root=str(resolved_data / "2.Validation"),
+            output_dir=str(output), run_mode=run_mode,
+            repeats=5, outer_folds=5, inner_folds=3,
+            n_configs=n_configs, soft_budget_seconds=soft_budget,
+            selection_metric=os.environ.get("TUNE_SELECTION_METRIC", "roc_auc"),
+            evaluate_validation=evaluate_validation,
+        )
+        try:
+            result = run_tuning_experiment(config)
+        except Exception as error:
+            _write_status(output, {"status": "failed", "mode": run_mode,
+                                   "error_type": type(error).__name__, "error": str(error),
+                                   "elapsed_seconds": time.monotonic() - started})
+            raise
+        final_report = output / "training" / "FINAL_REPORT.json"
+        _write_status(output, {"status": "complete", "mode": run_mode,
+                               "elapsed_seconds": time.monotonic() - started,
+                               "final_report": str(final_report)})
+        print(f"\nComplete ({run_mode}). Final report: {final_report}")
+        return result
 
     from SangHyo.Binary_Google_FinalBest.train import RunConfig, run_experiment
 
@@ -147,19 +175,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root")
     parser.add_argument("--output-dir")
-    parser.add_argument("--mode", choices=("full", "smoke"), default="full")
+    parser.add_argument("--mode", choices=("full", "smoke", "tune"), default="full")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-validation", action="store_true")
     arguments, _unknown = parser.parse_known_args()
 
-    alarm_enabled = arguments.mode.strip().lower() == "full" and hasattr(signal, "SIGALRM")
+    # base.ipynb runs this with no CLI args; allow selecting the mode via an env
+    # var (e.g. os.environ["FINALBEST_MODE"] = "tune" before running).
+    mode = os.environ.get("FINALBEST_MODE", arguments.mode).strip().lower()
+    # Hard wall-clock guard: 6h for full, ~19.5h for tune (stays under the 20h cap).
+    hard_limit = {"full": HARD_RUNTIME_SECONDS, "tune": TUNE_HARD_RUNTIME_SECONDS}.get(mode)
+    alarm_enabled = hard_limit is not None and hasattr(signal, "SIGALRM")
     previous = None
     if alarm_enabled:
         previous = signal.signal(signal.SIGALRM, _alarm_handler)
-        signal.alarm(HARD_RUNTIME_SECONDS)
+        signal.alarm(hard_limit)
     try:
         run_pipeline(namespace=globals(), data_root=arguments.data_root,
-                     output_dir=arguments.output_dir, mode=arguments.mode,
+                     output_dir=arguments.output_dir, mode=mode,
                      skip_install=arguments.skip_install,
                      evaluate_validation=not arguments.skip_validation)
     finally:
