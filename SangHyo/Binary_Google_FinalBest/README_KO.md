@@ -93,17 +93,38 @@ RUN_FILE = "Binary_Google_FinalBest/run.py"
 ```
 
 이 번들만 있으면 **재학습 없이** 새 피험자를 예측하거나 검증 성능을 그대로
-재현할 수 있습니다.
+재현할 수 있습니다. 세 가지 실행법 모두 가능합니다(**base.ipynb는 수정하지 않습니다**).
+
+### 방법 1 — base.ipynb (셀 2만 수정, 가장 간단)
+
+```python
+USER_FOLDER = "SangHyo"
+RUN_FILE = "Binary_Google_FinalBest/predict.py"
+```
+
+- 노트북의 `DATA_ROOT`를 자동으로 쓰고, Drive 결과 루트에서 **가장 최근
+  `deployment/`를 자동 탐지**합니다. 특정 실행을 지정하려면 실행 전 셀에서
+  환경변수를 설정하세요.
+
+```python
+import os
+os.environ["PREDICT_DEPLOYMENT_DIR"] = "/content/drive/MyDrive/Binary_Google_FinalBest_result/<실행ID>/deployment"
+os.environ["PREDICT_SPLIT"] = "val"   # 기본 val, 생략 가능
+```
+
+결과 CSV는 해당 실행 폴더에 `reproduced_predictions_val.csv`로 저장되고, val이면
+정답을 사후에 열어 **0.909(추천 임계값)를 재현**해 출력합니다.
+
+### 방법 2 — CLI
 
 ```bash
-# 검증셋을 다시 채점해 0.909(추천 임계값)를 재현
 python -m SangHyo.Binary_Google_FinalBest.predict \
   --deployment-dir <결과폴더>/deployment \
   --data-root /content/drive/Shareddrives/GoogleAI_contest/Data \
   --split val --evaluate
 ```
 
-코드에서 직접 쓰기:
+### 방법 3 — 코드에서 직접
 
 ```python
 from SangHyo.Binary_Google_FinalBest.predict import Deployment
@@ -111,6 +132,10 @@ dep = Deployment("<결과폴더>/deployment")
 prob = dep.predict_proba(X)          # 앙상블 위험도(임계값이 사는 공간)
 label = dep.predict(X)               # 추천 임계값(특이도95%)로 0/1 예측
 ```
+
+환경변수 정리: `PREDICT_DEPLOYMENT_DIR`(번들 경로), `PREDICT_DATA_ROOT`(Data 루트),
+`PREDICT_SPLIT`(train/val), `PREDICT_EVALUATE`(0/1), `PREDICT_RESULTS_ROOT`(자동탐지
+루트). CLI 인자가 있으면 항상 우선합니다.
 
 - 저장된 모델은 **검증 예측을 만든 바로 그 모델**입니다(같은 seed로 141명 전체
   재학습 → 결정론적). 재로딩 예측이 원본 동결 예측과 **오차 0** 으로 일치함을

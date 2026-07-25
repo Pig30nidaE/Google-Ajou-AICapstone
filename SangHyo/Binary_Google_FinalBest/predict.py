@@ -6,26 +6,51 @@ scores any split, reproducing the reported validation predictions exactly
 (YDF is deterministic under the saved seed, and the same fitted models used for
 the validation freeze are the ones saved).
 
-Usage (reproduce validation, optionally scoring accuracy)::
+Three ways to run it:
 
-    python -m SangHyo.Binary_Google_FinalBest.predict \
-        --deployment-dir /content/drive/MyDrive/Binary_Google_FinalBest_result/<RUN>/deployment \
-        --data-root /content/drive/Shareddrives/GoogleAI_contest/Data \
-        --split val --evaluate
+1. **base.ipynb (Cell 2)** — set only::
+
+       USER_FOLDER = "SangHyo"
+       RUN_FILE = "Binary_Google_FinalBest/predict.py"
+
+   It auto-detects the most recent ``deployment/`` under the Drive results root
+   and uses the notebook's ``DATA_ROOT``.  To target a specific run, set
+   ``os.environ["PREDICT_DEPLOYMENT_DIR"]`` (and optionally ``PREDICT_SPLIT``)
+   in a cell before running.
+
+2. **CLI** ::
+
+       python -m SangHyo.Binary_Google_FinalBest.predict \
+           --deployment-dir <RUN>/deployment --data-root <Data> --split val --evaluate
+
+3. **import** ::
+
+       from SangHyo.Binary_Google_FinalBest.predict import Deployment
+       dep = Deployment("<RUN>/deployment"); dep.predict(X)
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import sys
 
 import joblib
 import numpy as np
 import pandas as pd
 
-from .engine import binary_metrics
-from .features import load_split, load_validation_labels_checked
+# Absolute imports (not relative) so this file also works when base.ipynb runs
+# it standalone via runpy.run_path(run_name="__main__").
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
+from SangHyo.Binary_Google_FinalBest.engine import binary_metrics
+from SangHyo.Binary_Google_FinalBest.features import load_split, load_validation_labels_checked
+
+DEFAULT_RESULTS_ROOT = Path("/content/drive/MyDrive/Binary_Google_FinalBest_result")
 
 
 class _LoadedYDF:
@@ -81,6 +106,9 @@ class Deployment:
 
     def __init__(self, deployment_dir: str | Path) -> None:
         dep = Path(deployment_dir)
+        if not (dep / "deployment.json").is_file():
+            raise FileNotFoundError(f"No deployment.json in {dep}")
+        self.dir = dep
         self.config = json.loads((dep / "deployment.json").read_text(encoding="utf-8"))
         self.feature_names = self.config["feature_names"]
         self.final_weights = self.config["final_weights"]
@@ -109,22 +137,90 @@ class Deployment:
         return (prob >= t).astype(int)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--deployment-dir", required=True)
-    parser.add_argument("--data-root", required=True, help="repo Data root or a split root")
-    parser.add_argument("--split", default="val", choices=("train", "val"))
-    parser.add_argument("--output-csv", default=None)
-    parser.add_argument("--evaluate", action="store_true",
-                        help="also open labels and score (val labels are safe to open post-hoc)")
-    args = parser.parse_args()
+# --------------------------------------------------------------------------- #
+# Runner: resolves config from CLI args, env vars, base.ipynb globals, or auto.
+# --------------------------------------------------------------------------- #
 
-    deployment = Deployment(args.deployment_dir)
-    root = Path(args.data_root)
-    split_root = root / ("2.Validation" if args.split == "val" else "1.Training")
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _autodetect_deployment() -> Path | None:
+    roots = []
+    env_root = os.environ.get("PREDICT_RESULTS_ROOT")
+    if env_root:
+        roots.append(Path(env_root))
+    roots.append(DEFAULT_RESULTS_ROOT)
+    for root in roots:
+        if root.is_dir():
+            candidates = sorted(p for p in root.glob("*/deployment") if (p / "deployment.json").is_file())
+            if candidates:
+                return candidates[-1]  # newest UTC-timestamped run
+    return None
+
+
+def _resolve_deployment(explicit: str | None) -> Path:
+    for value in (explicit, os.environ.get("PREDICT_DEPLOYMENT_DIR")):
+        if value:
+            path = Path(value).expanduser()
+            if (path / "deployment.json").is_file():
+                return path
+            raise FileNotFoundError(f"deployment.json not found under {path}")
+    auto = _autodetect_deployment()
+    if auto is not None:
+        print(f"[predict] auto-detected deployment: {auto}")
+        return auto
+    raise FileNotFoundError(
+        "No deployment bundle found. Run Binary_Google_FinalBest/run.py once to "
+        "create one, or set PREDICT_DEPLOYMENT_DIR / --deployment-dir."
+    )
+
+
+def _resolve_data_root(explicit: str | None, injected) -> Path:
+    for value in (explicit, os.environ.get("PREDICT_DATA_ROOT"),
+                  os.environ.get("SANGHYO_DATA_ROOT"), injected):
+        if value:
+            path = Path(os.fspath(value)).expanduser()
+            if path.exists():
+                return path
+    for candidate in (Path("/content/drive/Shareddrives/GoogleAI_contest/Data"),
+                      REPOSITORY_ROOT / "Data"):
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError("Could not resolve a data root; set --data-root or PREDICT_DATA_ROOT.")
+
+
+def main(namespace: dict | None = None) -> None:
+    namespace = globals() if namespace is None else namespace
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--deployment-dir", default=None)
+    parser.add_argument("--data-root", default=None)
+    parser.add_argument("--split", default=None, choices=(None, "train", "val"))
+    parser.add_argument("--output-csv", default=None)
+    parser.add_argument("--evaluate", action="store_true")
+    parser.add_argument("--no-evaluate", action="store_true")
+    # base.ipynb runs via runpy inside ipykernel, whose "-f kernel.json" stays in
+    # sys.argv; ignore unknown notebook-owned arguments.
+    args, _unknown = parser.parse_known_args()
+
+    deployment_dir = _resolve_deployment(args.deployment_dir)
+    data_root = _resolve_data_root(args.data_root, namespace.get("DATA_ROOT"))
+    split = args.split or os.environ.get("PREDICT_SPLIT", "val")
+    if args.no_evaluate:
+        evaluate = False
+    elif args.evaluate:
+        evaluate = True
+    else:
+        evaluate = _env_bool("PREDICT_EVALUATE", split == "val")
+
+    deployment = Deployment(deployment_dir)
+    split_root = Path(data_root) / ("2.Validation" if split == "val" else "1.Training")
     if not split_root.is_dir():
-        split_root = root  # caller passed the split root directly
-    data = load_split(split_root, require_labels=False, split=args.split,
+        split_root = Path(data_root)
+    data = load_split(split_root, require_labels=False, split=split,
                       feature_subset=deployment.feature_names)
 
     prob = deployment.predict_proba(data.X)
@@ -135,19 +231,25 @@ def main() -> None:
         "prob_impaired_calibrated": deployment.predict_proba_calibrated(data.X),
         "prediction": pred,
     })
-    out = args.output_csv or "predictions.csv"
+    out = args.output_csv or os.environ.get("PREDICT_OUTPUT_CSV")
+    if out is None:
+        out = str(deployment.dir.parent / f"reproduced_predictions_{split}.csv")
     frame.to_csv(out, index=False)
-    print(f"Wrote {len(frame)} predictions to {out} "
-          f"(threshold rule = {deployment.recommended} = "
-          f"{deployment.thresholds[deployment.recommended]:.3f})")
+    rule = deployment.recommended
+    print(f"[predict] deployment : {deployment.dir}")
+    print(f"[predict] data split : {split} ({data.n_subjects} subjects)")
+    print(f"[predict] threshold  : {rule} = {deployment.thresholds[rule]:.3f}")
+    print(f"[predict] wrote {len(frame)} predictions -> {out}")
 
-    if args.evaluate and args.split == "val":
+    if evaluate and split == "val":
         y = load_validation_labels_checked(split_root, data.subject_ids)
         metrics = binary_metrics(y, pred, prob)
-        print("\nReproduced validation metrics at recommended threshold:")
+        c = metrics["confusion"]
+        print("\n[predict] reproduced validation metrics at recommended threshold:")
         for key in ("accuracy", "balanced_accuracy", "impaired_recall", "cn_specificity", "roc_auc"):
-            print(f"  {key:18s}: {metrics[key]:.4f}")
-        print(f"  confusion         : {metrics['confusion']}")
+            print(f"    {key:18s}: {metrics[key]:.4f}")
+        print(f"    confusion         : CN {c['tn']}/{c['tn']+c['fp']}, "
+              f"impaired {c['tp']}/{c['tp']+c['fn']}  => {c['tn']+c['tp']}/{len(y)}")
 
 
 if __name__ == "__main__":
