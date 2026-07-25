@@ -217,10 +217,21 @@ def run_experiment(config: RunConfig) -> dict:
     all_idx = np.arange(train.n_subjects)
     fitted = {name: _make_learner(name, train, config.seed, config.tabnet_epochs).fit(all_idx)
               for name in final_weights}
-    deployment_dir = _save_deployment(
-        output, fitted, final_weights, calibrator, thresholds, recommended,
-        train.feature_names, config,
-    )
+    # Saving the deployment bundle must never crash the whole run — if it fails
+    # (e.g. a filesystem quirk on the mounted Drive), we still report metrics and
+    # record why the save failed so it can be diagnosed.
+    deployment_dir = None
+    deployment_error = None
+    try:
+        deployment_dir = _save_deployment(
+            output, fitted, final_weights, calibrator, thresholds, recommended,
+            train.feature_names, config,
+        )
+    except Exception as error:  # noqa: BLE001 - report and continue
+        import traceback
+        deployment_error = f"{type(error).__name__}: {error}"
+        print(f"[warn] deployment 저장 실패(무시하고 계속): {deployment_error}")
+        traceback.print_exc()
 
     validation = None
     if config.evaluate_validation:
@@ -240,7 +251,8 @@ def run_experiment(config: RunConfig) -> dict:
         "thresholds_from_training_oof": thresholds,
         "recommended_threshold": recommended,
         "nested_oof_calibrated_threshold_0.5": oof_calibrated_metrics,
-        "deployment_dir": str(deployment_dir),
+        "deployment_dir": (str(deployment_dir) if deployment_dir else None),
+        "deployment_error": deployment_error,
         "validation": validation, "cognitive_test_used": True,
     }
     _write_json(output / "training" / "FINAL_REPORT.json", final_report)

@@ -108,7 +108,19 @@ class YDFLearner:
         meta = {"type": "ydf_learner", "kind": self.kind, "engine": self.engine_,
                 "feature_names": list(self.data.feature_names)}
         if YDF_AVAILABLE:
-            self.model_.save(str(path / "ydf_model"))
+            # YDF's save() does internal temp-file work that can fail on the
+            # mounted Google Drive (FUSE) filesystem.  Save to a local temp dir
+            # first, then copy the finished model tree to the destination.
+            import shutil
+            import tempfile
+
+            dest = path / "ydf_model"
+            with tempfile.TemporaryDirectory() as tmp:
+                local = Path(tmp) / "ydf_model"
+                self.model_.save(str(local))
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(local, dest)
             meta["pos_index"] = int(self._pos)
         else:
             joblib.dump(self.model_, path / "sklearn.joblib")
