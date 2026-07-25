@@ -20,9 +20,44 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 
-from .engine import binary_metrics, bootstrap_ci, nested_cv, select_threshold
+from .engine import (
+    binary_metrics,
+    bootstrap_ci,
+    nested_cv,
+    select_threshold,
+    select_threshold_specificity,
+)
+
+SPECIFICITY_TARGETS = (0.90, 0.95, 0.975)
+
+
+class PlattCalibrator:
+    """Monotonic (Platt) probability calibration fit on training OOF only.
+
+    Class-weighted YDF probabilities are inflated (CN clusters near 0.5-0.7);
+    calibration maps them back so a probability reads as an honest risk.  Being
+    monotonic it never changes the ranking, so specificity-anchored thresholds
+    are unaffected; it only makes a fixed 0.5 cut meaningful.  Falls back to
+    identity if the fitted slope is not positive.
+    """
+
+    def fit(self, prob: np.ndarray, y: np.ndarray) -> "PlattCalibrator":
+        p = np.clip(np.asarray(prob, float), 1e-5, 1 - 1e-5)
+        logits = np.log(p / (1 - p)).reshape(-1, 1)
+        lr = LogisticRegression(C=1.0, solver="lbfgs").fit(logits, np.asarray(y, int))
+        slope = float(lr.coef_[0, 0])
+        self.model = lr if (np.isfinite(slope) and slope > 0) else None
+        return self
+
+    def transform(self, prob: np.ndarray) -> np.ndarray:
+        p = np.clip(np.asarray(prob, float), 1e-5, 1 - 1e-5)
+        if self.model is None:
+            return p
+        logits = np.log(p / (1 - p)).reshape(-1, 1)
+        return np.clip(self.model.predict_proba(logits)[:, 1], 1e-7, 1 - 1e-7)
 from .features import (
     FINAL_FEATURES,
     SubjectData,
@@ -155,12 +190,31 @@ def run_experiment(config: RunConfig) -> dict:
     _write_json(output / "training" / "nested_cv_report.json", nested_report)
 
     final_weights = _final_weights(cv["model_mean_weight"], cv["model_inner_balanced_accuracy"])
-    thr_balanced = select_threshold(train.y, cv["oof_prob"], "balanced_accuracy")
-    thr_accuracy = select_threshold(train.y, cv["oof_prob"], "accuracy")
+
+    # Thresholds are all chosen on training OOF only.  The specificity-anchored
+    # thresholds transfer across the split much better than accuracy-optimal;
+    # spec@0.95 is the recommended operating point.
+    thresholds = {
+        "threshold_0.5": 0.5,
+        "balanced": select_threshold(train.y, cv["oof_prob"], "balanced_accuracy"),
+        "accuracy": select_threshold(train.y, cv["oof_prob"], "accuracy"),
+    }
+    for target in SPECIFICITY_TARGETS:
+        thresholds[f"specificity_{target}"] = select_threshold_specificity(
+            train.y, cv["oof_prob"], target
+        )
+    recommended = "specificity_0.95"
+
+    # Platt calibration fit on the honest nested OOF (for interpretable risks).
+    calibrator = PlattCalibrator().fit(cv["oof_prob"], train.y)
+    oof_cal = calibrator.transform(cv["oof_prob"])
+    oof_calibrated_metrics = binary_metrics(train.y, (oof_cal >= 0.5).astype(int), oof_cal)
 
     validation = None
     if config.evaluate_validation:
-        validation = _freeze_and_evaluate(config, train, final_weights, thr_balanced, thr_accuracy, output)
+        validation = _freeze_and_evaluate(
+            config, train, final_weights, thresholds, recommended, calibrator, output
+        )
 
     final_report = {
         "experiment": EXPERIMENT_NAME, "run_mode": config.run_mode,
@@ -171,7 +225,9 @@ def run_experiment(config: RunConfig) -> dict:
         "nested_oof_balanced_threshold": cv["oof_metrics_selected_threshold"],
         "nested_oof_accuracy_threshold": cv["oof_metrics_accuracy_threshold"],
         "bootstrap_95ci": ci, "final_weights": final_weights,
-        "final_threshold_balanced": thr_balanced, "final_threshold_accuracy": thr_accuracy,
+        "thresholds_from_training_oof": thresholds,
+        "recommended_threshold": recommended,
+        "nested_oof_calibrated_threshold_0.5": oof_calibrated_metrics,
         "validation": validation, "cognitive_test_used": True,
     }
     _write_json(output / "training" / "FINAL_REPORT.json", final_report)
@@ -180,7 +236,7 @@ def run_experiment(config: RunConfig) -> dict:
     return {"eda": eda, "nested_cv": nested_report, "validation": validation}
 
 
-def _freeze_and_evaluate(config, train, final_weights, thr_balanced, thr_accuracy, output):
+def _freeze_and_evaluate(config, train, final_weights, thresholds, recommended, calibrator, output):
     validation = load_split(config.validation_root, require_labels=False, split="val",
                             feature_subset=FINAL_FEATURES)
     assert_disjoint_subjects(train.subject_ids, validation.subject_ids)
@@ -194,19 +250,20 @@ def _freeze_and_evaluate(config, train, final_weights, thr_balanced, thr_accurac
     for name, w in final_weights.items():
         combined += w * probs[name]
     combined /= sum(final_weights.values())
+    combined_cal = calibrator.transform(combined)
 
     frozen = pd.DataFrame({
         "subject_hash": [hash_subject_id(s) for s in validation.subject_ids],
         "prob_impaired": combined,
-        "pred_threshold_0.5": (combined >= 0.5).astype(int),
-        "pred_balanced_threshold": (combined >= thr_balanced).astype(int),
-        "pred_accuracy_threshold": (combined >= thr_accuracy).astype(int),
+        "prob_impaired_calibrated": combined_cal,
+        **{f"pred_{name}": (combined >= t).astype(int) for name, t in thresholds.items()},
     })
     frozen_csv = output / "training" / "validation_predictions_label_free_hashed.csv"
     frozen.to_csv(frozen_csv, index=False)
     frozen_meta = {
         "n_subjects": int(validation.n_subjects),
-        "final_threshold_balanced": thr_balanced, "final_threshold_accuracy": thr_accuracy,
+        "thresholds_from_training_oof": thresholds,
+        "recommended_threshold": recommended,
         "prediction_csv_sha256": _sha256(frozen_csv),
         "frozen_utc": datetime.now(timezone.utc).isoformat(),
         "note": "Predictions frozen before validation labels were opened.",
@@ -214,13 +271,18 @@ def _freeze_and_evaluate(config, train, final_weights, thr_balanced, thr_accurac
     _write_json(output / "training" / "VALIDATION_PREDICTIONS_FROZEN.json", frozen_meta)
 
     y_val = load_validation_labels_checked(config.validation_root, validation.subject_ids)
+    metrics_by_threshold = {
+        name: binary_metrics(y_val, (combined >= t).astype(int), combined)
+        for name, t in thresholds.items()
+    }
     report = {
         "frozen": frozen_meta,
         "historical_benchmark_note": "33 subjects reused across experiments; historical benchmark, not a fresh test.",
         "all_cn_accuracy": float(np.mean(y_val == 0)),
-        "metrics_threshold_0.5": binary_metrics(y_val, (combined >= 0.5).astype(int), combined),
-        "metrics_balanced_threshold": binary_metrics(y_val, (combined >= thr_balanced).astype(int), combined),
-        "metrics_accuracy_threshold": binary_metrics(y_val, (combined >= thr_accuracy).astype(int), combined),
+        "recommended_threshold": recommended,
+        "metrics_at_recommended": metrics_by_threshold[recommended],
+        "metrics_by_threshold": metrics_by_threshold,
+        "metrics_calibrated_0.5": binary_metrics(y_val, (combined_cal >= 0.5).astype(int), combined_cal),
     }
     _write_json(output / "training" / "validation_report.json", report)
     return report

@@ -65,6 +65,26 @@ def select_threshold(y: np.ndarray, prob: np.ndarray, objective: str = "balanced
     return best_threshold
 
 
+def select_threshold_specificity(y: np.ndarray, prob: np.ndarray, target_specificity: float) -> float:
+    """Smallest threshold whose CN specificity on (y, prob) reaches the target.
+
+    A specificity-anchored threshold transfers across the train/validation split
+    far better than an accuracy-optimal one, because CN specificity is a stable
+    quantity whereas the accuracy-optimal point depends on the impaired
+    probability spread (which differs between splits).  Chosen on training
+    out-of-fold predictions only — never on validation labels.
+    """
+
+    y = np.asarray(y)
+    cn = np.asarray(prob)[y == 0]
+    if len(cn) == 0:
+        return 0.5
+    for t in np.sort(np.unique(prob)):
+        if float((cn < t).mean()) >= target_specificity:
+            return float(t)
+    return float(np.max(prob)) + 1e-6
+
+
 def _gated_weights(balaccs: dict[str, float], gate: float) -> tuple[dict[str, float], str]:
     eligible = {n: max(0.0, b - 0.5) for n, b in balaccs.items() if b >= gate}
     if eligible and sum(eligible.values()) > 0:
@@ -190,4 +210,5 @@ def bootstrap_ci(y, prob, margin, *, n_boot=1000, seed=0) -> dict:
     return {"accuracy": ci(acc), "balanced_accuracy": ci(bal), "roc_auc": ci(auc)}
 
 
-__all__ = ["binary_metrics", "bootstrap_ci", "nested_cv", "select_threshold"]
+__all__ = ["binary_metrics", "bootstrap_ci", "nested_cv", "select_threshold",
+           "select_threshold_specificity"]
