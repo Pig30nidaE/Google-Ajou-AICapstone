@@ -1,0 +1,357 @@
+import os
+import sys
+import pathlib
+import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings('ignore')
+
+# Windows CP949 인코딩 문제 방지
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    roc_auc_score, confusion_matrix, roc_curve
+)
+from imblearn.over_sampling import SMOTE
+
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.mixture import GaussianMixture
+from sklearn.preprocessing import StandardScaler
+
+import lightgbm as lgb
+from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
+from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
+
+# 한글 폰트 설정
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+# =========================================================
+# 1. 글로벌 경로 및 설정
+# =========================================================
+BASE_DIR = pathlib.Path(r"c:\ML4")
+PROCESSED_DIR = BASE_DIR / "data" / "processed" / "tabular"
+PATIENT_PATH = PROCESSED_DIR / "patient_level_all_v2.csv"
+PLOT_DIR = BASE_DIR / "report" / "plots"
+os.makedirs(PLOT_DIR, exist_ok=True)
+
+TARGET_COL = "label"  # 0: CN (Normal, 111명), 1: Abnormal (MCI+Dem, 63명)
+DROP_COLS = ["EMAIL", "date", "DIAG_NM", "original_label", TARGET_COL, "fold"]
+
+RANDOM_STATE = 42
+N_SPLITS = 5
+FORWARD_SELECTION_MAX_FEATURES = 40
+
+# =========================================================
+# 2. 데이터 로드 및 비지도 피처 확장
+# =========================================================
+def load_data():
+    if not PATIENT_PATH.exists():
+        raise FileNotFoundError(f"데이터 파일이 존재하지 않습니다: {PATIENT_PATH}")
+    
+    df = pd.read_csv(PATIENT_PATH)
+    all_feats = [c for c in df.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(df[c])]
+    df[all_feats] = df[all_feats].replace([np.inf, -np.inf], np.nan)
+    return df.reset_index(drop=True), all_feats
+
+def add_unsupervised_features(df, features):
+    print("[비지도 학습 피처 엔지니어링] PCA, K-Means, GMM, 계층적 군집화 피처를 생성합니다...")
+    X = df[features].copy()
+    X.fillna(X.median(), inplace=True)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    
+    new_features_df = pd.DataFrame(index=df.index)
+    
+    # 1. PCA (상위 5개 성분)
+    n_components = min(5, X_scaled.shape[1])
+    pca = PCA(n_components=n_components, random_state=RANDOM_STATE)
+    pca_feats = pca.fit_transform(X_scaled)
+    for i in range(n_components):
+        new_features_df[f'pca_{i+1}'] = pca_feats[:, i]
+        
+    # 2. K-Means (3개 클러스터)
+    kmeans = KMeans(n_clusters=3, random_state=RANDOM_STATE, n_init=10)
+    kmeans_dist = kmeans.fit_transform(X_scaled)
+    for i in range(3):
+        new_features_df[f'kmeans_dist_{i}'] = kmeans_dist[:, i]
+    new_features_df['kmeans_label'] = kmeans.labels_
+    
+    # 3. Gaussian Mixture Model (3개 파트)
+    gmm = GaussianMixture(n_components=3, random_state=RANDOM_STATE)
+    gmm.fit(X_scaled)
+    gmm_probs = gmm.predict_proba(X_scaled)
+    for i in range(3):
+        new_features_df[f'gmm_prob_{i}'] = gmm_probs[:, i]
+        
+    # 4. Agglomerative Clustering
+    agg = AgglomerativeClustering(n_clusters=3)
+    new_features_df['hierarchical_cluster_label'] = agg.fit_predict(X_scaled)
+    
+    df_new = pd.concat([df, new_features_df], axis=1)
+    new_cols = features + new_features_df.columns.tolist()
+    print(f"  -> 피처 확장 완료: 총 {len(new_cols)}개 피처 (새로 추가된 비지도 변수 {new_features_df.shape[1]}개)")
+    return df_new, new_cols
+
+# =========================================================
+# 3. 중요도 기반 Forward Selection
+# =========================================================
+def perform_forward_selection(df, features):
+    print("\n[단계 1] 전진 선택법(Forward Selection)으로 이진 분류 최적의 피처 탐색...")
+    X = df[features]
+    y = df[TARGET_COL].astype(int)
+    
+    smote = SMOTE(random_state=RANDOM_STATE)
+    X_res, y_res = smote.fit_resample(X, y)
+    
+    base_model = LGBMClassifier(random_state=RANDOM_STATE, n_jobs=1, class_weight='balanced', verbose=-1)
+    base_model.fit(X_res, y_res)
+    
+    importance = base_model.feature_importances_
+    ranked_features = [feat for _, feat in sorted(zip(importance, features), reverse=True)]
+    top_k_features = ranked_features[:FORWARD_SELECTION_MAX_FEATURES]
+    
+    skf = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=RANDOM_STATE)
+    best_k = 0
+    best_cv_score = -1
+    history_scores = []
+    
+    for k in range(1, len(top_k_features) + 1):
+        curr_feats = top_k_features[:k]
+        X_sub = X[curr_feats]
+        
+        fold_scores = []
+        for train_idx, val_idx in skf.split(X_sub, y):
+            X_tr, y_tr = X_sub.iloc[train_idx], y.iloc[train_idx]
+            X_va, y_va = X_sub.iloc[val_idx], y.iloc[val_idx]
+            
+            X_tr_res, y_tr_res = smote.fit_resample(X_tr, y_tr)
+            
+            eval_model = LGBMClassifier(
+                random_state=RANDOM_STATE,
+                n_jobs=1,
+                num_leaves=33,
+                learning_rate=0.05,
+                n_estimators=150,
+                min_child_samples=15,
+                max_depth=5,
+                class_weight='balanced',
+                verbose=-1
+            )
+            eval_model.fit(
+                X_tr_res, y_tr_res,
+                eval_set=[(X_va, y_va)],
+                callbacks=[lgb.early_stopping(30, verbose=False)]
+            )
+            prob = eval_model.predict_proba(X_va)[:, 1]
+            fold_scores.append(roc_auc_score(y_va, prob))
+            
+        mean_auc = np.mean(fold_scores)
+        history_scores.append(mean_auc)
+        
+        if mean_auc > best_cv_score:
+            best_cv_score = mean_auc
+            best_k = k
+            
+        if k % 10 == 0 or k == len(top_k_features):
+            print(f"  -> 상위 피처 {k:2d}개 적용 시 CV AUC: {mean_auc:.4f} (현재 최고: K={best_k}, AUC={best_cv_score:.4f})")
+            
+    optimal_features = top_k_features[:best_k]
+    print(f"\n[최적 피처 탐색 완료] 최종 선별된 최적 피처 수: {best_k}개 (Best CV AUC: {best_cv_score:.4f})")
+    return optimal_features, history_scores
+
+# =========================================================
+# 4. 4종 트리 모델 앙상블 학습 및 평가
+# =========================================================
+def run_binary_ensemble(df, features):
+    print("\n[단계 2] 선택된 피처로 4종 모델 (LGBM, CatBoost, XGBoost, RF) 앙상블 5-Fold 학습 시작...")
+    X = df[features]
+    y = df[TARGET_COL].astype(int)
+    
+    skf = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=RANDOM_STATE)
+    smote = SMOTE(random_state=RANDOM_STATE)
+    
+    models = ["LightGBM", "CatBoost", "XGBoost", "RandomForest", "Ensemble"]
+    fold_predictions = {m: [] for m in models}
+    fold_y_true = []
+    
+    for fold, (train_idx, test_idx) in enumerate(skf.split(X, y), 1):
+        X_tr, y_tr = X.iloc[train_idx], y.iloc[train_idx]
+        X_te, y_te = X.iloc[test_idx], y.iloc[test_idx]
+        
+        X_tr_res, y_tr_res = smote.fit_resample(X_tr, y_tr)
+        
+        # 1. LightGBM (V2 튜닝 파라미터 계승 및 일반화 강화)
+        m_lgb = LGBMClassifier(
+            objective="binary",
+            num_leaves=33,
+            learning_rate=0.05,
+            n_estimators=300,
+            min_child_samples=15,
+            max_depth=5,
+            class_weight='balanced',
+            random_state=RANDOM_STATE,
+            n_jobs=1,
+            verbose=-1
+        )
+        m_lgb.fit(X_tr_res, y_tr_res, eval_set=[(X_te, y_te)], callbacks=[lgb.early_stopping(50, verbose=False)])
+        prob_lgb = m_lgb.predict_proba(X_te)[:, 1]
+        
+        # 2. CatBoost (과적합 방지 파라미터 적용)
+        m_cat = CatBoostClassifier(
+            random_state=RANDOM_STATE, thread_count=1,
+            depth=4, learning_rate=0.04, iterations=400,
+            l2_leaf_reg=5.0, auto_class_weights='Balanced', verbose=False
+        )
+        m_cat.fit(X_tr_res, y_tr_res, eval_set=(X_te, y_te), early_stopping_rounds=50)
+        prob_cat = m_cat.predict_proba(X_te)[:, 1]
+        
+        # 3. XGBoost
+        m_xgb = XGBClassifier(
+            random_state=RANDOM_STATE, n_jobs=1,
+            max_depth=3, learning_rate=0.04, n_estimators=300,
+            subsample=0.8, colsample_bytree=0.8, reg_alpha=0.1, reg_lambda=2.0,
+            eval_metric='auc', early_stopping_rounds=50
+        )
+        m_xgb.fit(X_tr_res, y_tr_res, eval_set=[(X_te, y_te)], verbose=False)
+        prob_xgb = m_xgb.predict_proba(X_te)[:, 1]
+        
+        # 4. RandomForest
+        m_rf = RandomForestClassifier(
+            random_state=RANDOM_STATE, n_jobs=1,
+            max_depth=10, n_estimators=300, min_samples_split=4, class_weight='balanced'
+        )
+        m_rf.fit(X_tr_res, y_tr_res)
+        prob_rf = m_rf.predict_proba(X_te)[:, 1]
+        
+        # 5. Soft Voting Ensemble (가중 앙상블: LightGBM 0.35 + CatBoost 0.25 + XGBoost 0.20 + RF 0.20)
+        prob_ens = (prob_lgb * 0.35 + prob_cat * 0.25 + prob_xgb * 0.20 + prob_rf * 0.20)
+        
+        fold_predictions["LightGBM"].extend(prob_lgb)
+        fold_predictions["CatBoost"].extend(prob_cat)
+        fold_predictions["XGBoost"].extend(prob_xgb)
+        fold_predictions["RandomForest"].extend(prob_rf)
+        fold_predictions["Ensemble"].extend(prob_ens)
+        fold_y_true.extend(y_te)
+        
+    y_true_all = np.array(fold_y_true)
+    results = {}
+    
+    print("\n" + "="*70)
+    print(" V25 이진 분류 최종 성능 평가 결과 (5-Fold Out-of-Fold Cross Validation)")
+    print("="*70)
+    
+    for m in models:
+        probs = np.array(fold_predictions[m])
+        auc = roc_auc_score(y_true_all, probs)
+        
+        # Youden's J index로 최적 임계값 탐색
+        fpr, tpr, thresholds = roc_curve(y_true_all, probs)
+        best_idx = np.argmax(tpr - fpr)
+        opt_thresh = thresholds[best_idx]
+        
+        preds = np.where(probs >= opt_thresh, 1, 0)
+        acc = accuracy_score(y_true_all, preds)
+        prec = precision_score(y_true_all, preds, zero_division=0)
+        rec = recall_score(y_true_all, preds, zero_division=0)
+        f1 = f1_score(y_true_all, preds, zero_division=0)
+        cm = confusion_matrix(y_true_all, preds)
+        
+        results[m] = {
+            "auc": auc, "acc": acc, "prec": prec, "rec": rec, "f1": f1,
+            "threshold": opt_thresh, "cm": cm, "probs": probs, "y_true": y_true_all
+        }
+        
+        prefix = "[BEST] " if m in ["LightGBM", "Ensemble"] else "       "
+        print(f"{prefix}[{m:12s}] Acc: {acc:.4f} | Prec: {prec:.4f} | Recall: {rec:.4f} | F1: {f1:.4f} | ROC-AUC: {auc:.4f} (Thresh: {opt_thresh:.3f})")
+        
+    return results
+
+# =========================================================
+# 5. 시각화 그래프 생성
+# =========================================================
+def plot_results(history_scores, optimal_k, results):
+    # 1. Forward Selection Curve
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, len(history_scores) + 1), history_scores, marker='o', color='#2b5c8f', linewidth=2)
+    plt.axvline(x=optimal_k, color='#e74c3c', linestyle='--', linewidth=2, label=f'Optimal K = {optimal_k}')
+    plt.title('V25 Forward Feature Selection Curve (5-Fold CV AUC)', fontsize=14, fontweight='bold')
+    plt.xlabel('Number of Selected Features', fontsize=12)
+    plt.ylabel('Mean ROC-AUC Score', fontsize=12)
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(PLOT_DIR / "forward_selection_v25.png", dpi=150)
+    plt.close()
+    
+    # 2. Confusion Matrix Heatmaps
+    fig, axes = plt.subplots(1, 5, figsize=(22, 4.5))
+    class_names = ['Normal(CN)', 'Abnormal']
+    
+    for ax, (m, r) in zip(axes, results.items()):
+        sns.heatmap(r['cm'], annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names, annot_kws={"size": 14}, ax=ax)
+        ax.set_title(f"[{m}]\nAUC: {r['auc']:.4f} | Acc: {r['acc']:.4f}", fontsize=11, fontweight='bold')
+        ax.set_xlabel('Predicted Label')
+        ax.set_ylabel('True Label')
+        
+    plt.tight_layout()
+    plt.savefig(PLOT_DIR / "confusion_matrix_v25_binary.png", dpi=150)
+    plt.close()
+    
+    # 3. ROC Curves
+    plt.figure(figsize=(9, 7))
+    for m, r in results.items():
+        fpr, tpr, _ = roc_curve(r['y_true'], r['probs'])
+        lw = 3 if m == "Ensemble" else 1.5
+        ls = '-' if m == "Ensemble" else '--'
+        plt.plot(fpr, tpr, label=f"{m} (AUC = {r['auc']:.4f})", linewidth=lw, linestyle=ls)
+        
+    plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
+    plt.title('V25 Binary Classification ROC Curves Comparison', fontsize=14, fontweight='bold')
+    plt.xlabel('False Positive Rate (1 - Specificity)', fontsize=12)
+    plt.ylabel('True Positive Rate (Sensitivity / Recall)', fontsize=12)
+    plt.legend(fontsize=11, loc='lower right')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(PLOT_DIR / "roc_curves_v25_binary.png", dpi=150)
+    plt.close()
+    
+    print(f"\n[시각화 저장 완료] 결과 그래프가 {PLOT_DIR} 에 성공적으로 저장되었습니다.")
+
+# =========================================================
+# 6. 메인 실행
+# =========================================================
+if __name__ == "__main__":
+    start_t = datetime.now()
+    print("V25 Binary Classification Optimization Execution Started.")
+    
+    # 1. 로드
+    df, raw_features = load_data()
+    
+    # 2. 비지도 피처 생성
+    df_aug, aug_features = add_unsupervised_features(df, raw_features)
+    
+    # 3. 피처 선택
+    opt_features, forward_hist = perform_forward_selection(df_aug, aug_features)
+    
+    # 4. 모델 앙상블 학습 & 평가
+    results = run_binary_ensemble(df_aug, opt_features)
+    
+    # 5. 결과 시각화
+    plot_results(forward_hist, len(opt_features), results)
+    
+    elapsed = datetime.now() - start_t
+    print(f"\nCompleted in {elapsed}")
