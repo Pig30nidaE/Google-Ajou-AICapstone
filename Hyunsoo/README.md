@@ -82,6 +82,10 @@ RUN_FILE = "final_dementia_screening_model.py"
 원본 데이터는 Google Drive `GoogleAI_contest/aihub_original_data` 아래 AIHub 원본 폴더 구조
 (`1.Training/{원천데이터,라벨링데이터}`, `2.Validation/{원천데이터,라벨링데이터}`)가 필요합니다.
 
+이 최종 모델까지 오는 과정에서 시도했던 실험 전체(이전 SOTA 수치가 leakage였음을 발견한 과정, 이상치
+탐색, 문제 재정의, 실패한 시도들 포함)는 [`EXPERIMENT_LOG.md`](./EXPERIMENT_LOG.md)에 기록되어 있습니다.
+결과만 보지 말고 "왜 이 방식을 골랐는지"가 궁금하다면 이 로그를 참고하세요.
+
 ## 앞으로 작업할 때
 
 - 새 실험 코드는 가능하면 `.py` 파일로 작성합니다.
