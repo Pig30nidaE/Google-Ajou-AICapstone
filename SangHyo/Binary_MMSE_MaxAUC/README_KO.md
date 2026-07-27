@@ -93,7 +93,8 @@ run.py ──> train.run_experiment(RunConfig)
 USER_FOLDER = "SangHyo"
 RUN_FILE    = "Binary_MMSE_MaxAUC/run.py"
 ```
-- CPU만으로 충분합니다(수 분~십수 분). GPU 불필요.
+- CPU만으로 충분합니다(실측 약 15초, full 모드). 141명×39특징의 작은 표 데이터에
+  로지스틱회귀/SVM만 학습하므로 매우 빠릅니다. GPU 불필요.
 - 결과는 `/content/drive/MyDrive/Binary_MMSE_MaxAUC_result/<run_id>/`에 저장.
 - 웨어러블도 넣어 비교하려면 실행 전 셀에서 `os.environ["MAXAUC_INCLUDE_WEARABLE"]="1"`.
 
@@ -135,7 +136,12 @@ RUN_FILE = "Binary_MMSE_MaxAUC/predict.py"
 ## 5. 정직한 성능 기대치와 한계
 
 - **누수-없는 subject 단위 OOF ROC-AUC ≈ 0.74~0.79** (반복 중첩 CV, 부트스트랩
-  95% CI는 대략 0.71~0.86). 이것이 이 데이터의 현실적인 상한입니다.
+  95% CI는 대략 0.71~0.86). 이것이 이 데이터의 현실적인 상한입니다. 실제 full
+  모드 실행(141명, 2026-07-27) 결과 **0.7657** (95% CI [0.684, 0.846])로 이
+  범위 안에서 재현되었습니다. 검증셋(33명, 재사용 벤치마크) ROC-AUC는 0.635였고,
+  권장 임계값(specificity_0.95)에서 accuracy 0.879 / balanced accuracy 0.714 /
+  MCI+DEM recall 0.429(7명 중 3명)였습니다 — MMSE가 정상 범위인 일부 MCI 환자는
+  이 특징만으로는 구별이 불가능하기 때문입니다.
 - **왜 0.9가 안 되는가**: 같은 이웃 폴더의 실험에서, 논문식 **day 단위 K-fold는
   ROC-AUC 0.95~1.0**을 주지만 **GroupKFold(subject 단위)로 바꾸면 0.50~0.69**로
   무너집니다. 즉 논문의 0.9는 성능이 아니라 **누수의 산물**입니다. 이 폴더는
