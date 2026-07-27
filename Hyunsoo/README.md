@@ -54,6 +54,34 @@ RUN_FILE = "previous/privious_TreeModel_preprocessing/build_rf_lgbm_binary_daily
 
 필요한 데이터 파일은 각자 로컬 또는 Google Drive에 준비해두고 실행합니다.
 
+## 최종 모델: `final_dementia_screening_model.py`
+
+Claude Code와의 세션에서 도출한 최종 확정 모델입니다. 문제를 "CN vs MCI+Dementia"가 아니라
+"CN+MCI(정상 취급) vs Dementia 스크리닝"으로 재정의하고, 통계적 이상치(`nia+219@rowan.kr`, 하루
+평균 2.8만보를 걷는 Dementia 환자) 1명을 제외한 뒤, leak-free nested CV(SHAP 랭킹과 threshold 모두
+outer-train 안에서만 결정)로 찾은 단일 피처 `activity_low_std`(저강도 활동시간의 일별 표준편차) +
+로지스틱회귀 모델입니다. 표본이 극히 작은 상황(Dementia 11명)에서는 LightGBM 등 복잡한 모델이나
+피처를 여러 개 섞는 조합이 오히려 분산이 커져 성능이 떨어짐을 확인했고, 가장 단순한 모델이 최종
+선택되었습니다.
+
+**성능 (173명, leak-free nested CV 20회 반복 평균)**:
+
+| ROC-AUC | Accuracy | Precision | Recall(민감도) | Specificity(특이도) | F1 |
+| --- | --- | --- | --- | --- | --- |
+| 0.9087 | 0.8514 | 0.2749 | 0.8136 | 0.8540 | 0.4108 |
+
+Precision이 낮은 것은 모델 결함이 아니라 클래스 불균형(양성 11명 : 음성 162명)의 산술적 한계입니다.
+
+실행 예시:
+
+```python
+USER_FOLDER = "Hyunsoo"
+RUN_FILE = "final_dementia_screening_model.py"
+```
+
+원본 데이터는 Google Drive `GoogleAI_contest/aihub_original_data` 아래 AIHub 원본 폴더 구조
+(`1.Training/{원천데이터,라벨링데이터}`, `2.Validation/{원천데이터,라벨링데이터}`)가 필요합니다.
+
 ## 앞으로 작업할 때
 
 - 새 실험 코드는 가능하면 `.py` 파일로 작성합니다.
