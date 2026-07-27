@@ -30,6 +30,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -46,6 +47,13 @@ try:
     YDF_AVAILABLE = True
 except Exception:  # pragma: no cover - depends on the runtime
     YDF_AVAILABLE = False
+
+# scikit-learn 1.9 deprecated LogisticRegression's ``penalty`` in favour of a
+# continuous ``l1_ratio`` (0 = ridge, 1 = lasso).  Passing both makes 1.9 warn on
+# every single fit -- tens of thousands of lines over a full search -- and
+# ``penalty`` is scheduled for removal, so pick the API the installed version
+# actually wants.  requirements allow scikit-learn <2, so both paths are live.
+_LOGREG_USES_L1_RATIO = LogisticRegression().get_params().get("l1_ratio") is not None
 
 _WARNED: set[str] = set()
 
@@ -201,30 +209,41 @@ class SkLearner:
     def _prep(self, X: np.ndarray) -> np.ndarray:
         return (impute(X, self.median_) - self.mean_) / self.std_
 
-    def _estimator(self):
+    def _estimator(self, y: np.ndarray):
         p = self.params
         if self.kind == "logreg":
             penalty = p.get("penalty", "l2")
-            kwargs = dict(C=float(p.get("C", 0.1)), penalty=penalty,
-                          class_weight="balanced", max_iter=8000, random_state=self.seed)
-            if penalty in {"l1", "elasticnet"}:
-                kwargs["solver"] = "saga"
-                if penalty == "elasticnet":
-                    kwargs["l1_ratio"] = float(p.get("l1_ratio", 0.5))
+            l1_ratio = {"l2": 0.0, "l1": 1.0}.get(
+                penalty, float(p.get("l1_ratio", 0.5)))
+            kwargs = dict(C=float(p.get("C", 0.1)), class_weight="balanced",
+                          max_iter=8000, random_state=self.seed,
+                          solver="lbfgs" if l1_ratio == 0.0 else "saga")
+            if _LOGREG_USES_L1_RATIO:
+                kwargs["l1_ratio"] = l1_ratio
             else:
-                kwargs["solver"] = "lbfgs"
+                kwargs["penalty"] = penalty
+                if penalty == "elasticnet":
+                    kwargs["l1_ratio"] = l1_ratio
             return LogisticRegression(**kwargs)
         if self.kind == "svm":
-            return SVC(C=float(p.get("C", 1.0)), kernel="rbf",
+            base = SVC(C=float(p.get("C", 1.0)), kernel="rbf",
                        gamma=p.get("gamma", "scale"), class_weight="balanced",
-                       probability=True, random_state=self.seed)
+                       random_state=self.seed)
+            # SVC(probability=True) is deprecated in scikit-learn 1.9 and warns on
+            # every fit; CalibratedClassifierCV is the replacement and works on
+            # every version this project supports, so use it unconditionally.
+            # cv is clipped to the rarer class count so small inner folds stay valid.
+            minority = int(np.bincount(np.asarray(y, dtype=np.int64), minlength=2).min())
+            return CalibratedClassifierCV(base, method="sigmoid", ensemble=False,
+                                          cv=int(np.clip(minority, 2, 5)))
         raise ValueError(self.kind)
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "SkLearner":
         X = np.asarray(X, dtype=np.float64)
+        y = np.asarray(y, dtype=np.int64)
         self.n_features_ = X.shape[1]
         self._fit_prep(X)
-        self.model_ = self._estimator().fit(self._prep(X), np.asarray(y, dtype=np.int64))
+        self.model_ = self._estimator(y).fit(self._prep(X), y)
         return self
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
