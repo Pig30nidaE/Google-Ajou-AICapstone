@@ -260,9 +260,16 @@ def parse_args(argv=None) -> argparse.Namespace:
                         default=os.environ.get("SOTA_SMOTE", "borderline"))
     parser.add_argument("--data-root", default=os.environ.get("SOTA_DATA_ROOT"))
     parser.add_argument("--output-root", default=os.environ.get("SOTA_OUTPUT_ROOT"))
-    parser.add_argument("--seed", type=int, default=20260728)
+    parser.add_argument("--seed", type=int,
+                        default=int(os.environ.get("SOTA_SEED", 20260728)))
     parser.add_argument("--quiet", action="store_true")
-    return parser.parse_args(argv)
+
+    # base.ipynb runs this file with runpy inside a Jupyter kernel, so sys.argv
+    # still carries the kernel's own "-f .../kernel-xxx.json".  Ignore unknown
+    # arguments rather than aborting; in the notebook the SOTA_* environment
+    # variables are the control surface.
+    arguments, _unknown = parser.parse_known_args(argv)
+    return arguments
 
 
 def main(argv=None) -> int:
@@ -270,7 +277,10 @@ def main(argv=None) -> int:
     settings = MODE_SETTINGS[args.mode]
     config = PipelineConfig(seed=args.seed, smote_kind=args.smote, **settings)
 
-    project_root, data_root = resolve_roots(args.data_root)
+    # base.ipynb injects PROJECT_ROOT / DATA_ROOT / USER_ROOT as globals via
+    # runpy's init_globals; honour DATA_ROOT when no explicit override is given.
+    injected_data_root = globals().get("DATA_ROOT")
+    project_root, data_root = resolve_roots(args.data_root or injected_data_root)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_root = resolve_output_root(run_id, args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)

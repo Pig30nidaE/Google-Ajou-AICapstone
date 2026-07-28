@@ -201,6 +201,27 @@ def test_youden_threshold_separates_a_clean_split():
     assert np.array_equal(predicted, y)
 
 
+def test_parse_args_survives_jupyter_kernel_argv():
+    """Regression: base.ipynb runs this file inside a kernel via runpy, so
+    sys.argv still carries '-f .../kernel-xxx.json'."""
+
+    from Binary_Google_SOTA_DualTrack import run as runner
+
+    args = runner.parse_args(["-f", "/root/.../kernel-0dbe8ec8.json"])
+    assert args.mode in runner.MODE_SETTINGS
+    assert args.track in ("wearable", "mmse_fusion", "both")
+
+
+def test_env_vars_drive_the_notebook_run(monkeypatch):
+    from Binary_Google_SOTA_DualTrack import run as runner
+
+    monkeypatch.setenv("SOTA_MODE", "smoke")
+    monkeypatch.setenv("SOTA_TRACK", "wearable")
+    monkeypatch.setenv("SOTA_SMOTE", "none")
+    args = runner.parse_args(["-f", "/root/kernel.json"])
+    assert (args.mode, args.track, args.smote) == ("smoke", "wearable", "none")
+
+
 def test_soft_voting_weights_match_the_report():
     from Binary_Google_SOTA_DualTrack.models import SOFT_VOTING_WEIGHTS
 

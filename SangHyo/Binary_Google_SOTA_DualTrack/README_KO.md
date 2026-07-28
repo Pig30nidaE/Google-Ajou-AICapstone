@@ -18,6 +18,28 @@ USER_FOLDER = "SangHyo"
 RUN_FILE = "Binary_Google_SOTA_DualTrack/run.py"
 ```
 
+### ⚠️ 노트북에서는 환경변수로 설정한다
+
+`base.ipynb`는 `runpy.run_path`로 이 파일을 **커널 안에서** 실행하므로
+`sys.argv`에 커널 인자(`-f .../kernel-xxx.json`)가 그대로 남아 있고,
+`--mode` 같은 CLI 인자를 넘길 방법이 없다. 그래서 노트북에서는 **셀 2에
+아래를 추가**해 설정한다(모르는 인자는 무시하도록 되어 있으므로 커널 인자는
+문제를 일으키지 않는다).
+
+```python
+import os
+os.environ["SOTA_MODE"]  = "full"        # smoke | standard | full
+os.environ["SOTA_TRACK"] = "both"        # wearable | mmse_fusion | both
+os.environ["SOTA_SMOTE"] = "borderline"  # borderline | plain | none
+```
+
+지원 변수: `SOTA_MODE`, `SOTA_TRACK`, `SOTA_SMOTE`, `SOTA_SEED`,
+`SOTA_DATA_ROOT`, `SOTA_OUTPUT_ROOT`. 아무것도 설정하지 않으면
+`full` + `both` + `borderline`으로 돈다.
+
+`DATA_ROOT`는 `base.ipynb`가 주입하는 값을 그대로 쓴다(`SOTA_DATA_ROOT`로
+덮어쓸 수 있음).
+
 ### 런타임
 
 **CPU + High-RAM. GPU 불필요.** YDF는 멀티스레드 CPU 라이브러리라 코어 수가
