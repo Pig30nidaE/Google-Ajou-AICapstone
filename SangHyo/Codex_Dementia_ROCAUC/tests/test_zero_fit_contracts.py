@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+import subprocess
+import sys
 import unittest
 
 import numpy as np
@@ -154,6 +156,28 @@ class ZeroFitContracts(unittest.TestCase):
         self.assertEqual(
             TRAINING_ACKNOWLEDGEMENT,
             "I_UNDERSTAND_THIS_RUNS_TRAINING",
+        )
+
+    def test_direct_entrypoint_can_import_repository_sibling_package(self):
+        package_root = Path(__file__).resolve().parents[1]
+        run_path = package_root / "run.py"
+        probe = (
+            "import runpy; "
+            f"runpy.run_path({str(run_path)!r}, run_name='direct_import_probe'); "
+            "from SangHyo.Binary_Google_ROCAUC_Champion.data import AccessAudit; "
+            "assert AccessAudit is not None"
+        )
+        completed = subprocess.run(
+            [sys.executable, "-c", probe],
+            cwd=package_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(
+            completed.returncode,
+            0,
+            msg=f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}",
         )
 
     def test_validate_code_report_declares_zero_fits(self):

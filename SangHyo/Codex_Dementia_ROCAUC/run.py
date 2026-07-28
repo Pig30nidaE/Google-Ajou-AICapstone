@@ -12,7 +12,12 @@ from pathlib import Path
 import sys
 
 if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    package_root = Path(__file__).resolve().parent
+    repository_root = package_root.parents[1]
+    for import_root in (repository_root, package_root.parent):
+        import_path = str(import_root)
+        if import_path not in sys.path:
+            sys.path.insert(0, import_path)
     __package__ = "Codex_Dementia_ROCAUC"
 
 from .artifacts import write_json
