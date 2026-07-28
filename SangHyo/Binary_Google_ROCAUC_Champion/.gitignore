@@ -1,0 +1,11 @@
+outputs/
+*_result/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.matplotlib_cache/
+*.joblib
+*.tabpfn_fit
+*.pt
+*.cbm
