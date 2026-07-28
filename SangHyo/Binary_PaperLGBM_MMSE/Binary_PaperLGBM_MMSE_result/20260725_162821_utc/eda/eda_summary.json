@@ -1,0 +1,11 @@
+{
+  "experiment": "Binary_PaperLGBM_MMSE",
+  "include_mmse": true,
+  "n_subjects": 141,
+  "n_subject_days": 9673,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "n_features_subject_level": 149
+}

@@ -1,0 +1,82 @@
+{
+  "run_mode": "full",
+  "repeats": 5,
+  "outer_folds": 5,
+  "inner_folds": 3,
+  "weight_gate": 0.55,
+  "models": [
+    "ydf_gbt",
+    "ydf_rf"
+  ],
+  "google_model": "Yggdrasil Decision Forests (GBT + Random Forest)",
+  "ydf_engine_used": true,
+  "engine_note": "ydf",
+  "cognitive_test_used": true,
+  "oof_metrics_selected_threshold": {
+    "accuracy": 0.6453900709219859,
+    "balanced_accuracy": 0.6205882352941177,
+    "impaired_recall": 0.5,
+    "cn_specificity": 0.7411764705882353,
+    "precision": 0.56,
+    "f1": 0.5283018867924528,
+    "confusion": {
+      "tn": 63,
+      "fp": 22,
+      "fn": 28,
+      "tp": 28
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "oof_metrics_threshold_0.5": {
+    "accuracy": 0.6382978723404256,
+    "balanced_accuracy": 0.6086134453781513,
+    "impaired_recall": 0.4642857142857143,
+    "cn_specificity": 0.7529411764705882,
+    "precision": 0.5531914893617021,
+    "f1": 0.5048543689320388,
+    "confusion": {
+      "tn": 64,
+      "fp": 21,
+      "fn": 30,
+      "tp": 26
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "oof_metrics_accuracy_threshold": {
+    "accuracy": 0.7092198581560284,
+    "balanced_accuracy": 0.6522058823529412,
+    "impaired_recall": 0.375,
+    "cn_specificity": 0.9294117647058824,
+    "precision": 0.7777777777777778,
+    "f1": 0.5060240963855422,
+    "confusion": {
+      "tn": 79,
+      "fp": 6,
+      "fn": 35,
+      "tp": 21
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.5673758865248227,
+      0.7304964539007093
+    ],
+    "balanced_accuracy": [
+      0.5450654303351755,
+      0.7026356913433445
+    ],
+    "roc_auc": [
+      0.5763295971410007,
+      0.7610338331373947
+    ]
+  },
+  "model_inner_balanced_accuracy": {
+    "ydf_gbt": 0.6162899584076055,
+    "ydf_rf": 0.6360873440285205
+  },
+  "model_mean_weight": {
+    "ydf_gbt": 0.15490968508615566,
+    "ydf_rf": 0.1749435531788473
+  }
+}

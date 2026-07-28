@@ -1,0 +1,134 @@
+{
+  "experiment": "Binary_Google_YDF_Ensemble",
+  "run_mode": "full",
+  "started_utc": "2026-07-25T05:28:38.109586+00:00",
+  "finished_utc": "2026-07-25T05:30:02.701299+00:00",
+  "targets": {
+    "accuracy": 0.9,
+    "balanced_accuracy": 0.8
+  },
+  "ydf_engine_used": true,
+  "nested_oof_threshold_0.5": {
+    "accuracy": 0.6382978723404256,
+    "balanced_accuracy": 0.6086134453781513,
+    "impaired_recall": 0.4642857142857143,
+    "cn_specificity": 0.7529411764705882,
+    "precision": 0.5531914893617021,
+    "f1": 0.5048543689320388,
+    "confusion": {
+      "tn": 64,
+      "fp": 21,
+      "fn": 30,
+      "tp": 26
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "nested_oof_balanced_threshold": {
+    "accuracy": 0.6453900709219859,
+    "balanced_accuracy": 0.6205882352941177,
+    "impaired_recall": 0.5,
+    "cn_specificity": 0.7411764705882353,
+    "precision": 0.56,
+    "f1": 0.5283018867924528,
+    "confusion": {
+      "tn": 63,
+      "fp": 22,
+      "fn": 28,
+      "tp": 28
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "nested_oof_accuracy_threshold": {
+    "accuracy": 0.7092198581560284,
+    "balanced_accuracy": 0.6522058823529412,
+    "impaired_recall": 0.375,
+    "cn_specificity": 0.9294117647058824,
+    "precision": 0.7777777777777778,
+    "f1": 0.5060240963855422,
+    "confusion": {
+      "tn": 79,
+      "fp": 6,
+      "fn": 35,
+      "tp": 21
+    },
+    "roc_auc": 0.672689075630252
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.5673758865248227,
+      0.7304964539007093
+    ],
+    "balanced_accuracy": [
+      0.5450654303351755,
+      0.7026356913433445
+    ],
+    "roc_auc": [
+      0.5763295971410007,
+      0.7610338331373947
+    ]
+  },
+  "final_weights": {
+    "ydf_gbt": 0.4696321488337239,
+    "ydf_rf": 0.5303678511662762
+  },
+  "final_threshold_balanced": 0.629,
+  "final_threshold_accuracy": 0.629,
+  "validation": {
+    "frozen": {
+      "n_subjects": 33,
+      "final_threshold_balanced": 0.629,
+      "final_threshold_accuracy": 0.629,
+      "prediction_csv_sha256": "ed26d9867fd79c425fb059595ce74fb9b4bd5819609cd02a917d9bd0e5754e57",
+      "frozen_utc": "2026-07-25T05:30:01.719680+00:00",
+      "note": "Predictions frozen before validation labels were opened."
+    },
+    "historical_benchmark_note": "33 subjects reused across experiments; historical benchmark, not a fresh test.",
+    "all_cn_accuracy": 0.7878787878787878,
+    "metrics_threshold_0.5": {
+      "accuracy": 0.7878787878787878,
+      "balanced_accuracy": 0.7087912087912087,
+      "impaired_recall": 0.5714285714285714,
+      "cn_specificity": 0.8461538461538461,
+      "precision": 0.5,
+      "f1": 0.5333333333333333,
+      "confusion": {
+        "tn": 22,
+        "fp": 4,
+        "fn": 3,
+        "tp": 4
+      },
+      "roc_auc": 0.6758241758241758
+    },
+    "metrics_balanced_threshold": {
+      "accuracy": 0.8484848484848485,
+      "balanced_accuracy": 0.7472527472527473,
+      "impaired_recall": 0.5714285714285714,
+      "cn_specificity": 0.9230769230769231,
+      "precision": 0.6666666666666666,
+      "f1": 0.6153846153846153,
+      "confusion": {
+        "tn": 24,
+        "fp": 2,
+        "fn": 3,
+        "tp": 4
+      },
+      "roc_auc": 0.6758241758241758
+    },
+    "metrics_accuracy_threshold": {
+      "accuracy": 0.8484848484848485,
+      "balanced_accuracy": 0.7472527472527473,
+      "impaired_recall": 0.5714285714285714,
+      "cn_specificity": 0.9230769230769231,
+      "precision": 0.6666666666666666,
+      "f1": 0.6153846153846153,
+      "confusion": {
+        "tn": 24,
+        "fp": 2,
+        "fn": 3,
+        "tp": 4
+      },
+      "roc_auc": 0.6758241758241758
+    }
+  },
+  "cognitive_test_used": true
+}

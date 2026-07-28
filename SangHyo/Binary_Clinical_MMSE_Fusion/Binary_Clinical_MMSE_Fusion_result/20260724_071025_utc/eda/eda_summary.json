@@ -1,0 +1,81 @@
+{
+  "n_subjects": 141,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "all_cn_accuracy": 0.6028368794326241,
+  "n_wearable_features": 168,
+  "n_mmse_features": 32,
+  "top_single_feature_direction_free_auc": [
+    [
+      "mmse__TOTAL",
+      0.7365546218487395
+    ],
+    [
+      "mmse__Q13_3",
+      0.6769957983193278
+    ],
+    [
+      "mmse__Q13_2",
+      0.6767857142857143
+    ],
+    [
+      "sleep__stage__entropy__iqr",
+      0.6558823529411765
+    ],
+    [
+      "mmse__Q12_5",
+      0.646953781512605
+    ],
+    [
+      "mmse__Q03",
+      0.6310924369747899
+    ],
+    [
+      "sleep__clock__bedtime_sin__median",
+      0.630672268907563
+    ],
+    [
+      "sleep__duration__deep_ratio__median",
+      0.6203781512605042
+    ],
+    [
+      "sleep__scalar__score_deep__iqr",
+      0.6182773109243698
+    ],
+    [
+      "sleep__scalar__awake__median",
+      0.615546218487395
+    ],
+    [
+      "sleep__clock__bedtime_cos__median",
+      0.6126050420168068
+    ],
+    [
+      "sleep__scalar__score_deep__median",
+      0.6046218487394959
+    ],
+    [
+      "sleep__clock__bedtime_cos__iqr",
+      0.604201680672269
+    ],
+    [
+      "sleep__scalar__deep__median",
+      0.5965336134453781
+    ],
+    [
+      "sleep__scalar__awake__iqr",
+      0.5955882352941178
+    ]
+  ],
+  "cognitive_test_used": true,
+  "mmse_feature_count": 32,
+  "diagnosis_columns_excluded": [
+    "DIAG_NM",
+    "DIAG_SEQ",
+    "DOCTOR_NM",
+    "MMSE_NUM",
+    "MMSE_KIND"
+  ]
+}

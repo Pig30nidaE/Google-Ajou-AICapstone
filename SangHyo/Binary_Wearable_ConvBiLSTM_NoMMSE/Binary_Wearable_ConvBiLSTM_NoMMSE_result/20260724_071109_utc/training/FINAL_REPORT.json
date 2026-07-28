@@ -1,0 +1,103 @@
+{
+  "experiment": "Binary_Wearable_ConvBiLSTM_NoMMSE",
+  "run_mode": "full",
+  "started_utc": "2026-07-24T07:11:13.649006+00:00",
+  "finished_utc": "2026-07-24T07:12:51.308239+00:00",
+  "primary_metric": "subject-level nested-OOF balanced accuracy",
+  "targets": {
+    "accuracy": 0.9,
+    "balanced_accuracy": 0.8
+  },
+  "nested_oof_selected_threshold": {
+    "accuracy": 0.524822695035461,
+    "balanced_accuracy": 0.5236344537815126,
+    "impaired_recall": 0.5178571428571429,
+    "cn_specificity": 0.5294117647058824,
+    "precision": 0.42028985507246375,
+    "f1": 0.46399999999999997,
+    "confusion": {
+      "tn": 45,
+      "fp": 40,
+      "fn": 27,
+      "tp": 29
+    },
+    "roc_auc": 0.5262605042016807
+  },
+  "nested_oof_threshold_0.5": {
+    "accuracy": 0.5177304964539007,
+    "balanced_accuracy": 0.5025210084033613,
+    "impaired_recall": 0.42857142857142855,
+    "cn_specificity": 0.5764705882352941,
+    "precision": 0.4,
+    "f1": 0.4137931034482759,
+    "confusion": {
+      "tn": 49,
+      "fp": 36,
+      "fn": 32,
+      "tp": 24
+    },
+    "roc_auc": 0.5262605042016807
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.45390070921985815,
+      0.6028368794326241
+    ],
+    "balanced_accuracy": [
+      0.4485541127370488,
+      0.605465044985624
+    ],
+    "roc_auc": [
+      0.43108579493284643,
+      0.617982929991357
+    ]
+  },
+  "final_weights": {
+    "gbt": 0.172102305551179,
+    "logreg": 0.5709784149992122,
+    "rf": 0.25691927944960874
+  },
+  "final_threshold": 0.28,
+  "validation": {
+    "frozen": {
+      "n_subjects": 33,
+      "final_threshold": 0.28,
+      "prediction_csv_sha256": "5bc308a15862619c9c2ba1115fb3e8f1f149fd2dbe1015da3906c0e932cb179a",
+      "frozen_utc": "2026-07-24T07:12:50.091363+00:00",
+      "note": "Predictions frozen before validation labels were opened."
+    },
+    "historical_benchmark_note": "These 33 subjects were reused across prior experiments; treat as a historical benchmark, not a fresh independent test.",
+    "all_cn_accuracy": 0.7878787878787878,
+    "metrics_selected_threshold": {
+      "accuracy": 0.3333333333333333,
+      "balanced_accuracy": 0.4725274725274725,
+      "impaired_recall": 0.7142857142857143,
+      "cn_specificity": 0.23076923076923078,
+      "precision": 0.2,
+      "f1": 0.3125,
+      "confusion": {
+        "tn": 6,
+        "fp": 20,
+        "fn": 2,
+        "tp": 5
+      },
+      "roc_auc": 0.6593406593406594
+    },
+    "metrics_threshold_0.5": {
+      "accuracy": 0.5757575757575758,
+      "balanced_accuracy": 0.6263736263736264,
+      "impaired_recall": 0.7142857142857143,
+      "cn_specificity": 0.5384615384615384,
+      "precision": 0.29411764705882354,
+      "f1": 0.4166666666666667,
+      "confusion": {
+        "tn": 14,
+        "fp": 12,
+        "fn": 2,
+        "tp": 5
+      },
+      "roc_auc": 0.6593406593406594
+    }
+  },
+  "cognitive_test_used": false
+}

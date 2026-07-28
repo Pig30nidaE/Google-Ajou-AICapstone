@@ -1,0 +1,8 @@
+{
+  "n_subjects": 33,
+  "final_threshold_balanced": 0.648,
+  "final_threshold_accuracy": 0.648,
+  "prediction_csv_sha256": "e081c725b2eaf8592fd05c37e0bbbea130adc8301c00210a8b447680eb21fd12",
+  "frozen_utc": "2026-07-25T06:11:15.883159+00:00",
+  "note": "Predictions frozen before validation labels were opened."
+}

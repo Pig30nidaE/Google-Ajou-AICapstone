@@ -1,0 +1,94 @@
+{
+  "n_subjects": 141,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "all_cn_accuracy": 0.6028368794326241,
+  "n_features": 31,
+  "n_mmse_features": 11,
+  "n_wearable_features": 20,
+  "cognitive_test_used": true,
+  "top_feature_direction_free_auc": [
+    [
+      "mmse_TOTAL",
+      0.7365546218487395
+    ],
+    [
+      "mmse_recall",
+      0.7288865546218487
+    ],
+    [
+      "mmse_Q13_3",
+      0.6769957983193278
+    ],
+    [
+      "mmse_Q13_2",
+      0.6767857142857143
+    ],
+    [
+      "mmse_orient_time",
+      0.6691176470588235
+    ],
+    [
+      "mmse_Q12_5",
+      0.646953781512605
+    ],
+    [
+      "mmse_attention",
+      0.6448529411764705
+    ],
+    [
+      "mmse_Q03",
+      0.6310924369747899
+    ],
+    [
+      "mmse_orient_place",
+      0.6142857142857143
+    ],
+    [
+      "w_sleep_score_deep",
+      0.6014705882352941
+    ],
+    [
+      "w_sleep_awake",
+      0.6006302521008403
+    ],
+    [
+      "w_sleep_light",
+      0.5941176470588235
+    ],
+    [
+      "w_sleep_deep",
+      0.5911764705882352
+    ],
+    [
+      "w_sleep_duration",
+      0.5844537815126051
+    ],
+    [
+      "mmse_Q09",
+      0.5834033613445379
+    ],
+    [
+      "w_sleep_restless",
+      0.5764705882352941
+    ],
+    [
+      "w_sleep_efficiency",
+      0.5724789915966386
+    ],
+    [
+      "mmse_language",
+      0.5670168067226891
+    ],
+    [
+      "w_activity_rest",
+      0.5647058823529412
+    ],
+    [
+      "w_activity_inactive",
+      0.5615546218487395
+    ]
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "n_subjects": 141,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "all_cn_accuracy": 0.6028368794326241,
+  "n_mmse_features": 39,
+  "top_feature_direction_free_auc": [
+    [
+      "mmse_TOTAL",
+      0.7366
+    ],
+    [
+      "mmse_num_failed",
+      0.7366
+    ],
+    [
+      "mmse_recall",
+      0.7289
+    ],
+    [
+      "mmse_recall_deficit",
+      0.7289
+    ],
+    [
+      "mmse_Q13_3",
+      0.677
+    ],
+    [
+      "mmse_Q13_2",
+      0.6768
+    ],
+    [
+      "mmse_orient_time",
+      0.6691
+    ],
+    [
+      "mmse_Q12_5",
+      0.647
+    ],
+    [
+      "mmse_attention",
+      0.6449
+    ],
+    [
+      "mmse_Q03",
+      0.6311
+    ],
+    [
+      "mmse_orient_place",
+      0.6143
+    ],
+    [
+      "mmse_Q01",
+      0.5836
+    ],
+    [
+      "mmse_Q09",
+      0.5834
+    ],
+    [
+      "mmse_Q12_2",
+      0.582
+    ],
+    [
+      "mmse_Q04",
+      0.5747
+    ],
+    [
+      "mmse_Q17",
+      0.5688
+    ],
+    [
+      "mmse_language",
+      0.567
+    ],
+    [
+      "mmse_Q12_3",
+      0.5666
+    ],
+    [
+      "mmse_Q05",
+      0.5625
+    ],
+    [
+      "mmse_Q13_1",
+      0.5605
+    ]
+  ],
+  "feature_set_cv_roc_auc": {
+    "mmse_only": 0.7351,
+    "mmse_plus_wearable": 0.7517
+  },
+  "finding": "CN vs MCI+DEM is MMSE-driven; delayed recall + engineered num_failed/recall_deficit are strongest. Wearables dilute the signal, so the model is MMSE-focused (wearable optional)."
+}

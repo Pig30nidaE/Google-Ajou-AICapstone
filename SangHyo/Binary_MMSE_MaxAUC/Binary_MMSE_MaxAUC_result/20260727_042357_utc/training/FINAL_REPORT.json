@@ -1,0 +1,279 @@
+{
+  "experiment": "Binary_MMSE_MaxAUC",
+  "run_mode": "full",
+  "started_utc": "2026-07-27T04:23:59.042174+00:00",
+  "finished_utc": "2026-07-27T04:24:12.497392+00:00",
+  "primary_metric": "leakage-free subject-level ROC-AUC",
+  "target": {
+    "roc_auc": 0.9,
+    "accuracy": 0.8
+  },
+  "include_wearable": false,
+  "eda": {
+    "n_subjects": 141,
+    "class_counts": {
+      "CN": 85,
+      "MCI_DEM": 56
+    },
+    "all_cn_accuracy": 0.6028368794326241,
+    "n_mmse_features": 39,
+    "top_feature_direction_free_auc": [
+      [
+        "mmse_TOTAL",
+        0.7366
+      ],
+      [
+        "mmse_num_failed",
+        0.7366
+      ],
+      [
+        "mmse_recall",
+        0.7289
+      ],
+      [
+        "mmse_recall_deficit",
+        0.7289
+      ],
+      [
+        "mmse_Q13_3",
+        0.677
+      ],
+      [
+        "mmse_Q13_2",
+        0.6768
+      ],
+      [
+        "mmse_orient_time",
+        0.6691
+      ],
+      [
+        "mmse_Q12_5",
+        0.647
+      ],
+      [
+        "mmse_attention",
+        0.6449
+      ],
+      [
+        "mmse_Q03",
+        0.6311
+      ],
+      [
+        "mmse_orient_place",
+        0.6143
+      ],
+      [
+        "mmse_Q01",
+        0.5836
+      ],
+      [
+        "mmse_Q09",
+        0.5834
+      ],
+      [
+        "mmse_Q12_2",
+        0.582
+      ],
+      [
+        "mmse_Q04",
+        0.5747
+      ],
+      [
+        "mmse_Q17",
+        0.5688
+      ],
+      [
+        "mmse_language",
+        0.567
+      ],
+      [
+        "mmse_Q12_3",
+        0.5666
+      ],
+      [
+        "mmse_Q05",
+        0.5625
+      ],
+      [
+        "mmse_Q13_1",
+        0.5605
+      ]
+    ],
+    "feature_set_cv_roc_auc": {
+      "mmse_only": 0.7351,
+      "mmse_plus_wearable": 0.7517
+    },
+    "finding": "CN vs MCI+DEM is MMSE-driven; delayed recall + engineered num_failed/recall_deficit are strongest. Wearables dilute the signal, so the model is MMSE-focused (wearable optional)."
+  },
+  "leakage_free_subject_oof_roc_auc": 0.7657563025210085,
+  "bootstrap_95ci_roc_auc": [
+    0.6840006743438116,
+    0.8456556259600614
+  ],
+  "nested_oof_threshold_0.5": {
+    "accuracy": 0.7092198581560284,
+    "balanced_accuracy": 0.6887605042016807,
+    "impaired_recall": 0.5892857142857143,
+    "cn_specificity": 0.788235294117647,
+    "precision": 0.6470588235294118,
+    "f1": 0.6168224299065421,
+    "confusion": {
+      "tn": 67,
+      "fp": 18,
+      "fn": 23,
+      "tp": 33
+    },
+    "roc_auc": 0.7657563025210085
+  },
+  "nested_oof_balanced_threshold": {
+    "accuracy": 0.6950354609929078,
+    "balanced_accuracy": 0.6800420168067227,
+    "impaired_recall": 0.6071428571428571,
+    "cn_specificity": 0.7529411764705882,
+    "precision": 0.6181818181818182,
+    "f1": 0.6126126126126126,
+    "confusion": {
+      "tn": 64,
+      "fp": 21,
+      "fn": 22,
+      "tp": 34
+    },
+    "roc_auc": 0.7657563025210085
+  },
+  "nested_oof_accuracy_threshold": {
+    "accuracy": 0.7588652482269503,
+    "balanced_accuracy": 0.7086134453781512,
+    "impaired_recall": 0.4642857142857143,
+    "cn_specificity": 0.9529411764705882,
+    "precision": 0.8666666666666667,
+    "f1": 0.6046511627906976,
+    "confusion": {
+      "tn": 81,
+      "fp": 4,
+      "fn": 30,
+      "tp": 26
+    },
+    "roc_auc": 0.7657563025210085
+  },
+  "model_inner_balanced_accuracy": {
+    "logreg": 0.6572240047534165,
+    "svm": 0.6709334521687462
+  },
+  "final_weights": {
+    "logreg": 0.47737314061898223,
+    "svm": 0.5226268593810177
+  },
+  "thresholds_from_training_oof": {
+    "threshold_0.5": 0.5,
+    "balanced": 0.443,
+    "accuracy": 0.632,
+    "specificity_0.9": 0.6073690846089763,
+    "specificity_0.95": 0.6344011327450427
+  },
+  "recommended_threshold": "specificity_0.95",
+  "validation": {
+    "frozen": {
+      "n_subjects": 33,
+      "prediction_csv_sha256": "9bb61af1e195789b7c356dc99afc96fc0f52af486a23db6c363f7d5ed9351a38",
+      "frozen_utc": "2026-07-27T04:24:11.440216+00:00",
+      "note": "Predictions frozen before validation labels were opened."
+    },
+    "historical_benchmark_note": "33-subject reused benchmark, not a fresh test.",
+    "roc_auc": 0.6346153846153847,
+    "all_cn_accuracy": 0.7878787878787878,
+    "recommended_threshold": "specificity_0.95",
+    "metrics_at_recommended": {
+      "accuracy": 0.8787878787878788,
+      "balanced_accuracy": 0.7142857142857143,
+      "impaired_recall": 0.42857142857142855,
+      "cn_specificity": 1.0,
+      "precision": 1.0,
+      "f1": 0.6,
+      "confusion": {
+        "tn": 26,
+        "fp": 0,
+        "fn": 4,
+        "tp": 3
+      },
+      "roc_auc": 0.6346153846153847
+    },
+    "metrics_by_threshold": {
+      "threshold_0.5": {
+        "accuracy": 0.7575757575757576,
+        "balanced_accuracy": 0.6895604395604396,
+        "impaired_recall": 0.5714285714285714,
+        "cn_specificity": 0.8076923076923077,
+        "precision": 0.4444444444444444,
+        "f1": 0.5,
+        "confusion": {
+          "tn": 21,
+          "fp": 5,
+          "fn": 3,
+          "tp": 4
+        },
+        "roc_auc": 0.6346153846153847
+      },
+      "balanced": {
+        "accuracy": 0.6666666666666666,
+        "balanced_accuracy": 0.6318681318681318,
+        "impaired_recall": 0.5714285714285714,
+        "cn_specificity": 0.6923076923076923,
+        "precision": 0.3333333333333333,
+        "f1": 0.4210526315789474,
+        "confusion": {
+          "tn": 18,
+          "fp": 8,
+          "fn": 3,
+          "tp": 4
+        },
+        "roc_auc": 0.6346153846153847
+      },
+      "accuracy": {
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.7142857142857143,
+        "impaired_recall": 0.42857142857142855,
+        "cn_specificity": 1.0,
+        "precision": 1.0,
+        "f1": 0.6,
+        "confusion": {
+          "tn": 26,
+          "fp": 0,
+          "fn": 4,
+          "tp": 3
+        },
+        "roc_auc": 0.6346153846153847
+      },
+      "specificity_0.9": {
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.7142857142857143,
+        "impaired_recall": 0.42857142857142855,
+        "cn_specificity": 1.0,
+        "precision": 1.0,
+        "f1": 0.6,
+        "confusion": {
+          "tn": 26,
+          "fp": 0,
+          "fn": 4,
+          "tp": 3
+        },
+        "roc_auc": 0.6346153846153847
+      },
+      "specificity_0.95": {
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.7142857142857143,
+        "impaired_recall": 0.42857142857142855,
+        "cn_specificity": 1.0,
+        "precision": 1.0,
+        "f1": 0.6,
+        "confusion": {
+          "tn": 26,
+          "fp": 0,
+          "fn": 4,
+          "tp": 3
+        },
+        "roc_auc": 0.6346153846153847
+      }
+    }
+  },
+  "honesty_note": "ROC-AUC is the primary metric. All evaluation is subject-level (leakage-free). MMSE-only is the max-AUC configuration; wearables dilute it (see eda.feature_set_cv_roc_auc)."
+}

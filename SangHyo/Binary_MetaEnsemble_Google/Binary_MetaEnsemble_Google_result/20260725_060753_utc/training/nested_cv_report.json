@@ -1,0 +1,95 @@
+{
+  "run_mode": "full",
+  "repeats": 5,
+  "outer_folds": 5,
+  "inner_folds": 3,
+  "weight_gate": 0.55,
+  "base_models": [
+    "dom_gbt",
+    "dom_logreg",
+    "dom_rf",
+    "ydf_gbt",
+    "ydf_rf",
+    "eda_logreg",
+    "eda_gbt"
+  ],
+  "ydf_engine_used": true,
+  "cognitive_test_used": true,
+  "oof_metrics_selected_threshold": {
+    "accuracy": 0.6666666666666666,
+    "balanced_accuracy": 0.641281512605042,
+    "impaired_recall": 0.5178571428571429,
+    "cn_specificity": 0.7647058823529411,
+    "precision": 0.5918367346938775,
+    "f1": 0.5523809523809524,
+    "confusion": {
+      "tn": 65,
+      "fp": 20,
+      "fn": 27,
+      "tp": 29
+    },
+    "roc_auc": 0.7081932773109244
+  },
+  "oof_metrics_threshold_0.5": {
+    "accuracy": 0.6879432624113475,
+    "balanced_accuracy": 0.6558823529411765,
+    "impaired_recall": 0.5,
+    "cn_specificity": 0.8117647058823529,
+    "precision": 0.6363636363636364,
+    "f1": 0.56,
+    "confusion": {
+      "tn": 69,
+      "fp": 16,
+      "fn": 28,
+      "tp": 28
+    },
+    "roc_auc": 0.7081932773109244
+  },
+  "oof_metrics_accuracy_threshold": {
+    "accuracy": 0.7375886524822695,
+    "balanced_accuracy": 0.6848739495798319,
+    "impaired_recall": 0.42857142857142855,
+    "cn_specificity": 0.9411764705882353,
+    "precision": 0.8275862068965517,
+    "f1": 0.5647058823529412,
+    "confusion": {
+      "tn": 80,
+      "fp": 5,
+      "fn": 32,
+      "tp": 24
+    },
+    "roc_auc": 0.7081932773109244
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.5886524822695035,
+      0.7446808510638298
+    ],
+    "balanced_accuracy": [
+      0.5674317226890756,
+      0.7214496033628505
+    ],
+    "roc_auc": [
+      0.6197426470588235,
+      0.7926700900432763
+    ]
+  },
+  "model_inner_balanced_accuracy": {
+    "dom_gbt": 0.624278669043375,
+    "dom_logreg": 0.6487272727272727,
+    "dom_rf": 0.6470469399881164,
+    "ydf_gbt": 0.6162899584076055,
+    "ydf_rf": 0.6360873440285205,
+    "eda_logreg": 0.6723012477718361,
+    "eda_gbt": 0.6211960784313725
+  },
+  "model_mean_weight": {
+    "dom_gbt": 0.1218972073677956,
+    "dom_logreg": 0.14872727272727274,
+    "dom_rf": 0.14704693998811644,
+    "ydf_gbt": 0.11490968508615566,
+    "ydf_rf": 0.13494355317884732,
+    "eda_logreg": 0.172301247771836,
+    "eda_gbt": 0.11812418300653592
+  }
+}

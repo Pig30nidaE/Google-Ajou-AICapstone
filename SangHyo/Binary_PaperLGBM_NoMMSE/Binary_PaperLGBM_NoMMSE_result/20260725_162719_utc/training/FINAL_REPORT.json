@@ -1,0 +1,27 @@
+{
+  "experiment": "Binary_PaperLGBM_NoMMSE",
+  "run_mode": "full",
+  "include_mmse": false,
+  "started_utc": "2026-07-25T16:27:20.886027+00:00",
+  "finished_utc": "2026-07-25T16:31:32.388030+00:00",
+  "primary_metric": "leakage-free subject-level ROC-AUC",
+  "target": {
+    "roc_auc": 0.9,
+    "accuracy": 0.8
+  },
+  "leakage_free_subject_oof_roc_auc": 0.5214285714285715,
+  "leakage_diagnostic": {
+    "day_random_kfold_roc_auc_LEAKY": 0.9526091873720018,
+    "day_groupkfold_roc_auc_honest": 0.48105587222509744,
+    "subject_from_groupkfold_roc_auc_honest": 0.4581932773109244,
+    "note": "day_random_kfold is the paper-style split and is inflated by subject leakage; the GroupKFold/subject numbers are honest."
+  },
+  "validation": {
+    "n_subjects": 33,
+    "roc_auc": 0.6538461538461539,
+    "accuracy_threshold_0.5": 0.6363636363636364,
+    "all_cn_accuracy": 0.7878787878787878,
+    "historical_benchmark_note": "33-subject reused benchmark, not a fresh test."
+  },
+  "honesty_note": "The 0.90 target is only reachable with the paper's day-level random K-fold, which has subject leakage (see leakage_diagnostic). The honest, leakage-free subject-level ROC-AUC is the primary metric above."
+}

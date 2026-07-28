@@ -1,0 +1,15 @@
+{
+  "n_subjects": 33,
+  "thresholds_from_training_oof": {
+    "threshold_0.5": 0.5,
+    "balanced": 0.385,
+    "accuracy": 0.635,
+    "specificity_0.9": 0.6936980385217317,
+    "specificity_0.95": 0.7111826118622311,
+    "specificity_0.975": 0.8183547756130155
+  },
+  "recommended_threshold": "specificity_0.95",
+  "prediction_csv_sha256": "4c30fd965e27b960dafa5b848db02bec756e9b86459df9abc88d930f36760977",
+  "frozen_utc": "2026-07-25T07:23:04.998503+00:00",
+  "note": "Predictions frozen before validation labels were opened."
+}

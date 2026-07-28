@@ -1,0 +1,98 @@
+{
+  "run_mode": "full",
+  "repeats": 5,
+  "outer_folds": 5,
+  "inner_folds": 3,
+  "weight_gate": 0.55,
+  "models": [
+    "ydf_gbt",
+    "ydf_rf"
+  ],
+  "google_models": "Yggdrasil Decision Forests (GBT+RF)",
+  "ydf_engine_used": true,
+  "tabnet_used": false,
+  "feature_set": [
+    "mmse_TOTAL",
+    "mmse_orient_time",
+    "mmse_orient_place",
+    "mmse_attention",
+    "mmse_recall",
+    "mmse_language",
+    "mmse_Q13_2",
+    "mmse_Q13_3",
+    "mmse_Q12_5",
+    "mmse_Q03",
+    "mmse_Q09",
+    "w_sleep_light",
+    "w_activity_rest",
+    "w_sleep_restless"
+  ],
+  "cognitive_test_used": true,
+  "oof_metrics_selected_threshold": {
+    "accuracy": 0.6808510638297872,
+    "balanced_accuracy": 0.653046218487395,
+    "impaired_recall": 0.5178571428571429,
+    "cn_specificity": 0.788235294117647,
+    "precision": 0.6170212765957447,
+    "f1": 0.5631067961165048,
+    "confusion": {
+      "tn": 67,
+      "fp": 18,
+      "fn": 27,
+      "tp": 29
+    },
+    "roc_auc": 0.7115546218487395
+  },
+  "oof_metrics_threshold_0.5": {
+    "accuracy": 0.6879432624113475,
+    "balanced_accuracy": 0.6650210084033614,
+    "impaired_recall": 0.5535714285714286,
+    "cn_specificity": 0.7764705882352941,
+    "precision": 0.62,
+    "f1": 0.5849056603773586,
+    "confusion": {
+      "tn": 66,
+      "fp": 19,
+      "fn": 25,
+      "tp": 31
+    },
+    "roc_auc": 0.7115546218487395
+  },
+  "oof_metrics_accuracy_threshold": {
+    "accuracy": 0.7092198581560284,
+    "balanced_accuracy": 0.664390756302521,
+    "impaired_recall": 0.44642857142857145,
+    "cn_specificity": 0.8823529411764706,
+    "precision": 0.7142857142857143,
+    "f1": 0.5494505494505495,
+    "confusion": {
+      "tn": 75,
+      "fp": 10,
+      "fn": 31,
+      "tp": 25
+    },
+    "roc_auc": 0.7115546218487395
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.5957446808510638,
+      0.7588652482269503
+    ],
+    "balanced_accuracy": [
+      0.5731355122588015,
+      0.7280357142857142
+    ],
+    "roc_auc": [
+      0.6182275818834773,
+      0.7987999635238331
+    ]
+  },
+  "model_inner_balanced_accuracy": {
+    "ydf_gbt": 0.6280386215092097,
+    "ydf_rf": 0.6617284610814022
+  },
+  "model_mean_weight": {
+    "ydf_gbt": 0.12737195484254307,
+    "ydf_rf": 0.16172846108140226
+  }
+}

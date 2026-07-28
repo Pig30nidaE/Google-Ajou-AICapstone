@@ -1,0 +1,79 @@
+{
+  "n_subjects": 141,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "all_cn_accuracy": 0.6028368794326241,
+  "n_daily_channels": 56,
+  "n_tabular_features": 168,
+  "observation_days": {
+    "min": 35,
+    "median": 66.0,
+    "max": 120
+  },
+  "top_single_feature_direction_free_auc": [
+    [
+      "sleep__stage__entropy__iqr",
+      0.6558823529411765
+    ],
+    [
+      "sleep__clock__bedtime_sin__median",
+      0.630672268907563
+    ],
+    [
+      "sleep__duration__deep_ratio__median",
+      0.6203781512605042
+    ],
+    [
+      "sleep__scalar__score_deep__iqr",
+      0.6182773109243698
+    ],
+    [
+      "sleep__scalar__awake__median",
+      0.615546218487395
+    ],
+    [
+      "sleep__clock__bedtime_cos__median",
+      0.6126050420168068
+    ],
+    [
+      "sleep__scalar__score_deep__median",
+      0.6046218487394959
+    ],
+    [
+      "sleep__clock__bedtime_cos__iqr",
+      0.604201680672269
+    ],
+    [
+      "sleep__scalar__deep__median",
+      0.5965336134453781
+    ],
+    [
+      "sleep__scalar__awake__iqr",
+      0.5955882352941178
+    ],
+    [
+      "sleep__stage__transition_rate__iqr",
+      0.5915966386554622
+    ],
+    [
+      "sleep__stage__transition_rate__median",
+      0.5878151260504202
+    ],
+    [
+      "sleep__scalar__onset_latency__trend",
+      0.5846638655462185
+    ],
+    [
+      "sleep__duration__awake_ratio__median",
+      0.579201680672269
+    ],
+    [
+      "sleep__scalar__score__iqr",
+      0.5778361344537816
+    ]
+  ],
+  "cognitive_test_used": false,
+  "mmse_feature_count": 0
+}

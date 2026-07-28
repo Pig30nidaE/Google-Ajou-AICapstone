@@ -1,0 +1,20 @@
+{
+  "n_subjects": 141,
+  "class_counts": {
+    "CN": 85,
+    "MCI_DEM": 56
+  },
+  "all_cn_accuracy": 0.6028368794326241,
+  "n_features_full": 31,
+  "n_features_minimal": 14,
+  "base_models": [
+    "dom_gbt",
+    "dom_logreg",
+    "dom_rf",
+    "ydf_gbt",
+    "ydf_rf",
+    "eda_logreg",
+    "eda_gbt"
+  ],
+  "cognitive_test_used": true
+}

@@ -1,0 +1,103 @@
+{
+  "experiment": "Binary_Clinical_MMSE_Fusion",
+  "run_mode": "full",
+  "started_utc": "2026-07-24T07:10:27.820371+00:00",
+  "finished_utc": "2026-07-24T07:14:29.113412+00:00",
+  "primary_metric": "subject-level nested-OOF balanced accuracy",
+  "targets": {
+    "accuracy": 0.9,
+    "balanced_accuracy": 0.8
+  },
+  "nested_oof_selected_threshold": {
+    "accuracy": 0.6737588652482269,
+    "balanced_accuracy": 0.6441176470588235,
+    "impaired_recall": 0.5,
+    "cn_specificity": 0.788235294117647,
+    "precision": 0.6086956521739131,
+    "f1": 0.5490196078431373,
+    "confusion": {
+      "tn": 67,
+      "fp": 18,
+      "fn": 28,
+      "tp": 28
+    },
+    "roc_auc": 0.6972689075630252
+  },
+  "nested_oof_threshold_0.5": {
+    "accuracy": 0.7021276595744681,
+    "balanced_accuracy": 0.6798319327731093,
+    "impaired_recall": 0.5714285714285714,
+    "cn_specificity": 0.788235294117647,
+    "precision": 0.64,
+    "f1": 0.6037735849056605,
+    "confusion": {
+      "tn": 67,
+      "fp": 18,
+      "fn": 24,
+      "tp": 32
+    },
+    "roc_auc": 0.6972689075630252
+  },
+  "bootstrap_95ci": {
+    "accuracy": [
+      0.6028368794326241,
+      0.75177304964539
+    ],
+    "balanced_accuracy": [
+      0.5702678571428571,
+      0.7256374787357865
+    ],
+    "roc_auc": [
+      0.6094309858615762,
+      0.7855089981899193
+    ]
+  },
+  "final_weights": {
+    "gbt": 0.21219383306470793,
+    "logreg": 0.49657304409860753,
+    "rf": 0.2912331228366845
+  },
+  "final_threshold": 0.5,
+  "validation": {
+    "frozen": {
+      "n_subjects": 33,
+      "final_threshold": 0.5,
+      "prediction_csv_sha256": "739f76d099eba2e7fa27f708d104c7dd046f866d34b56eb9c9bcd8bbc4dfd622",
+      "frozen_utc": "2026-07-24T07:14:27.483641+00:00",
+      "note": "Predictions frozen before validation labels were opened."
+    },
+    "historical_benchmark_note": "These 33 subjects were reused across prior experiments; treat as a historical benchmark, not a fresh independent test.",
+    "all_cn_accuracy": 0.7878787878787878,
+    "metrics_selected_threshold": {
+      "accuracy": 0.7878787878787878,
+      "balanced_accuracy": 0.7087912087912087,
+      "impaired_recall": 0.5714285714285714,
+      "cn_specificity": 0.8461538461538461,
+      "precision": 0.5,
+      "f1": 0.5333333333333333,
+      "confusion": {
+        "tn": 22,
+        "fp": 4,
+        "fn": 3,
+        "tp": 4
+      },
+      "roc_auc": 0.6208791208791208
+    },
+    "metrics_threshold_0.5": {
+      "accuracy": 0.7878787878787878,
+      "balanced_accuracy": 0.7087912087912087,
+      "impaired_recall": 0.5714285714285714,
+      "cn_specificity": 0.8461538461538461,
+      "precision": 0.5,
+      "f1": 0.5333333333333333,
+      "confusion": {
+        "tn": 22,
+        "fp": 4,
+        "fn": 3,
+        "tp": 4
+      },
+      "roc_auc": 0.6208791208791208
+    }
+  },
+  "cognitive_test_used": true
+}

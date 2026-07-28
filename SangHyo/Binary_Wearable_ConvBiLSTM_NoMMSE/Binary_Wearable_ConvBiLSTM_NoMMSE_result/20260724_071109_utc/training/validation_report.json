@@ -1,0 +1,41 @@
+{
+  "frozen": {
+    "n_subjects": 33,
+    "final_threshold": 0.28,
+    "prediction_csv_sha256": "5bc308a15862619c9c2ba1115fb3e8f1f149fd2dbe1015da3906c0e932cb179a",
+    "frozen_utc": "2026-07-24T07:12:50.091363+00:00",
+    "note": "Predictions frozen before validation labels were opened."
+  },
+  "historical_benchmark_note": "These 33 subjects were reused across prior experiments; treat as a historical benchmark, not a fresh independent test.",
+  "all_cn_accuracy": 0.7878787878787878,
+  "metrics_selected_threshold": {
+    "accuracy": 0.3333333333333333,
+    "balanced_accuracy": 0.4725274725274725,
+    "impaired_recall": 0.7142857142857143,
+    "cn_specificity": 0.23076923076923078,
+    "precision": 0.2,
+    "f1": 0.3125,
+    "confusion": {
+      "tn": 6,
+      "fp": 20,
+      "fn": 2,
+      "tp": 5
+    },
+    "roc_auc": 0.6593406593406594
+  },
+  "metrics_threshold_0.5": {
+    "accuracy": 0.5757575757575758,
+    "balanced_accuracy": 0.6263736263736264,
+    "impaired_recall": 0.7142857142857143,
+    "cn_specificity": 0.5384615384615384,
+    "precision": 0.29411764705882354,
+    "f1": 0.4166666666666667,
+    "confusion": {
+      "tn": 14,
+      "fp": 12,
+      "fn": 2,
+      "tp": 5
+    },
+    "roc_auc": 0.6593406593406594
+  }
+}
