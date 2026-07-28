@@ -615,6 +615,26 @@ class StaticContracts(unittest.TestCase):
         self.assertIn("{'default', 'max'}", nested_source)
         self.assertNotIn("'smoke'", nested_source.lower())
 
+    def test_launcher_filters_only_jupyter_kernel_connection_argument(self) -> None:
+        tree = _tree("run.py")
+        filter_function = _function(tree, "_without_jupyter_kernel_args")
+        rendered = ast.unparse(filter_function)
+        self.assertIn("token in {'-f', '--f'}", rendered)
+        self.assertIn("connection_file.name.startswith('kernel-')", rendered)
+        self.assertIn("connection_file.suffix == '.json'", rendered)
+
+        main = _function(tree, "main")
+        main_source = ast.unparse(main)
+        main_calls = {
+            _dotted_name(call.func)
+            for call in ast.walk(main)
+            if isinstance(call, ast.Call)
+        }
+        self.assertIn("sys.argv[1:]", main_source)
+        self.assertIn("_without_jupyter_kernel_args(raw_argv)", main_source)
+        self.assertIn("parse_args", main_calls)
+        self.assertNotIn("parse_known_args", main_calls)
+
     def test_metrics_keep_repeat_and_subject_mean_estimands_separate(self) -> None:
         metrics_tree = _tree("metrics.py")
         summary = _function(metrics_tree, "summarize_repeated_oof")

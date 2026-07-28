@@ -289,8 +289,43 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _without_jupyter_kernel_args(argv: list[str]) -> list[str]:
+    """Remove only Jupyter's injected ``-f <kernel-*.json>`` argument.
+
+    ``base.ipynb`` executes this file with :func:`runpy.run_path`, so the
+    notebook kernel's own command-line arguments remain in ``sys.argv``.
+    Unknown user arguments must still fail; therefore ``parse_known_args`` is
+    intentionally not used.
+    """
+
+    cleaned: list[str] = []
+    index = 0
+    while index < len(argv):
+        token = str(argv[index])
+        if token in {"-f", "--f"} and index + 1 < len(argv):
+            connection_file = Path(str(argv[index + 1]))
+            if (
+                connection_file.name.startswith("kernel-")
+                and connection_file.suffix == ".json"
+            ):
+                index += 2
+                continue
+        if token.startswith(("-f=", "--f=")):
+            connection_file = Path(token.split("=", 1)[1])
+            if (
+                connection_file.name.startswith("kernel-")
+                and connection_file.suffix == ".json"
+            ):
+                index += 1
+                continue
+        cleaned.append(token)
+        index += 1
+    return cleaned
+
+
 def main(argv: list[str] | None = None) -> dict[str, Any]:
-    arguments = _parser().parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    arguments = _parser().parse_args(_without_jupyter_kernel_args(raw_argv))
     return run_pipeline(
         data_root=arguments.data_root,
         output_dir=arguments.output_dir,
