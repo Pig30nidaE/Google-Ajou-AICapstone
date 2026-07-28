@@ -1,0 +1,2 @@
+"""Zero-fit contract tests."""
+

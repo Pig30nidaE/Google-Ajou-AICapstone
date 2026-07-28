@@ -1,0 +1,7 @@
+outputs/
+*_result/
+__pycache__/
+*.pyc
+.pytest_cache/
+.matplotlib_cache/
+!requirements_colab.txt

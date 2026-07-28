@@ -1,0 +1,63 @@
+{
+  "n_selected": 12,
+  "selected_features": [
+    "mmse_q18",
+    "mmse_q12_5",
+    "act_activity_inactive_cv",
+    "slp_stage_frac_rem",
+    "act_activity_high_cv",
+    "act_class_trans_high_to_low",
+    "act_activity_total_cv",
+    "slp_sleep_hr_lowest_cv",
+    "act_activity_score_move_every_hour_cv",
+    "slp_sleep_score_median",
+    "slp_sleep_hr_lowest_iqr",
+    "slp_rmssd5min_var"
+  ],
+  "thresholds": {
+    "soft_voting": 0.4938934162259102,
+    "stacking": 0.27178169096989163
+  },
+  "inner_auc": {
+    "gbt_leafwise": 0.8510504201680672,
+    "gbt_oblique": 0.8651260504201681,
+    "gbt_depthwise": 0.851890756302521,
+    "random_forest": 0.8026260504201681
+  },
+  "params": {
+    "gbt_leafwise": {
+      "num_trees": 500,
+      "shrinkage": 0.03,
+      "subsample": 0.7,
+      "num_candidate_attributes_ratio": 0.6,
+      "l2_regularization": 1.0,
+      "min_examples": 20,
+      "max_num_nodes": 15,
+      "max_depth": -1
+    },
+    "gbt_oblique": {
+      "num_trees": 500,
+      "shrinkage": 0.05,
+      "subsample": 0.7,
+      "num_candidate_attributes_ratio": 0.6,
+      "l2_regularization": 0.1,
+      "min_examples": 20,
+      "max_depth": 6
+    },
+    "gbt_depthwise": {
+      "num_trees": 200,
+      "shrinkage": 0.05,
+      "subsample": 0.7,
+      "num_candidate_attributes_ratio": 0.6,
+      "l2_regularization": 1.0,
+      "min_examples": 20,
+      "max_depth": 3
+    },
+    "random_forest": {
+      "num_trees": 500,
+      "max_depth": 16,
+      "min_examples": 5,
+      "num_candidate_attributes_ratio": 0.4
+    }
+  }
+}

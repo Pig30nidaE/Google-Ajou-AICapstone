@@ -1,0 +1,65 @@
+{
+  "cohort": {
+    "n_persons": 141,
+    "class_counts": {
+      "CN": 85,
+      "MCI_DEM": 56
+    },
+    "positive_rate": 0.3971631205673759,
+    "all_cn_baseline_accuracy": 0.6028368794326241,
+    "n_unique_person_ids": 141,
+    "diagnosis_counts": {
+      "CN": 85,
+      "MCI": 47,
+      "Dem": 9
+    }
+  },
+  "missingness": {
+    "overall_missing_fraction": 1.906504995043087e-05,
+    "n_columns_any_missing": 1,
+    "worst_columns": {
+      "act_activity_inactivity_alerts_cv": 0.0071,
+      "slp_stage_trans_light_to_awake": 0.0,
+      "slp_hr5min_std": 0.0,
+      "slp_hr5min_mean": 0.0,
+      "slp_sleep_total_iqr": 0.0,
+      "slp_sleep_total_median": 0.0,
+      "slp_sleep_total_std": 0.0,
+      "slp_sleep_total_mean": 0.0,
+      "slp_sleep_temperature_deviation_iqr": 0.0,
+      "slp_sleep_temperature_deviation_median": 0.0,
+      "slp_sleep_temperature_deviation_std": 0.0,
+      "slp_sleep_temperature_deviation_mean": 0.0,
+      "slp_sleep_temperature_delta_iqr": 0.0,
+      "slp_sleep_temperature_delta_median": 0.0,
+      "slp_sleep_temperature_delta_std": 0.0
+    }
+  },
+  "univariate": {
+    "n_scored": 372,
+    "top_absolute_auc_gap": {
+      "mmse_total": 0.2366,
+      "mmse_q13_3": 0.177,
+      "mmse_q13_2": 0.1768,
+      "mmse_q12_5": 0.147,
+      "slp_stage_trans_deep_to_light": 0.1441,
+      "slp_sleep_score_deep_std": 0.1399,
+      "slp_stage_trans_light_to_deep": 0.1372,
+      "slp_sleep_restless_iqr": 0.1356,
+      "mmse_q03": 0.1311,
+      "slp_sleep_restless_std": 0.1288,
+      "slp_bedstart_hour_sin_mean": 0.1221,
+      "act_activity_inactivity_alerts_cv": 0.1195,
+      "slp_sleep_score_deep_cv": 0.1187,
+      "act_activity_score_move_every_hour_mean": 0.1176,
+      "slp_bedstart_hour_cos_mean": 0.1166,
+      "act_activity_inactivity_alerts_mean": 0.1158,
+      "slp_stage_trans_deep_to_rem": 0.1113,
+      "slp_sleep_midpoint_at_delta_cv": 0.1111,
+      "slp_sleep_score_deep_iqr": 0.1108,
+      "slp_sleep_awake_std": 0.1105
+    },
+    "note": "Computed on all Training people; diagnostic only, not used for selection."
+  },
+  "n_features": 372
+}

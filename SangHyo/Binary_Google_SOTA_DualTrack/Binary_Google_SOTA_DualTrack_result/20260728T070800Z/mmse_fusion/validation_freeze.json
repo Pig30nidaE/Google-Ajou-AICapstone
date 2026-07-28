@@ -1,0 +1,11 @@
+{
+  "file": "validation_predictions_frozen.csv",
+  "sha256": "52e0a6fa9d2db9cb18fd432c8d20b1bc0cf99ba7e276fdd90168eab1e3f81fe6",
+  "frozen_at_utc": "2026-07-28T07:31:56.302136+00:00",
+  "thresholds": {
+    "soft_voting": 0.4938934162259102,
+    "stacking": 0.27178169096989163
+  },
+  "n_rows": 33,
+  "note": "Written and hashed BEFORE any Validation label was read."
+}

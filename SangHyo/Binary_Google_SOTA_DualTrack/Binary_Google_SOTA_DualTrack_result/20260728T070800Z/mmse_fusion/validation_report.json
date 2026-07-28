@@ -1,0 +1,153 @@
+{
+  "track": "mmse_fusion",
+  "frozen": {
+    "file": "validation_predictions_frozen.csv",
+    "sha256": "52e0a6fa9d2db9cb18fd432c8d20b1bc0cf99ba7e276fdd90168eab1e3f81fe6",
+    "frozen_at_utc": "2026-07-28T07:31:56.302136+00:00",
+    "thresholds": {
+      "soft_voting": 0.4938934162259102,
+      "stacking": 0.27178169096989163
+    },
+    "n_rows": 33,
+    "note": "Written and hashed BEFORE any Validation label was read."
+  },
+  "validation_metrics": {
+    "soft_voting": {
+      "threshold": 0.4938934162259102,
+      "accuracy": 0.6363636363636364,
+      "balanced_accuracy": 0.6126373626373627,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.6538461538461539,
+      "precision": 0.3076923076923077,
+      "f1": 0.4,
+      "roc_auc": 0.6153846153846154,
+      "confusion": {
+        "tn": 17,
+        "fp": 9,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878,
+      "bootstrap": {
+        "roc_auc_95ci": {
+          "lo": 0.27586206896551724,
+          "hi": 0.9259259259259259
+        },
+        "balanced_accuracy_95ci": {
+          "lo": 0.38326388888888885,
+          "hi": 0.8333333333333333
+        },
+        "n_resamples_used": 1999
+      }
+    },
+    "stacking": {
+      "threshold": 0.27178169096989163,
+      "accuracy": 0.5757575757575758,
+      "balanced_accuracy": 0.5741758241758241,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.5769230769230769,
+      "precision": 0.26666666666666666,
+      "f1": 0.36363636363636365,
+      "roc_auc": 0.6208791208791209,
+      "confusion": {
+        "tn": 15,
+        "fp": 11,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878,
+      "bootstrap": {
+        "roc_auc_95ci": {
+          "lo": 0.28448275862068967,
+          "hi": 0.9259259259259259
+        },
+        "balanced_accuracy_95ci": {
+          "lo": 0.34065934065934067,
+          "hi": 0.7928694581280789
+        },
+        "n_resamples_used": 1999
+      }
+    },
+    "gbt_leafwise": {
+      "threshold": 0.5,
+      "accuracy": 0.696969696969697,
+      "balanced_accuracy": 0.651098901098901,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.7307692307692307,
+      "precision": 0.36363636363636365,
+      "f1": 0.4444444444444444,
+      "roc_auc": 0.6373626373626373,
+      "confusion": {
+        "tn": 19,
+        "fp": 7,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878
+    },
+    "gbt_oblique": {
+      "threshold": 0.5,
+      "accuracy": 0.696969696969697,
+      "balanced_accuracy": 0.651098901098901,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.7307692307692307,
+      "precision": 0.36363636363636365,
+      "f1": 0.4444444444444444,
+      "roc_auc": 0.6263736263736264,
+      "confusion": {
+        "tn": 19,
+        "fp": 7,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878
+    },
+    "gbt_depthwise": {
+      "threshold": 0.5,
+      "accuracy": 0.6666666666666666,
+      "balanced_accuracy": 0.6318681318681318,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.6923076923076923,
+      "precision": 0.3333333333333333,
+      "f1": 0.4210526315789474,
+      "roc_auc": 0.6428571428571429,
+      "confusion": {
+        "tn": 18,
+        "fp": 8,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878
+    },
+    "random_forest": {
+      "threshold": 0.5,
+      "accuracy": 0.696969696969697,
+      "balanced_accuracy": 0.651098901098901,
+      "recall_mci_dem": 0.5714285714285714,
+      "specificity_cn": 0.7307692307692307,
+      "precision": 0.36363636363636365,
+      "f1": 0.4444444444444444,
+      "roc_auc": 0.6043956043956044,
+      "confusion": {
+        "tn": 19,
+        "fp": 7,
+        "fn": 3,
+        "tp": 4
+      },
+      "n": 33,
+      "n_mci_dem": 7,
+      "all_cn_baseline_accuracy": 0.7878787878787878
+    }
+  },
+  "note": "Threshold and every model choice were fixed on Training only. This Validation set is evaluated once; do not re-tune against it."
+}

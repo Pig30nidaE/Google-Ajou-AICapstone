@@ -1,0 +1,28 @@
+{
+  "train": {
+    "n_persons": 141,
+    "n_features": 372,
+    "observation_days": {
+      "min": 35,
+      "median": 66.0,
+      "max": 120
+    },
+    "dropped_all_nan_or_constant": 12,
+    "track": "mmse_fusion",
+    "split": "train"
+  },
+  "validation": {
+    "n_persons": 33,
+    "n_features": 375,
+    "observation_days": {
+      "min": 38,
+      "median": 70.0,
+      "max": 122
+    },
+    "dropped_all_nan_or_constant": 9,
+    "track": "mmse_fusion",
+    "split": "validation"
+  },
+  "n_shared_columns": 371,
+  "n_train_columns": 372
+}

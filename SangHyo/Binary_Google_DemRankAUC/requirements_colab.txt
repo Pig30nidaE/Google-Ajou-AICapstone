@@ -1,0 +1,32 @@
+# Required.  The pipeline runs on these alone (Google YDF and every optional
+# booster degrade gracefully; models.environment_report() records what was used).
+numpy>=1.26,<3
+pandas>=2.1,<3
+scipy>=1.11,<2
+# Upper bound is 1.10, not 2: LogisticRegression's ``penalty`` argument is
+# scheduled for removal in 1.10 and models.py still passes it.
+scikit-learn>=1.4,<1.10
+joblib>=1.3,<2
+matplotlib>=3.8,<4
+
+# Google models.  ydf is the tree engine used across this repo; pytorch-tabnet
+# supplies TabNet with masked self-supervised pretraining.
+ydf==0.16.1
+pytorch-tabnet==4.1.0
+
+# Tree baselines the brief asks to compare against.
+lightgbm>=4.3,<5
+xgboost>=2.0,<4
+catboost>=1.2.8,<2
+
+# Resampling arms (SMOTE / Borderline-SMOTE / ADASYN, BalancedRF, EasyEnsemble).
+imbalanced-learn>=0.12
+
+# Hyperparameter search.  Without it, tuning.py falls back to a seeded random
+# search over the identical spaces, so the run still completes.
+optuna>=3.6,<5
+
+# torch is needed only for TabNet and the --sequence-arm TSMixer encoder.
+torch>=2.5,<3
+
+pytest>=8,<9
