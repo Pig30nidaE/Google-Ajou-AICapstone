@@ -80,7 +80,7 @@ class GeminiConfig:
     # a freshly created key/project (confirmed live, 2026-07-29), while
     # gemini-2.5-flash hit its free-tier quota. gemini-3.6-flash-latest reached
     # generation for this key, so it is the current key-tested default.
-    model: str = "gemini-3.6-flash"
+    model: str = "gemma-4-31b-it"
     api_key_env: str = "GEMINI_API_KEY"
     temperature: float = 0.0
     top_p: float = 0.95

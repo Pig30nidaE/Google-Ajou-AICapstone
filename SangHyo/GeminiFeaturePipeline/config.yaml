@@ -30,7 +30,7 @@ gemini:
   # are retired (404); gemini-2.5-flash-lite 404s as "no longer available to new
   # users" for a fresh key; gemini-2.5-flash is reachable but its free tier hit a
   # 5 req/min quota. Run `--stage models` to see what THIS key can call.
-  model: gemini-3.6-flash
+  model: gemma-4-31b-it
   api_key_env: GEMINI_API_KEY   # only the NAME of the variable; never the key itself
   temperature: 0.0
   top_p: 0.95
