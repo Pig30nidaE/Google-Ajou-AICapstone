@@ -82,7 +82,7 @@ class GeminiConfig:
     # IS reachable for a new key -- it returned 429 (quota), not 404 (missing) --
     # and just needs its free-tier quota respected (see max_concurrency /
     # min_interval_seconds below and the retry-after parsing in gemini_client.py).
-    model: str = "gemini-3.6-flash"
+    model: str = "gemini-3.6-flash-latest"
     api_key_env: str = "GEMINI_API_KEY"
     temperature: float = 0.0
     top_p: float = 0.95
