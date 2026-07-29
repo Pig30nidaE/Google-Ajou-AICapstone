@@ -112,9 +112,11 @@ README나 기존 대화가 아니라 파일 내용과 기존 코드 사용처를
 
 ## 10. 사용자 확인이 필요한 항목
 
-1. Gemini 모델명 기본값을 `gemini-2.5-flash-lite`로 두었다(실측 결과
-   `gemini-2.5-flash` 무료 티어가 5 req/min 한도에 걸려 전환). 유료 티어 사용
-   여부나 다른 모델을 쓰기로 정해지면 `config.yaml`의 `gemini.model`,
+1. Gemini 모델명 기본값을 `gemini-2.5-flash`로 두었다. 무료 티어가 5 req/min
+   한도에 걸리는 것은 확인했지만(재시도 대기시간 준수·동시성 축소로 대응),
+   `gemini-2.5-flash-lite`로 바꿔봤더니 신규 키에는 "no longer available to new
+   users" 404가 떠서 제외했다(2026-07-29 실측). 유료 티어 사용 여부나 다른
+   모델을 쓰기로 정해지면 `config.yaml`의 `gemini.model`,
    `gemini.max_concurrency`, `gemini.price_per_million_*`를 조정해야 한다.
 2. Gemini 캐시를 Drive의 어느 경로에 둘지(기본
    `/content/drive/MyDrive/GeminiFeaturePipeline_cache`). 캐시가 날아가면 174건을

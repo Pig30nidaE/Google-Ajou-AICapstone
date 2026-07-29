@@ -76,10 +76,13 @@ class DataConfig:
 class GeminiConfig:
     enabled: bool = True
     # gemini-1.5-flash and gemini-2.0-flash(-lite) are already retired (404).
-    # gemini-2.5-flash's free tier hit a 5 req/min quota in testing; the
-    # flash-lite tier of the same 2.5 generation reports a materially higher
-    # free-tier RPM allowance while keeping the same 2.5 prompt/schema behaviour.
-    model: str = "gemini-2.5-flash-lite"
+    # gemini-2.5-flash-lite returns 404 "no longer available to new users" for
+    # a freshly created key/project (confirmed live, 2026-07-29) even though it
+    # is not globally retired, so it is not a safe default. gemini-2.5-flash
+    # IS reachable for a new key -- it returned 429 (quota), not 404 (missing) --
+    # and just needs its free-tier quota respected (see max_concurrency /
+    # min_interval_seconds below and the retry-after parsing in gemini_client.py).
+    model: str = "gemini-2.5-flash"
     api_key_env: str = "GEMINI_API_KEY"
     temperature: float = 0.0
     top_p: float = 0.95

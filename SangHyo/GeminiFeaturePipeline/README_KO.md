@@ -127,7 +127,7 @@ python run.py --config config.yaml --stage all --mmse-mode with
 | `GFP_DATA_ROOT` | 데이터 루트 | 노트북 `DATA_ROOT` → `<repo>/Data` |
 | `GFP_OUTPUT_ROOT` | 결과 루트 | Colab `/content/drive/MyDrive/GeminiFeaturePipeline_result` |
 | `GFP_CACHE_ROOT` | Gemini/일간테이블 캐시 | Colab `/content/drive/MyDrive/GeminiFeaturePipeline_cache` |
-| `GFP_GEMINI_MODEL` | 모델명 | `gemini-2.5-flash-lite` |
+| `GFP_GEMINI_MODEL` | 모델명 | `gemini-2.5-flash` |
 | `GFP_GEMINI_API_KEY_ENV` | 키를 담은 환경변수 **이름** | `GEMINI_API_KEY` |
 | `GFP_GEMINI_MAX_CONCURRENCY`, `GFP_GEMINI_MIN_INTERVAL`, `GFP_GEMINI_MAX_RETRIES`, `GFP_GEMINI_TIMEOUT`, `GFP_GEMINI_LIMIT_SUBJECTS` | 호출 동시성/요청 제한/타임아웃 | config.yaml 값 |
 | `GFP_CV_SPLITS`, `GFP_CV_REPEATS`, `GFP_SEED`, `GFP_RUN_ID`, `GFP_N_JOBS`, `GFP_MMSE_MODE` | 실행 파라미터 | config.yaml 값 |
@@ -220,10 +220,11 @@ recall_sensitivity, specificity, mcc`.
 ## 11. 사용자에게 필요한 추가 정보
 
 1. Colab에서 사용할 **Gemini 모델명**과 호출 한도(분당 요청 수). 기본값은
-   `gemini-2.5-flash-lite`(무료 티어 `gemini-2.5-flash`가 5 req/min 한도에 걸려
-   전환, 2026-07-29 실측), 동시성 1, 최소 간격 13초다. 유료 티어라면 올려서 쓴다.
-   `gemini-1.5-flash`/`gemini-2.0-flash(-lite)`는 이미 서비스 종료(404)되었고,
-   2.5 시리즈도 2026-10-16 종료 예정이니 장기 사용 시 재확인이 필요하다.
+   `gemini-2.5-flash`, 동시성 1, 최소 간격 13초다(무료 티어 5 req/min 한도 실측
+   기준, 2026-07-29). 유료 티어라면 올려서 쓴다. `gemini-1.5-flash`,
+   `gemini-2.0-flash(-lite)`는 이미 서비스 종료(404)되었고, `gemini-2.5-flash-lite`는
+   신규 키에는 "no longer available to new users" 404가 떠서 제외했다(2026-07-29
+   실측). 2.5 시리즈 전체도 2026-10-16 종료 예정이니 장기 사용 시 재확인이 필요하다.
 2. 비용 추적이 필요하면 `gemini.price_per_million_input_tokens` /
    `price_per_million_output_tokens`에 실제 단가를 넣어야 리포트에 비용 추정이 나온다.
 3. Drive의 결과·캐시 경로를 기본값과 다르게 쓸지 여부.
