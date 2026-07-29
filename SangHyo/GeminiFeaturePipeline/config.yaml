@@ -26,16 +26,24 @@ data:
 
 gemini:
   enabled: true
-  # gemini-1.5-flash / gemini-2.0-flash(-lite) are already retired (404 as of
-  # 2026-07). gemini-2.5-flash-lite 404s as "no longer available to new users"
-  # for a freshly created key (confirmed live, 2026-07-29), even though it
-  # isn't globally retired -- so it's skipped. gemini-2.5-flash IS reachable
-  # (429 quota, not 404 missing) and just needs its free-tier quota respected.
-  model: gemini-3.6-flash
+  # Availability is per-key, not per-doc: gemini-1.5-flash / gemini-2.0-flash(-lite)
+  # are retired (404); gemini-2.5-flash-lite 404s as "no longer available to new
+  # users" for a fresh key; gemini-2.5-flash is reachable but its free tier hit a
+  # 5 req/min quota. Run `--stage models` to see what THIS key can call.
+  model: gemini-3.6-flash-latest
   api_key_env: GEMINI_API_KEY   # only the NAME of the variable; never the key itself
   temperature: 0.0
   top_p: 0.95
-  max_output_tokens: 2048
+  # The observed 2048-token cap was exhausted before the short JSON completed
+  # (finish_reason=MAX_TOKENS). The answer is only 12 numbers; 8192 leaves ample
+  # safety headroom even if the service emits a few thought tokens.
+  max_output_tokens: 8192
+  # minimal | low | medium | high, or null to accept the model default
+  # (gemini-3.6-flash defaults to "medium"). No reasoning is needed here.
+  thinking_level: minimal
+  # Gemini 2.5 only: set thinking_level to null before setting this. Sending
+  # both thinking_level and thinking_budget produces a 400 response.
+  thinking_budget: null
   response_seed: 7
   timeout_seconds: 120
   max_retries: 6

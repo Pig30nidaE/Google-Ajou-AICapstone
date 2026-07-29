@@ -1,0 +1,16 @@
+# Colab Pro+ dependencies for GeminiFeaturePipeline.
+# Ranges follow SangHyo/AGENTS.md section 0 so this experiment stays compatible
+# with the other Binary_* experiments in the repository.
+numpy>=1.26,<3
+pandas>=2.1,<3
+scipy>=1.11,<2
+scikit-learn>=1.4,<2
+PyYAML>=6.0,<7
+
+# Gemini structured output (unified SDK: `from google import genai`).
+# Gemini 3 thinking_level support is required; allow the current 2.x SDK.
+google-genai>=1.68,<3
+
+# Optional gradient-boosting backend. If it is missing, models.py falls back to
+# sklearn's HistGradientBoostingClassifier and records the fallback in the report.
+lightgbm>=4.1,<5

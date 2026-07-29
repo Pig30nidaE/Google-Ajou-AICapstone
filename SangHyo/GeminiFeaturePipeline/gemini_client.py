@@ -70,6 +70,14 @@ _RETRY_AFTER_SAFETY_MARGIN = 1.05
 _RETRY_AFTER_HARD_CEILING_SECONDS = 180.0
 
 
+class _RetryableResponseError(ValueError):
+    """The API answered, but the body could not be used safely."""
+
+
+class _ResponseTruncatedError(ValueError):
+    """The configured output cap was reached; retrying unchanged is wasteful."""
+
+
 def _server_requested_retry_delay(error: BaseException) -> float | None:
     match = _RETRY_AFTER_PATTERN.search(f"{error}")
     if not match:
@@ -101,6 +109,7 @@ class ExtractionSummary:
     dry_run: int = 0
     prompt_tokens: int = 0
     output_tokens: int = 0
+    thinking_tokens: int = 0
     api_calls: int = 0
     total_payload_bytes: int = 0
     estimated_cost_usd: float | None = None
@@ -117,6 +126,8 @@ class ExtractionSummary:
             "api_calls_executed": self.api_calls,
             "prompt_tokens": self.prompt_tokens,
             "output_tokens": self.output_tokens,
+            "thinking_tokens": self.thinking_tokens,
+            "billed_output_tokens": self.output_tokens + self.thinking_tokens,
             "total_payload_bytes": self.total_payload_bytes,
             "estimated_cost_usd": self.estimated_cost_usd,
             "errors": self.errors[:20],
@@ -143,6 +154,10 @@ class _RateLimiter:
 
 
 def _is_retryable(error: BaseException) -> bool:
+    if isinstance(error, _RetryableResponseError):
+        return True
+    if isinstance(error, _ResponseTruncatedError):
+        return False
     text = f"{type(error).__name__}: {error}".lower()
     return any(marker in text for marker in _RETRYABLE_MARKERS)
 
@@ -191,11 +206,17 @@ class GeminiFeatureExtractor:
 
     # -- cache -------------------------------------------------------------- #
     def generation_config(self) -> dict[str, Any]:
+        """Also the cache key material: changing any of it invalidates old answers."""
+
         return {
             "temperature": float(self.config.temperature),
             "top_p": float(self.config.top_p),
             "max_output_tokens": int(self.config.max_output_tokens),
             "seed": self.config.response_seed,
+            "thinking_config": {
+                "thinking_level": self.config.thinking_level,
+                "thinking_budget": self.config.thinking_budget,
+            },
             "response_mime_type": "application/json",
         }
 
@@ -309,37 +330,100 @@ class GeminiFeatureExtractor:
             "models": sorted(usable, key=lambda entry: entry["id"]),
         }
 
-    def _call_api(self, user_prompt: str) -> tuple[str, dict[str, Any]]:
+    def _thinking_config(self, types: Any) -> Any | None:
+        """Build the one model-appropriate thinking knob, failing closed.
+
+        Gemini 3.x models think by default (``gemini-3.6-flash`` defaults to
+        ``thinking_level="medium"``) and thought tokens count as billed output.
+        This fixed 12-number extraction does not benefit from that reasoning, so
+        the default is ``minimal``.
+
+        Gemini 3 uses ``thinking_level`` while Gemini 2.5 uses the legacy
+        ``thinking_budget``.  The API rejects a request containing both.  If the
+        installed SDK cannot express the configured knob, silently omitting it
+        would restore the model's default thinking and recreate the truncation,
+        so this method raises with an upgrade instruction instead.
+        """
+
+        level = self.config.thinking_level
+        budget = self.config.thinking_budget
+        if level is None and budget is None:
+            return None
+        if level is not None and budget is not None:
+            raise ValueError(
+                "Set only one of thinking_level and thinking_budget; "
+                "the Gemini API rejects requests containing both."
+            )
+        thinking_cls = getattr(types, "ThinkingConfig", None)
+        if thinking_cls is None:
+            raise RuntimeError(
+                "Installed google-genai does not provide ThinkingConfig. "
+                "Upgrade with `pip install -U 'google-genai>=1.68,<3'`."
+            )
+
+        if level is not None:
+            enum_cls = getattr(types, "ThinkingLevel", None)
+            enum_value = getattr(enum_cls, str(level).strip().upper(), None)
+            if enum_value is None:
+                raise RuntimeError(
+                    "Installed google-genai does not provide the configured "
+                    f"ThinkingLevel {level!r}. Upgrade with "
+                    "`pip install -U 'google-genai>=1.68,<3'`."
+                )
+            kwargs: dict[str, Any] = {"thinking_level": enum_value}
+        else:
+            kwargs = {"thinking_budget": int(budget)}
+
+        try:
+            return thinking_cls(**kwargs)
+        except Exception as error:  # noqa: BLE001 - SDK version/model config mismatch
+            raise RuntimeError(
+                f"Could not construct Gemini thinking_config={kwargs}. "
+                "Upgrade google-genai and use thinking_level for Gemini 3 or "
+                "thinking_budget for Gemini 2.5."
+            ) from error
+
+    def _call_api(self, user_prompt: str) -> tuple[str, dict[str, Any], str]:
         from google.genai import types  # type: ignore
 
         client = self._get_client()
         generation = self.generation_config()
-        config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=generation["temperature"],
-            top_p=generation["top_p"],
-            max_output_tokens=generation["max_output_tokens"],
-            seed=generation["seed"],
-            response_mime_type="application/json",
-            response_schema=self.schema,
-            http_options=types.HttpOptions(
+        config_kwargs: dict[str, Any] = {
+            "system_instruction": SYSTEM_PROMPT,
+            "temperature": generation["temperature"],
+            "top_p": generation["top_p"],
+            "max_output_tokens": generation["max_output_tokens"],
+            "seed": generation["seed"],
+            "response_mime_type": "application/json",
+            "response_schema": self.schema,
+            "http_options": types.HttpOptions(
                 timeout=int(float(self.config.timeout_seconds) * 1000)
             ),
-        )
+        }
+        thinking = self._thinking_config(types)
+        if thinking is not None:
+            config_kwargs["thinking_config"] = thinking
+
         self._limiter.acquire()
         response = client.models.generate_content(
-            model=self.config.model, contents=user_prompt, config=config
+            model=self.config.model,
+            contents=user_prompt,
+            config=types.GenerateContentConfig(**config_kwargs),
         )
         usage = getattr(response, "usage_metadata", None)
         usage_payload = {
             "prompt_tokens": int(getattr(usage, "prompt_token_count", 0) or 0),
             "output_tokens": int(getattr(usage, "candidates_token_count", 0) or 0),
+            "thinking_tokens": int(getattr(usage, "thoughts_token_count", 0) or 0),
             "total_tokens": int(getattr(usage, "total_token_count", 0) or 0),
         }
+        usage_payload["billed_output_tokens"] = (
+            usage_payload["output_tokens"] + usage_payload["thinking_tokens"]
+        )
+        candidates = getattr(response, "candidates", None) or []
+        finish_reason = str(getattr(candidates[0], "finish_reason", "") or "") if candidates else ""
         text = getattr(response, "text", None)
-        if not text:
-            raise ValueError("Gemini returned an empty response body")
-        return str(text), usage_payload
+        return ("" if text is None else str(text)), usage_payload, finish_reason
 
     # -- one subject -------------------------------------------------------- #
     def _extract_one(self, subject_id: str, payload: Mapping[str, Any]) -> GeminiResult:
@@ -396,22 +480,59 @@ class GeminiFeatureExtractor:
         started = datetime.now(timezone.utc)
         clock = time.monotonic()
         backoff = float(self.config.initial_backoff_seconds)
+        # Kept across attempts so a failure record can show what actually came
+        # back.  Without this, a truncated body surfaces only as an opaque
+        # JSONDecodeError with no way to tell truncation from malformed output.
+        last_text: str | None = None
+        last_finish_reason: str | None = None
+        last_usage: dict[str, Any] | None = None
         for attempt in range(1, int(self.config.max_retries) + 1):
+            # Do not attribute a previous response body to a later transport/API
+            # exception that produced no response at all.
+            last_text = None
+            last_finish_reason = None
+            last_usage = None
             try:
-                text, usage = self._call_api(user_prompt)
-                parsed = json.loads(_strip_code_fence(text))
-                features = validate_feature_payload(parsed)
+                text, usage, finish_reason = self._call_api(user_prompt)
+                last_text, last_finish_reason, last_usage = text, finish_reason, usage
+                if not text:
+                    raise _RetryableResponseError(
+                        f"empty response body (finish_reason={finish_reason or 'unknown'})"
+                    )
+                if "MAX_TOKENS" in finish_reason.upper():
+                    raise _ResponseTruncatedError(
+                        f"response truncated: finish_reason={finish_reason}, "
+                        f"max_output_tokens={self.config.max_output_tokens}, "
+                        f"thinking_tokens={usage.get('thinking_tokens')}. "
+                        "Raise gemini.max_output_tokens or lower gemini.thinking_level."
+                    )
+                try:
+                    parsed = json.loads(_strip_code_fence(text))
+                    features = validate_feature_payload(parsed)
+                except (json.JSONDecodeError, TypeError, ValueError) as error:
+                    raise _RetryableResponseError(
+                        "invalid structured response: "
+                        f"{type(error).__name__}: {error}; "
+                        f"finish_reason={finish_reason or 'unknown'}, "
+                        f"response_chars={len(text)}, "
+                        f"output_tokens={usage.get('output_tokens')}, "
+                        f"thinking_tokens={usage.get('thinking_tokens')}"
+                    ) from error
             except Exception as error:  # noqa: BLE001 - recorded, classified, retried
                 server_delay = _server_requested_retry_delay(error)
+                retryable = _is_retryable(error)
                 attempts.append(
                     {
                         "attempt": attempt,
                         "error": f"{type(error).__name__}: {error}"[:800],
-                        "retryable": _is_retryable(error),
+                        "retryable": retryable,
                         "server_requested_retry_delay_seconds": server_delay,
+                        "finish_reason": last_finish_reason,
+                        "response_preview": (last_text or "")[:500],
+                        "usage": last_usage,
                     }
                 )
-                last = attempt >= int(self.config.max_retries)
+                last = attempt >= int(self.config.max_retries) or not retryable
                 if last:
                     record = {
                         **base_record,
@@ -419,6 +540,9 @@ class GeminiFeatureExtractor:
                         "features": None,
                         "error": attempts[-1]["error"],
                         "attempts": attempts,
+                        "last_finish_reason": last_finish_reason,
+                        "last_raw_response_text": last_text,
+                        "last_usage": last_usage,
                         "request_started_utc": started.isoformat(),
                         "duration_seconds": round(time.monotonic() - clock, 3),
                     }
@@ -451,6 +575,7 @@ class GeminiFeatureExtractor:
                 "n_attempts": attempt,
                 "raw_response_text": text,
                 "response_hash": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                "finish_reason": finish_reason,
                 "usage": usage,
                 "request_started_utc": started.isoformat(),
                 "duration_seconds": round(time.monotonic() - clock, 3),
@@ -481,23 +606,34 @@ class GeminiFeatureExtractor:
         for result in produced:
             results[result.subject_id] = result
             summary.total_payload_bytes += int(result.record.get("payload_size_bytes", 0))
+            usages: list[Mapping[str, Any]] = []
             if result.status == "cached":
                 summary.cached += 1
             elif result.status == "fresh":
                 summary.fresh += 1
                 summary.api_calls += 1 + len(result.record.get("attempts", []))
-                usage = result.record.get("usage") or {}
-                summary.prompt_tokens += int(usage.get("prompt_tokens", 0))
-                summary.output_tokens += int(usage.get("output_tokens", 0))
+                usages.extend(
+                    attempt.get("usage") or {}
+                    for attempt in result.record.get("attempts", [])
+                )
+                usages.append(result.record.get("usage") or {})
             elif result.status == "failed":
                 summary.failed += 1
                 summary.api_calls += len(result.record.get("attempts", []))
+                usages.extend(
+                    attempt.get("usage") or {}
+                    for attempt in result.record.get("attempts", [])
+                )
                 summary.errors.append(f"{result.subject_ref}: {result.error}")
             elif result.status == "cache_miss":
                 summary.cache_miss += 1
                 summary.errors.append(f"{result.subject_ref}: {result.error}")
             elif result.status == "dry_run":
                 summary.dry_run += 1
+            for usage in usages:
+                summary.prompt_tokens += int(usage.get("prompt_tokens", 0))
+                summary.output_tokens += int(usage.get("output_tokens", 0))
+                summary.thinking_tokens += int(usage.get("thinking_tokens", 0))
 
         prices = (
             self.config.price_per_million_input_tokens,
@@ -506,7 +642,9 @@ class GeminiFeatureExtractor:
         if all(price is not None for price in prices):
             summary.estimated_cost_usd = round(
                 summary.prompt_tokens / 1e6 * float(prices[0])
-                + summary.output_tokens / 1e6 * float(prices[1]),
+                + (summary.output_tokens + summary.thinking_tokens)
+                / 1e6
+                * float(prices[1]),
                 6,
             )
         return results, summary

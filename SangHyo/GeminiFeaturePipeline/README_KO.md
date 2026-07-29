@@ -5,9 +5,10 @@
 파이프라인이다. Gemini는 진단하지 않고, 클래스 확률도 내지 않으며, 타깃 레이블과 MMSE를
 절대 보지 않는다.
 
-> **현재 상태**: 코드 작성만 완료했다. Gemini API는 아직 한 번도 호출되지 않았고,
-> 모델은 아직 학습되지 않았으며, 성능은 아직 측정되지 않았다. 이 README에는 실측 성능
-> 수치가 없다. 실제 실행은 사용자가 Google Colab Pro+에서 수행한다.
+> **현재 상태**: API 가용성·쿼터·응답 형식 진단까지 수행했다. `gemini-3.6-flash-latest`
+> 호출은 API에 도달했지만 기본 thinking이 2048 출력 예산을 소진해 JSON이 잘린 사례가
+> 있었다. 현재 설정은 `thinking_level: minimal`, `max_output_tokens: 8192`이며,
+> `finish_reason`과 thinking 토큰도 기록한다. 모델 학습·성능 평가는 아직 수행하지 않았다.
 
 ## 1. 두 가지 파이프라인
 
@@ -140,6 +141,27 @@ python run.py --config config.yaml --stage models
 os.environ["GFP_GEMINI_MODEL"] = "<MODELS_AVAILABLE.json에서 고른 id>"
 ```
 
+### 503 또는 잘린 JSON이 날 때
+
+`503 UNAVAILABLE`은 일시적인 서버 과부하이므로 지수 backoff로 재시도한다. 반면
+`404` 같은 비일시 오류와 `finish_reason=MAX_TOKENS`는 같은 요청을 반복해도 해결되지
+않으므로 즉시 실패 레코드를 남긴다.
+
+Gemini 3.x는 thinking이 기본 활성화되어 있다. 이 파이프라인은 12개 수치만 추출하므로
+`config.yaml`에서 thinking을 최소화하고 출력 여유를 둔다.
+
+```yaml
+gemini:
+  model: gemini-3.6-flash-latest
+  max_output_tokens: 8192
+  thinking_level: minimal
+  thinking_budget: null
+```
+
+Gemini 3에는 `thinking_level`, Gemini 2.5에는 `thinking_budget`을 사용한다. 둘을
+동시에 보내면 400이므로 설정 검증에서 차단한다. generation config가 캐시 키에
+포함되므로 이 변경 뒤에는 이전 실패 캐시가 자동 재사용되지 않는다.
+
 ## 5. 환경변수
 
 | 변수 | 용도 | 기본값 |
@@ -149,8 +171,11 @@ os.environ["GFP_GEMINI_MODEL"] = "<MODELS_AVAILABLE.json에서 고른 id>"
 | `GFP_DATA_ROOT` | 데이터 루트 | 노트북 `DATA_ROOT` → `<repo>/Data` |
 | `GFP_OUTPUT_ROOT` | 결과 루트 | Colab `/content/drive/MyDrive/GeminiFeaturePipeline_result` |
 | `GFP_CACHE_ROOT` | Gemini/일간테이블 캐시 | Colab `/content/drive/MyDrive/GeminiFeaturePipeline_cache` |
-| `GFP_GEMINI_MODEL` | 모델명 | `gemini-2.5-flash` |
+| `GFP_GEMINI_MODEL` | 모델명 | `gemini-3.6-flash-latest` |
 | `GFP_GEMINI_API_KEY_ENV` | 키를 담은 환경변수 **이름** | `GEMINI_API_KEY` |
+| `GFP_GEMINI_MAX_OUTPUT_TOKENS` | thinking+응답 출력 상한 | `8192` |
+| `GFP_GEMINI_THINKING_LEVEL` | Gemini 3 thinking 수준(`minimal/low/medium/high`) | `minimal` |
+| `GFP_GEMINI_THINKING_BUDGET` | Gemini 2.5 전용 thinking 예산 | 없음 |
 | `GFP_GEMINI_MAX_CONCURRENCY`, `GFP_GEMINI_MIN_INTERVAL`, `GFP_GEMINI_MAX_RETRIES`, `GFP_GEMINI_TIMEOUT`, `GFP_GEMINI_LIMIT_SUBJECTS` | 호출 동시성/요청 제한/타임아웃 | config.yaml 값 |
 | `GFP_CV_SPLITS`, `GFP_CV_REPEATS`, `GFP_SEED`, `GFP_RUN_ID`, `GFP_N_JOBS`, `GFP_MMSE_MODE` | 실행 파라미터 | config.yaml 값 |
 
@@ -168,7 +193,7 @@ os.environ["GFP_GEMINI_MODEL"] = "<MODELS_AVAILABLE.json에서 고른 id>"
 | `PAYLOAD_REPORT.json` | payload 수, 바이트 크기 통계, 가드 통과 여부 |
 | `payloads/payloads_<split>.json` | 실제 전송 payload (subject_ref 해시 키) |
 | `MODELS_AVAILABLE.json` | (`--stage models`) 이 API 키가 실제로 호출 가능한 모델 목록과 설정 모델의 가용 여부 |
-| `GEMINI_REPORT.json` | 캐시/신규/실패/토큰 사용량, 프롬프트·스키마·generation config 전문 |
+| `GEMINI_REPORT.json` | 캐시/신규/실패/후보·thinking 토큰 사용량, 프롬프트·스키마·generation config 전문 |
 | `gemini_features_<split>.csv` | `subject_hash` + 12개 특징 |
 | `split_registry.json` | fold별 학습/검증 subject **해시** 목록과 클래스 수 |
 | `TRAINING_REPORT.json` | 설계 행렬 구성, 결측 리포트, arm별 fold 기록과 지표 |
@@ -212,8 +237,8 @@ recall_sensitivity, specificity, mcc`.
 
 ## 9. 현재 구현의 한계
 
-1. **아직 아무것도 실행되지 않았다.** 성능은 미측정이며, Gemini가 이 payload에서
-   유용한 신호를 만들어낼지는 실행 전에는 알 수 없다.
+1. **정식 특징 추출·학습은 아직 완료되지 않았다.** API 오류 진단만 수행했으며,
+   Gemini 특징이 이 payload에서 유용한 신호를 만들지는 아직 알 수 없다.
 2. 저장소의 기존 결과에 따르면 웨어러블-only는 사람 단위 OOF에서 대체로 0.45~0.57,
    MMSE 포함은 0.67~0.77이다(`SangHyo/AGENTS.md` 3절). Gemini 특징이 이 범위를
    크게 바꿀 것이라고 가정하지 않는다.
@@ -242,9 +267,9 @@ recall_sensitivity, specificity, mcc`.
 
 ## 11. 사용자에게 필요한 추가 정보
 
-1. Colab에서 사용할 **Gemini 모델명**과 호출 한도(분당 요청 수). 기본값은
-   `gemini-2.5-flash`, 동시성 1, 최소 간격 13초다(무료 티어 5 req/min 한도 실측
-   기준, 2026-07-29). 유료 티어라면 올려서 쓴다. `gemini-1.5-flash`,
+1. Colab에서 사용할 **Gemini 모델명**과 호출 한도(분당 요청 수). 현재 기본값은
+   이 키에서 실제 응답을 받은 `gemini-3.6-flash-latest`, 동시성 1, 최소 간격
+   13초다. 유료 티어라면 올려서 쓴다. `gemini-1.5-flash`,
    `gemini-2.0-flash(-lite)`는 이미 서비스 종료(404)되었고, `gemini-2.5-flash-lite`는
    신규 키에는 "no longer available to new users" 404가 떠서 제외했다(2026-07-29
    실측). 2.5 시리즈 전체도 2026-10-16 종료 예정이니 장기 사용 시 재확인이 필요하다.

@@ -167,6 +167,26 @@ def test_cli_overrides_beat_environment():
     assert configured.mmse_mode == "with"
 
 
+def test_thinking_knobs_are_configurable_and_mutually_exclusive():
+    configured = config_module.load_config(
+        None,
+        environ={
+            "GFP_GEMINI_MAX_OUTPUT_TOKENS": "4096",
+            "GFP_GEMINI_THINKING_LEVEL": "null",
+            "GFP_GEMINI_THINKING_BUDGET": "0",
+        },
+    )
+    assert configured.gemini.max_output_tokens == 4096
+    assert configured.gemini.thinking_level is None
+    assert configured.gemini.thinking_budget == 0
+
+    with pytest.raises(ValueError, match="only one"):
+        config_module.load_config(
+            None,
+            environ={"GFP_GEMINI_THINKING_BUDGET": "0"},
+        )
+
+
 def test_tuning_must_stay_disabled():
     with pytest.raises(ValueError, match="tuning.enabled"):
         config_module.load_config(None, cli_overrides={"tuning.enabled": True})

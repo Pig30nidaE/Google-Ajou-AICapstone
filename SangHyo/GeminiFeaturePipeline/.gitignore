@@ -9,3 +9,7 @@ GeminiFeaturePipeline_cache/
 # documents required by this experiment are actually tracked.
 !docs/
 !docs/**
+
+# The root also ignores every *.txt file. This launcher reads the Colab
+# dependency contract by this exact name, so a fresh clone must contain it.
+!requirements_colab.txt

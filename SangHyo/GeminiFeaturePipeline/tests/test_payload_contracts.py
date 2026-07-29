@@ -142,8 +142,40 @@ def test_fingerprint_changes_when_the_contract_changes(tmp_path, payload):
     hotter = GeminiFeatureExtractor(
         GeminiConfig(dry_run=True, temperature=0.7), cache_root=tmp_path
     )
+    more_thinking = GeminiFeatureExtractor(
+        GeminiConfig(dry_run=True, thinking_level="low"), cache_root=tmp_path
+    )
     assert base.request_fingerprint(payload) != other_model.request_fingerprint(payload)
     assert base.request_fingerprint(payload) != hotter.request_fingerprint(payload)
+    assert base.request_fingerprint(payload) != more_thinking.request_fingerprint(payload)
+
+
+def test_gemini3_thinking_level_is_sent_as_an_enum(tmp_path):
+    class _ThinkingLevel:
+        MINIMAL = "MINIMAL"
+
+    class _ThinkingConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class _Types:
+        ThinkingLevel = _ThinkingLevel
+        ThinkingConfig = _ThinkingConfig
+
+    extractor = GeminiFeatureExtractor(
+        GeminiConfig(thinking_level="minimal", thinking_budget=None),
+        cache_root=tmp_path,
+    )
+    thinking = extractor._thinking_config(_Types)
+    assert thinking.kwargs == {"thinking_level": "MINIMAL"}
+
+
+def test_thinking_config_fails_closed_with_an_old_sdk(tmp_path):
+    extractor = GeminiFeatureExtractor(
+        GeminiConfig(thinking_level="minimal"), cache_root=tmp_path
+    )
+    with pytest.raises(RuntimeError, match="google-genai"):
+        extractor._thinking_config(object())
 
 
 def test_dry_run_reports_without_calling_the_api(tmp_path, payload):
@@ -160,3 +192,110 @@ def test_offline_mode_reports_cache_miss_instead_of_calling(tmp_path, payload):
     results, summary = extractor.extract({"subject-a": payload})
     assert results["subject-a"].status == "cache_miss"
     assert summary.api_calls == 0 and summary.fresh == 0
+
+
+def test_max_tokens_failure_is_recorded_and_not_retried_unchanged(
+    tmp_path, payload, monkeypatch
+):
+    extractor = GeminiFeatureExtractor(
+        GeminiConfig(
+            max_retries=6,
+            min_interval_seconds=0,
+            initial_backoff_seconds=0,
+        ),
+        cache_root=tmp_path,
+    )
+    calls = 0
+
+    def truncated(_prompt):
+        nonlocal calls
+        calls += 1
+        return (
+            '{"routine_regularity": "unterminated',
+            {
+                "prompt_tokens": 100,
+                "output_tokens": 20,
+                "thinking_tokens": 8170,
+                "billed_output_tokens": 8190,
+                "total_tokens": 8290,
+            },
+            "MAX_TOKENS",
+        )
+
+    monkeypatch.setattr(extractor, "_call_api", truncated)
+    results, summary = extractor.extract({"subject-a": payload})
+
+    result = results["subject-a"]
+    assert calls == 1
+    assert summary.api_calls == 1 and summary.failed == 1
+    assert result.status == "failed"
+    assert result.record["last_finish_reason"] == "MAX_TOKENS"
+    assert result.record["attempts"][0]["retryable"] is False
+    assert "response truncated" in result.error
+    assert summary.output_tokens == 20
+    assert summary.thinking_tokens == 8170
+    assert summary.to_dict()["billed_output_tokens"] == 8190
+
+
+def test_transient_503_retries_then_counts_thinking_tokens(
+    tmp_path, payload, monkeypatch
+):
+    extractor = GeminiFeatureExtractor(
+        GeminiConfig(
+            max_retries=2,
+            min_interval_seconds=0,
+            initial_backoff_seconds=0,
+            price_per_million_input_tokens=1.0,
+            price_per_million_output_tokens=2.0,
+        ),
+        cache_root=tmp_path,
+    )
+    calls = 0
+    body = json.dumps(
+        {
+            name: 0.5
+            for name in (
+                "routine_regularity",
+                "sleep_timing_variability",
+                "sleep_continuity",
+                "activity_volume_stability",
+                "sustained_exertion",
+                "diurnal_contrast",
+                "long_term_trend_direction",
+                "short_term_volatility",
+                "weekday_weekend_divergence",
+                "cross_domain_coherence",
+                "atypical_day_frequency",
+                "observation_reliability",
+            )
+        }
+    )
+
+    def flaky(_prompt):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("503 UNAVAILABLE: temporarily overloaded")
+        return (
+            body,
+            {
+                "prompt_tokens": 100,
+                "output_tokens": 50,
+                "thinking_tokens": 25,
+                "billed_output_tokens": 75,
+                "total_tokens": 175,
+            },
+            "STOP",
+        )
+
+    monkeypatch.setattr(extractor, "_call_api", flaky)
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    results, summary = extractor.extract({"subject-a": payload})
+
+    assert calls == 2
+    assert results["subject-a"].status == "fresh"
+    assert summary.api_calls == 2
+    assert summary.output_tokens == 50
+    assert summary.thinking_tokens == 25
+    assert summary.to_dict()["billed_output_tokens"] == 75
+    assert summary.estimated_cost_usd == pytest.approx(0.00025)

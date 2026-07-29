@@ -77,16 +77,25 @@ class GeminiConfig:
     enabled: bool = True
     # gemini-1.5-flash and gemini-2.0-flash(-lite) are already retired (404).
     # gemini-2.5-flash-lite returns 404 "no longer available to new users" for
-    # a freshly created key/project (confirmed live, 2026-07-29) even though it
-    # is not globally retired, so it is not a safe default. gemini-2.5-flash
-    # IS reachable for a new key -- it returned 429 (quota), not 404 (missing) --
-    # and just needs its free-tier quota respected (see max_concurrency /
-    # min_interval_seconds below and the retry-after parsing in gemini_client.py).
+    # a freshly created key/project (confirmed live, 2026-07-29), while
+    # gemini-2.5-flash hit its free-tier quota. gemini-3.6-flash-latest reached
+    # generation for this key, so it is the current key-tested default.
     model: str = "gemini-3.6-flash-latest"
     api_key_env: str = "GEMINI_API_KEY"
     temperature: float = 0.0
     top_p: float = 0.95
-    max_output_tokens: int = 2048
+    # Gemini 3.x models think by default. In the observed gemini-3.6-flash
+    # failure, the 2048-token cap was exhausted before the short JSON response
+    # completed. The answer itself is only 12 numbers, so this is ample headroom
+    # even if the service still emits a small number of thought tokens.
+    max_output_tokens: int = 8192
+    # "minimal" | "low" | "medium" | "high", or null to accept the model default.
+    # This task is a fixed numeric extraction with no reasoning to do, and
+    # gemini-3.6-flash otherwise defaults to "medium".
+    thinking_level: str | None = "minimal"
+    # Gemini 2.5 uses a numeric budget instead of a level. Set thinking_level to
+    # null before using this; the API rejects requests that contain both knobs.
+    thinking_budget: int | None = None
     response_seed: int | None = 7
     timeout_seconds: float = 120.0
     max_retries: int = 6
@@ -317,6 +326,8 @@ def _coerce(value: Any, template: Any) -> Any:
 _OPTIONAL_FIELD_TYPES: dict[tuple[str, str], type] = {
     ("gemini", "response_seed"): int,
     ("gemini", "limit_subjects"): int,
+    ("gemini", "thinking_level"): str,
+    ("gemini", "thinking_budget"): int,
     ("gemini", "price_per_million_input_tokens"): float,
     ("gemini", "price_per_million_output_tokens"): float,
 }
@@ -340,7 +351,7 @@ def _build_section(cls, defaults, overrides: Mapping[str, Any] | None, section: 
         if key not in current:
             raise KeyError(f"Unknown config key {cls.__name__}.{key}")
         template = getattr(defaults, key)
-        if template is None:
+        if (section, key) in _OPTIONAL_FIELD_TYPES or template is None:
             values[key] = _coerce_optional(section, key, value)
         else:
             values[key] = _coerce(value, template)
@@ -358,6 +369,9 @@ _ENV_MAP: dict[str, tuple[str, str]] = {
     "GFP_GEMINI_API_KEY_ENV": ("gemini", "api_key_env"),
     "GFP_GEMINI_ENABLED": ("gemini", "enabled"),
     "GFP_GEMINI_TEMPERATURE": ("gemini", "temperature"),
+    "GFP_GEMINI_MAX_OUTPUT_TOKENS": ("gemini", "max_output_tokens"),
+    "GFP_GEMINI_THINKING_LEVEL": ("gemini", "thinking_level"),
+    "GFP_GEMINI_THINKING_BUDGET": ("gemini", "thinking_budget"),
     "GFP_GEMINI_MAX_CONCURRENCY": ("gemini", "max_concurrency"),
     "GFP_GEMINI_MIN_INTERVAL": ("gemini", "min_interval_seconds"),
     "GFP_GEMINI_MAX_RETRIES": ("gemini", "max_retries"),
@@ -467,6 +481,26 @@ def _validate(config: PipelineConfig) -> None:
         raise ValueError("gemini.repeat_calls must be >= 1")
     if config.gemini.temperature < 0:
         raise ValueError("gemini.temperature must be >= 0")
+    if config.gemini.max_output_tokens < 1:
+        raise ValueError("gemini.max_output_tokens must be >= 1")
+    if config.gemini.thinking_level is not None:
+        level = str(config.gemini.thinking_level).strip().lower()
+        allowed_levels = {"minimal", "low", "medium", "high"}
+        if level not in allowed_levels:
+            raise ValueError(
+                "gemini.thinking_level must be minimal|low|medium|high|null; "
+                f"got {config.gemini.thinking_level!r}"
+            )
+    if config.gemini.thinking_budget is not None and config.gemini.thinking_budget < -1:
+        raise ValueError("gemini.thinking_budget must be >= -1 or null")
+    if (
+        config.gemini.thinking_level is not None
+        and config.gemini.thinking_budget is not None
+    ):
+        raise ValueError(
+            "Set only one of gemini.thinking_level and gemini.thinking_budget; "
+            "the Gemini API rejects requests containing both."
+        )
     unknown_sets = set(config.features.feature_sets) - {"base", "base_gemini", "gemini_only"}
     if unknown_sets:
         raise ValueError(f"Unknown feature_sets: {sorted(unknown_sets)}")

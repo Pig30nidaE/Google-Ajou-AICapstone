@@ -54,7 +54,9 @@ os.environ["GFP_ARGS"] = "--stage all --mmse-mode both"
 # (3) 선택: 경로/모델을 코드 수정 없이 바꾸고 싶을 때
 # os.environ["GFP_OUTPUT_ROOT"] = "/content/drive/MyDrive/GeminiFeaturePipeline_result"
 # os.environ["GFP_CACHE_ROOT"]  = "/content/drive/MyDrive/GeminiFeaturePipeline_cache"
-# os.environ["GFP_GEMINI_MODEL"] = "gemini-2.5-flash"
+# os.environ["GFP_GEMINI_MODEL"] = "gemini-3.6-flash-latest"
+# os.environ["GFP_GEMINI_THINKING_LEVEL"] = "minimal"
+# os.environ["GFP_GEMINI_MAX_OUTPUT_TOKENS"] = "8192"
 ```
 
 `userdata`를 쓰지 않는다면 `os.environ["GEMINI_API_KEY"] = getpass.getpass()`처럼
