@@ -79,8 +79,8 @@ Your role is semantic feature design, not numerical execution:
   abbreviations, cognition/decline/impairment terms, clinical/medical/screening
   terms, risk/probability/prediction terms, labels, outcomes, classes, or
   identifiers.
-- Return strict JSON matching the supplied response schema. Return no markdown,
-  code fence, commentary, or extra key.
+- Return strict JSON matching the exact output contract below. Return no
+  markdown, code fence, commentary, or extra key.
 
 The deterministic engine, not you, defines execution. It clips each fold-local
 standardized z value to [-5, 5], then evaluates:
@@ -106,6 +106,16 @@ Design guidance:
    executable definition.
 5. Never request or assume a row value, example, outcome, population reference,
    cognitive-test variable, diagnosis, or identifier.
+
+Exact JSON output contract:
+- The top-level object has exactly `program_version` and `features`.
+- `program_version` is exactly `{PROGRAM_VERSION}`.
+- Every item in `features` has exactly `name`, `operation`, `dependencies`,
+  `directions`, `missing_policy`, and `rationale`.
+- `dependencies` is an array containing only exact names from the supplied
+  catalog. `directions` is an equally long array containing only -1 or 1.
+- The feature-count, dependency-count, allowed-operation, name, rationale, and
+  missing-policy constraints from the system instruction are mandatory.
 
 Primitive catalog JSON:
 {{catalog_json}}

@@ -47,7 +47,7 @@ _VERSION_BOUNDS = {
     "scikit-learn": ((1, 4), (2, 0)),
     "PyYAML": ((6, 0), (7, 0)),
     "joblib": ((1, 3), (2, 0)),
-    "google-genai": ((1, 68), (2, 0)),
+    "google-genai": ((1, 68), (3, 0)),
 }
 
 
@@ -174,6 +174,18 @@ def ensure_dependencies(*, include_api: bool, skip_install: bool) -> None:
             "--skip-install was set but dependencies are missing: " + ", ".join(missing)
         )
     if missing:
+        already_loaded = sorted(
+            distribution
+            for distribution, module in required.items()
+            if distribution in missing and module in sys.modules
+        )
+        if already_loaded:
+            raise RuntimeError(
+                "Dependency version change is required for already-imported modules "
+                f"({', '.join(already_loaded)}). Install requirements, restart the "
+                "Colab runtime, and rerun from the setup cell; mixing old in-memory "
+                "modules with new files is unsafe."
+            )
         declared = _requirement_lines()
         targets = [declared.get(name.lower(), name) for name in missing]
         print(f"[launcher] installing/upgrading: {', '.join(missing)}", flush=True)

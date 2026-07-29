@@ -4,11 +4,11 @@ The client never receives subject rows. Its complete variable input is the
 label-neutral ``PrimitiveSpec`` catalog rendered by :mod:`prompts`. A successful
 response is validated as a non-executable DSL before it is cached.
 
-Cache identity binds the static prompt, primitive catalog, response schema,
-model, and generation settings. The cache stores only the canonical program and
-a deliberately small manifest (token counts, successful attempt, model, and
-hashes). It never stores the API key, environment contents, raw response,
-provider error body, or patient data.
+Cache identity binds the static prompt, primitive catalog, local validation
+schema, model, response mode, and generation settings. The cache stores only
+the canonical program and a deliberately small manifest (token counts,
+successful attempt, model, response mode, and hashes). It never stores the API
+key, environment contents, raw response, provider error body, or patient data.
 """
 
 from __future__ import annotations
@@ -29,7 +29,6 @@ from .program_schema import (
     canonicalize_program,
     catalog_hash,
     program_hash,
-    response_schema,
     schema_hash,
 )
 from .prompts import SYSTEM_PROMPT, prompt_hash, render_user_prompt
@@ -42,7 +41,7 @@ __all__ = [
     "generate_global_program",
 ]
 
-_CACHE_FORMAT = 1
+_CACHE_FORMAT = 2
 _RETRY_AFTER_RE = re.compile(
     r"(?:retry\s+(?:after|in)|retry-after[:=]?)\s*([0-9]+(?:\.[0-9]+)?)\s*s?",
     re.IGNORECASE,
@@ -55,6 +54,7 @@ _MANIFEST_KEYS = frozenset(
         "output_tokens",
         "thinking_tokens",
         "total_tokens",
+        "response_mode",
         "prompt_hash",
         "catalog_hash",
         "schema_hash",
@@ -99,27 +99,86 @@ class _InvalidProgramResponse(RuntimeError):
     """The server answered, but not with a usable strict program."""
 
 
+def _unwrap_json_code_fence(value: str) -> str:
+    """Accept only an optional single JSON fence around the complete response."""
+
+    stripped = str(value).strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if len(lines) < 3 or not lines[-1].strip().startswith("```"):
+        return stripped
+    opening = lines[0].strip().lower()
+    if opening not in {"```", "```json"}:
+        return stripped
+    return "\n".join(lines[1:-1]).strip()
+
+
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
 def _status_code(error: BaseException) -> int | None:
-    for attribute in ("status_code", "status", "code"):
-        raw = getattr(error, attribute, None)
-        if callable(raw):
-            try:
-                raw = raw()
-            except Exception:  # noqa: BLE001 - provider-specific accessor
-                raw = None
-        raw = getattr(raw, "value", raw)
-        if isinstance(raw, int):
-            return int(raw)
-        if isinstance(raw, str):
-            match = re.search(r"\b([45][0-9]{2})\b", raw)
-            if match:
-                return int(match.group(1))
+    candidates: list[Any] = [error]
+    for container_name in ("response", "error", "body"):
+        nested = getattr(error, container_name, None)
+        if nested is not None:
+            candidates.append(nested)
+    for candidate in candidates:
+        for attribute in ("status_code", "status", "code"):
+            if isinstance(candidate, Mapping):
+                raw = candidate.get(attribute)
+            else:
+                raw = getattr(candidate, attribute, None)
+            if callable(raw):
+                try:
+                    raw = raw()
+                except Exception:  # noqa: BLE001 - provider-specific accessor
+                    raw = None
+            raw = getattr(raw, "value", raw)
+            if isinstance(raw, int):
+                return int(raw)
+            if isinstance(raw, str):
+                match = re.search(r"\b([45][0-9]{2})\b", raw)
+                if match:
+                    return int(match.group(1))
     match = re.search(r"\b([45][0-9]{2})\b", f"{error}")
     return int(match.group(1)) if match else None
+
+
+def _safe_error_summary(
+    error: BaseException,
+    *,
+    api_key_env: str,
+    limit: int = 600,
+) -> str:
+    """Return a live-traceback diagnostic with credentials aggressively redacted.
+
+    The program stage has no subject rows, but provider/SDK exceptions may still
+    contain request URLs or authentication metadata. Persisted status artifacts
+    continue to omit this text; it is only attached to the raised notebook
+    exception.
+    """
+
+    message = f"{type(error).__name__}: {error}"
+    secret = os.environ.get(str(api_key_env).strip(), "")
+    if len(secret) >= 8:
+        message = message.replace(secret, "[REDACTED_API_KEY]")
+    message = re.sub(
+        r"(?i)(x-goog-api-key|api[_-]?key|key)(\s*[:=]\s*)"
+        r"([^\s,&;'\"}]+)",
+        r"\1\2[REDACTED]",
+        message,
+    )
+    message = re.sub(
+        r"(?i)([?&](?:key|api_key)=)[^&\s]+",
+        r"\1[REDACTED]",
+        message,
+    )
+    compact = " ".join(message.split())
+    if len(compact) > int(limit):
+        compact = compact[: max(0, int(limit) - 3)] + "..."
+    return compact
 
 
 def _is_retryable(error: BaseException) -> bool:
@@ -272,7 +331,22 @@ class FeatureProgramClient:
                 else str(self.config.thinking_level).strip().lower()
             ),
             "thinking_budget": self.config.thinking_budget,
+            "response_mode": self._response_mode(),
         }
+
+    def _response_mode(self) -> str:
+        """Select the provider-facing format without weakening local validation.
+
+        Google documents hosted Gemma generation and thinking, but does not list
+        Gemma among the models with a structured-output guarantee. In addition,
+        this program's nested catalog enum can exceed provider schema-complexity
+        limits even on models that support structured output. Every configured
+        model therefore receives the complete JSON contract in the prompt
+        without provider formatting fields; the same strict local validator is
+        mandatory before cache write.
+        """
+
+        return "prompt_json_local_validation"
 
     def _request_identity(
         self, catalog: Sequence[PrimitiveSpec]
@@ -319,6 +393,8 @@ class FeatureProgramClient:
             if not isinstance(manifest, Mapping) or set(manifest) != _MANIFEST_KEYS:
                 return None
             if str(manifest["model"]) != str(self.config.model):
+                return None
+            if str(manifest["response_mode"]) != self._response_mode():
                 return None
             for key in (
                 "prompt_hash",
@@ -412,8 +488,6 @@ class FeatureProgramClient:
             "system_instruction": SYSTEM_PROMPT,
             "temperature": 0.0,
             "max_output_tokens": int(self.config.max_output_tokens),
-            "response_mime_type": "application/json",
-            "response_schema": response_schema(catalog),
             "http_options": types.HttpOptions(
                 timeout=int(float(self.config.timeout_seconds) * 1000)
             ),
@@ -500,11 +574,12 @@ class FeatureProgramClient:
                             "global program response body was empty"
                         )
                     try:
-                        decoded = json.loads(text)
+                        decoded = json.loads(_unwrap_json_code_fence(text))
                         canonical = canonicalize_program(decoded, catalog)
                     except (json.JSONDecodeError, TypeError, ValueError) as error:
                         raise _InvalidProgramResponse(
-                            "global program response violated the strict JSON DSL"
+                            "global program response violated the strict JSON DSL: "
+                            f"{_safe_error_summary(error, api_key_env=self.config.api_key_env)}"
                         ) from error
                     break
                 except Exception as error:  # noqa: BLE001 - classify SDK errors
@@ -557,12 +632,16 @@ class FeatureProgramClient:
                     if isinstance(error, _InvalidProgramResponse):
                         raise RuntimeError(
                             "Gemma returned an unusable global feature program; "
+                            f"cause={_safe_error_summary(error, api_key_env=self.config.api_key_env)}; "
                             "no cache was written"
                         ) from None
                     raise RuntimeError(
                         "Global feature-program generation failed "
-                        f"(status={status or 'transport'}, "
-                        f"attempts={attempt}); no cache was written"
+                        f"(status={status or 'local-sdk-or-transport'}, "
+                        f"attempts={attempt}, response_mode={self._response_mode()}, "
+                        "cause="
+                        f"{_safe_error_summary(error, api_key_env=self.config.api_key_env)}"
+                        "); no cache was written"
                     ) from None
 
             manifest: dict[str, Any] = {
@@ -572,6 +651,7 @@ class FeatureProgramClient:
                 "output_tokens": int(tokens["output_tokens"]),
                 "thinking_tokens": int(tokens["thinking_tokens"]),
                 "total_tokens": int(tokens["total_tokens"]),
+                "response_mode": self._response_mode(),
                 "prompt_hash": identity["prompt_hash"],
                 "catalog_hash": identity["catalog_hash"],
                 "schema_hash": identity["schema_hash"],

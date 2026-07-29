@@ -31,6 +31,8 @@ feature program을 **한 번** 만드는 CN 대 MCI+Dem 이진 분류 실험이�
 - historical Validation 33명의 feature/label을 열지 않음
 - Gemma 입력에 patient value, ID, label, diagnosis, MMSE, 기존 AUC가 없음
 - Gemma는 임의 코드를 만들지 않고 제한된 JSON DSL만 생성
+- Gemma 모델에는 prompt의 정확한 JSON DSL 계약을 사용하고, 응답은 Python의
+  엄격한 allowlist validator를 통과해야만 cache에 기록
 - imputation, winsorization, scaling, constant-column 제거는 fold-training만 사용
 - score rank는 outer/inner training reference CDF만 사용
 - test batch 안에서 rank-normalize하지 않음
@@ -110,3 +112,10 @@ thinking_budget: null
 
 API key 값은 로그, prompt, cache, 결과 파일에 기록하지 않는다. 환경변수 이름만
 설정 파일에 남는다.
+
+Gemma 4의 공식 hosted API 문서는 일반 생성과 thinking on/off를 지원하지만
+Gemma를 structured-output 지원 모델로 명시하지 않는다. 따라서 복잡한 중첩
+`response_schema`와 `response_mime_type`을 Gemma 요청에 보내지 않는다. 이는
+검증을 생략하는 것이 아니라 provider schema 대신 동일한 계약을 prompt에
+명시하고, 응답을 `program_schema.py`에서 더 엄격하게 검증하는 방식이다.
+모델을 override하더라도 복잡한 provider schema는 사용하지 않는다.
