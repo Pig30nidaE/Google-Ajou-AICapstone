@@ -1,0 +1,34 @@
+run:
+  experiment_name: GemmaFeatureProgramPipeline
+  run_id: null
+  seed: 20260729
+  profile: standard
+  n_bootstrap: 4000
+
+paths:
+  data_root: null
+  output_root: null
+  cache_root: null
+
+gemma:
+  enabled: true
+  model: gemma-4-31b-it
+  api_key_env: GEMINI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 8192
+  thinking_level: minimal
+  thinking_budget: null
+  timeout_seconds: 180
+  max_retries: 6
+  initial_backoff_seconds: 2
+  backoff_multiplier: 2
+  max_backoff_seconds: 90
+  offline: false
+  regenerate_program: false
+
+cv:
+  outer_folds: 5
+  inner_folds: 4
+  standard_repeats: 10
+  full_repeats: 20
+  smoke_repeats: 1
