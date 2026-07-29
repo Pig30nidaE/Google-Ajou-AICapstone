@@ -106,12 +106,22 @@ FORBIDDEN_SUBSTRINGS = (
     "clinical_label",
 )
 
+# Python's ``\b`` treats underscore as a word character, so ``\bmmse\b`` fails to
+# match "mini_mental_score" or "cognitivefunction_block" - exactly the snake_case
+# style used throughout this codebase.  These two custom boundaries require a
+# non-alphanumeric (or start/end-of-string) neighbour instead, so underscores and
+# hyphens count as separators the way they do everywhere else in this module.
+_WORD_START = r"(?<![0-9A-Za-z])"
+_WORD_END = r"(?![0-9A-Za-z])"
+
 FORBIDDEN_PATTERNS = (
-    re.compile(r"(?<![a-z])(cn|mci|dem)[ _-]?(vs|versus|like|score|prob)", re.I),
-    re.compile(r"\b(cn|mci|dem)\b", re.I),
-    re.compile(r"\bdiag[_ ]?nm\b", re.I),
-    re.compile(r"\bcognitive\s+(status|impairment|decline)\b", re.I),
-    re.compile(r"\bclass\s*(index|probability|label)\b", re.I),
+    re.compile(
+        _WORD_START + r"(cn|mci|dem)[ _-]?(vs|versus|like|score|prob)" + _WORD_END, re.I
+    ),
+    re.compile(_WORD_START + r"(cn|mci|dem)" + _WORD_END, re.I),
+    re.compile(_WORD_START + r"diag[_ ]?nm" + _WORD_END, re.I),
+    re.compile(_WORD_START + r"cognitive\s+(status|impairment|decline)" + _WORD_END, re.I),
+    re.compile(_WORD_START + r"class\s*(index|probability|label)" + _WORD_END, re.I),
 )
 
 # Prompts are *allowed* to say "do not diagnose" / "do not report risk", because
@@ -120,19 +130,36 @@ FORBIDDEN_PATTERNS = (
 # prompt text is checked against this narrower set instead of FORBIDDEN_TOKENS.
 CLASS_NAME_TOKENS = frozenset({"cn", "mci", "dem", "ad"})
 CLASS_NAME_PATTERNS = (
-    re.compile(r"\b(cn|mci|dem|ad)\b", re.I),
+    re.compile(_WORD_START + r"(cn|mci|dem|ad)" + _WORD_END, re.I),
     re.compile(r"dementia|alzheim|mild cognitive impairment", re.I),
-    re.compile(r"\bmmse\b|\bmini[ _-]?mental\b|\bmoca\b|\bcdr\b", re.I),
+    re.compile(
+        _WORD_START
+        + r"mmse"
+        + _WORD_END
+        + r"|"
+        + _WORD_START
+        + r"mini[ _-]?mental"
+        + _WORD_END
+        + r"|"
+        + _WORD_START
+        + r"moca"
+        + _WORD_END
+        + r"|"
+        + _WORD_START
+        + r"cdr"
+        + _WORD_END,
+        re.I,
+    ),
     re.compile(r"cognitively\s+normal|normal\s+cognition", re.I),
 )
 
 MMSE_TOKENS = frozenset({"mmse", "kmmse", "mmsekc", "moca", "cdr", "gds"})
 MMSE_PATTERNS = (
-    re.compile(r"\bmmse\b", re.I),
-    re.compile(r"\bmini[ _-]?mental\b", re.I),
+    re.compile(_WORD_START + r"mmse" + _WORD_END, re.I),
+    re.compile(_WORD_START + r"mini[ _-]?mental" + _WORD_END, re.I),
     re.compile(r"^q\d{1,2}(_\d)?$", re.I),  # raw MMSE item column names (Q01, Q13_2)
-    re.compile(r"\bcognitivefunction\b", re.I),
-    re.compile(r"\bcognitive_?function\b", re.I),
+    re.compile(_WORD_START + r"cognitivefunction" + _WORD_END, re.I),
+    re.compile(_WORD_START + r"cognitive_?function" + _WORD_END, re.I),
 )
 
 _TOKEN_SPLIT = re.compile(r"[^0-9A-Za-z]+")

@@ -184,7 +184,36 @@ def _module_available(module: str) -> bool:
         return False
 
 
-def ensure_dependencies(*, include_gemini: bool, skip_install: bool, force: bool = False) -> dict[str, str]:
+def _parse_requirements(path: Path) -> dict[str, str]:
+    """Map normalized distribution name -> its exact requirement line.
+
+    Used so an install can be scoped to a handful of distributions (e.g. just
+    ``google-genai``) while still applying the version constraints declared in
+    ``requirements_colab.txt``, instead of re-resolving the whole file.
+    """
+
+    mapping: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        name = line
+        for separator in ("==", ">=", "<=", "~=", "!=", ">", "<", "["):
+            name = name.split(separator, 1)[0]
+        mapping[name.strip().lower()] = line
+    return mapping
+
+
+def ensure_dependencies(*, include_gemini: bool, skip_install: bool) -> dict[str, str]:
+    """Install only what the current stage actually needs, and only if missing.
+
+    A ``--dry-run`` never calls the Gemini API, so it must not require
+    ``google-genai``/``lightgbm`` to be installable at all; forcing a full
+    ``requirements_colab.txt`` install on every notebook launch previously
+    broke dry-run whenever those extras hit a resolver conflict in the Colab
+    image, even though dry-run never needed them.
+    """
+
     required = dict(_REQUIRED_MODULES)
     if include_gemini:
         required.update(_GEMINI_MODULES)
@@ -193,16 +222,29 @@ def ensure_dependencies(*, include_gemini: bool, skip_install: bool, force: bool
         for distribution, module in required.items()
         if not _module_available(module)
     ]
-    if (missing or force) and skip_install:
+    if missing and skip_install:
         raise ModuleNotFoundError(
             "Dependencies must be installed but --skip-install was given: " + ", ".join(missing)
         )
-    if missing or force:
-        print(f"[launcher] installing declared dependencies: {', '.join(missing) or '(refresh)'}", flush=True)
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", "-r", str(REQUIREMENTS_FILE)],
-            check=True,
+    if missing:
+        lines = _parse_requirements(REQUIREMENTS_FILE)
+        targets = [lines.get(name.lower(), name) for name in missing]
+        print(f"[launcher] installing missing dependencies: {', '.join(missing)}", flush=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", *targets],
+            capture_output=True,
+            text=True,
         )
+        if result.stdout:
+            print(result.stdout, flush=True)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr, flush=True)
+        if result.returncode != 0:
+            tail = "\n".join(result.stderr.strip().splitlines()[-25:])
+            raise RuntimeError(
+                f"pip install failed for {targets} (exit {result.returncode}). "
+                f"Last lines of stderr:\n{tail}"
+            )
         importlib.invalidate_caches()
     failures: dict[str, str] = {}
     for distribution, module in required.items():
@@ -239,11 +281,7 @@ def main(
     args = build_parser().parse_args(arguments)
     stage = args.stage
     needs_api = stage in {"gemini", "all"} and not args.dry_run and not args.offline and not args.no_gemini
-    ensure_dependencies(
-        include_gemini=needs_api,
-        skip_install=bool(args.skip_install),
-        force=notebook_launch and not args.skip_install,
-    )
+    ensure_dependencies(include_gemini=needs_api, skip_install=bool(args.skip_install))
 
     config: PipelineConfig = load_config(
         args.config, environ=environ, cli_overrides=_cli_overrides(args)
