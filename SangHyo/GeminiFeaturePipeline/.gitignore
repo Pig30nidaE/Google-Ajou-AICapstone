@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 GeminiFeaturePipeline_result/
 GeminiFeaturePipeline_cache/
+
+# The repository-root .gitignore has an unanchored `docs/` rule meant for the
+# repo's own top-level docs/ folder; being unanchored, it also matches this
+# folder's docs/ subdirectory. Re-include it explicitly so the analysis
+# documents required by this experiment are actually tracked.
+!docs/
+!docs/**

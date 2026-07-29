@@ -75,7 +75,11 @@ class DataConfig:
 @dataclass(frozen=True)
 class GeminiConfig:
     enabled: bool = True
-    model: str = "gemini-2.5-flash"
+    # gemini-1.5-flash and gemini-2.0-flash(-lite) are already retired (404).
+    # gemini-2.5-flash's free tier hit a 5 req/min quota in testing; the
+    # flash-lite tier of the same 2.5 generation reports a materially higher
+    # free-tier RPM allowance while keeping the same 2.5 prompt/schema behaviour.
+    model: str = "gemini-2.5-flash-lite"
     api_key_env: str = "GEMINI_API_KEY"
     temperature: float = 0.0
     top_p: float = 0.95

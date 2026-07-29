@@ -26,7 +26,10 @@ data:
 
 gemini:
   enabled: true
-  model: gemini-2.5-flash
+  # gemini-1.5-flash / gemini-2.0-flash(-lite) are already retired (404 as of
+  # 2026-07). gemini-2.5-flash hit a 5 req/min free-tier quota in testing;
+  # 2.5-flash-lite reports a materially higher free-tier RPM allowance.
+  model: gemini-2.5-flash-lite
   api_key_env: GEMINI_API_KEY   # only the NAME of the variable; never the key itself
   temperature: 0.0
   top_p: 0.95
