@@ -39,6 +39,62 @@ def test_every_cli_stage_maps_to_a_function():
         assert callable(pipeline._STAGE_FUNCTIONS[stage])
 
 
+def test_models_stage_discovers_availability_without_generating(tmp_path):
+    """The `models` diagnostic must read the key's real model list, not the docs."""
+
+    from SangHyo.GeminiFeaturePipeline.config import GeminiConfig
+    from SangHyo.GeminiFeaturePipeline.gemini_client import GeminiFeatureExtractor
+
+    class _FakeModel:
+        def __init__(self, name, actions):
+            self.name = name
+            self.display_name = name
+            self.supported_actions = actions
+            self.input_token_limit = 1000
+            self.output_token_limit = 100
+
+    class _FakeModels:
+        def list(self):
+            return [
+                _FakeModel("models/gemini-2.5-flash", ["generateContent"]),
+                _FakeModel("models/gemini-3.1-flash-lite", ["generateContent"]),
+                _FakeModel("models/text-embedding-004", ["embedContent"]),
+            ]
+
+    class _FakeClient:
+        models = _FakeModels()
+
+    extractor = GeminiFeatureExtractor(GeminiConfig(model="gemini-2.5-flash"), cache_root=tmp_path)
+    extractor._client = _FakeClient()
+    report = extractor.list_available_models()
+
+    # embedding-only models must not be offered as generation targets
+    assert report["generate_content_models"] == ["gemini-2.5-flash", "gemini-3.1-flash-lite"]
+    assert report["configured_model_is_available"] is True
+    assert report["n_models_visible"] == 3
+
+    unavailable = GeminiFeatureExtractor(
+        GeminiConfig(model="gemini-2.5-flash-lite"), cache_root=tmp_path
+    )
+    unavailable._client = _FakeClient()
+    assert unavailable.list_available_models()["configured_model_is_available"] is False
+
+
+def test_models_stage_requires_the_sdk_even_in_dry_run():
+    """`models` always calls the API, so dry-run must not skip its dependency."""
+
+    parser = run.build_parser()
+    for argv in (["--stage", "models"], ["--stage", "models", "--dry-run"]):
+        args = parser.parse_args(argv)
+        needs_api = args.stage == "models" or (
+            args.stage in {"gemini", "all"}
+            and not args.dry_run
+            and not args.offline
+            and not args.no_gemini
+        )
+        assert needs_api is True
+
+
 def test_every_mmse_mode_is_reachable():
     parser = run.build_parser()
     action = next(action for action in parser._actions if action.dest == "mmse_mode")

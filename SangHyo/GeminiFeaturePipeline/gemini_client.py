@@ -265,6 +265,50 @@ class GeminiFeatureExtractor:
             self._client = genai.Client(api_key=key)
             return self._client
 
+    def list_available_models(self) -> dict[str, Any]:
+        """Ask the API which models THIS key may actually call.
+
+        Google no longer publishes per-model, per-project rate limits or
+        availability (the docs redirect to the AI Studio console), and model
+        IDs that are listed as "stable" in the public docs can still return
+        404 "no longer available to new users" for a freshly created key.
+        So the model list is discovered from the key itself rather than
+        hard-coded from documentation.  ``models.list`` is a metadata call and
+        does not consume the ``generate_content`` quota.
+        """
+
+        client = self._get_client()
+        discovered: list[dict[str, Any]] = []
+        for model in client.models.list():
+            actions = [str(action) for action in (getattr(model, "supported_actions", None) or [])]
+            name = str(getattr(model, "name", "") or "")
+            discovered.append(
+                {
+                    "name": name,
+                    "id": name.removeprefix("models/"),
+                    "display_name": str(getattr(model, "display_name", "") or ""),
+                    "supported_actions": actions,
+                    "input_token_limit": getattr(model, "input_token_limit", None),
+                    "output_token_limit": getattr(model, "output_token_limit", None),
+                }
+            )
+        # Older SDK builds omit supported_actions; treat an empty list as "unknown"
+        # rather than as "does not support generateContent".
+        usable = [
+            entry
+            for entry in discovered
+            if not entry["supported_actions"] or "generateContent" in entry["supported_actions"]
+        ]
+        configured = str(self.config.model)
+        configured_ids = {entry["id"] for entry in usable}
+        return {
+            "configured_model": configured,
+            "configured_model_is_available": configured in configured_ids,
+            "n_models_visible": len(discovered),
+            "generate_content_models": sorted(entry["id"] for entry in usable),
+            "models": sorted(usable, key=lambda entry: entry["id"]),
+        }
+
     def _call_api(self, user_prompt: str) -> tuple[str, dict[str, Any]]:
         from google.genai import types  # type: ignore
 

@@ -90,6 +90,9 @@ python run.py --config config.yaml --stage inspect
 python run.py --config config.yaml --stage payload
 ```
 ```bash
+python run.py --config config.yaml --stage models
+```
+```bash
 python run.py --config config.yaml --stage gemini --dry-run
 ```
 ```bash
@@ -118,6 +121,25 @@ python run.py --config config.yaml --stage all --mmse-mode with
 `--stage evaluate`는 같은 실행 안에서 `train` 다음에만 의미가 있다(메모리의 arm 결과를
 집계한다). 단독으로 호출하면 명시적 오류를 낸다.
 
+### `--stage models`: 404/429가 날 때 가장 먼저 실행할 것
+
+Google은 모델별·프로젝트별 가용성과 rate limit을 더 이상 문서로 공개하지 않는다
+(공식 문서가 AI Studio 콘솔을 보라고 안내한다). 게다가 문서에 "stable"로 적힌
+모델도 신규 키에서는 `404 no longer available to new users`가 날 수 있다.
+따라서 **문서가 아니라 키 자신에게 물어보는 것이 유일하게 정확한 레퍼런스**다.
+
+```bash
+python run.py --config config.yaml --stage models
+```
+
+이 단계는 `models.list` 메타데이터 호출만 하므로 `generate_content` 쿼터를
+소모하지 않는다. 결과는 `MODELS_AVAILABLE.json`에 저장되고, 현재 설정한 모델이
+목록에 없으면 경고를 출력한다. 목록에서 고른 id를 그대로 쓰면 된다.
+
+```python
+os.environ["GFP_GEMINI_MODEL"] = "<MODELS_AVAILABLE.json에서 고른 id>"
+```
+
 ## 5. 환경변수
 
 | 변수 | 용도 | 기본값 |
@@ -145,6 +167,7 @@ python run.py --config config.yaml --stage all --mmse-mode with
 | `DATA_AUDIT.json` | 분할별 피험자·subject-day 수, 정렬 감사, 라벨 파일 SHA-256, 진단 분포, MMSE 접근 정책 |
 | `PAYLOAD_REPORT.json` | payload 수, 바이트 크기 통계, 가드 통과 여부 |
 | `payloads/payloads_<split>.json` | 실제 전송 payload (subject_ref 해시 키) |
+| `MODELS_AVAILABLE.json` | (`--stage models`) 이 API 키가 실제로 호출 가능한 모델 목록과 설정 모델의 가용 여부 |
 | `GEMINI_REPORT.json` | 캐시/신규/실패/토큰 사용량, 프롬프트·스키마·generation config 전문 |
 | `gemini_features_<split>.csv` | `subject_hash` + 12개 특징 |
 | `split_registry.json` | fold별 학습/검증 subject **해시** 목록과 클래스 수 |

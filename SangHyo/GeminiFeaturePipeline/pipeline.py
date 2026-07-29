@@ -65,7 +65,7 @@ from .splits import build_split_plan, save_split_plan
 __all__ = ["PipelineContext", "STAGES", "make_context", "run_stage", "run_all", "write_status"]
 
 DEVELOPMENT_SPLIT = "train"
-STAGES = ("inspect", "payload", "gemini", "train", "evaluate", "all")
+STAGES = ("inspect", "payload", "models", "gemini", "train", "evaluate", "all")
 
 
 @dataclass
@@ -282,6 +282,34 @@ def stage_payload(context: PipelineContext) -> dict[str, Any]:
             f"median {report['splits'][split]['payload_bytes_median']} bytes"
         )
     context.record("payload_report", write_json(context.run_dir / "PAYLOAD_REPORT.json", report))
+    return report
+
+
+# --------------------------------------------------------------------------- #
+# stage: models (diagnostic)
+# --------------------------------------------------------------------------- #
+def stage_models(context: PipelineContext) -> dict[str, Any]:
+    """Ask the API which models this key can call.  Consumes no generate quota.
+
+    Run this first whenever a model returns 404 or 429: the public model list
+    and the per-project availability/quota are not the same thing, and Google
+    only exposes the latter through the key itself and the AI Studio console.
+    """
+
+    context.log("[stage] models: querying the API for models available to this key")
+    extractor = _extractor(context)
+    report = {"stage": "models", "generate_content_calls_executed": 0, **extractor.list_available_models()}
+    configured = report["configured_model"]
+    context.log(f"[models] {report['n_models_visible']} model(s) visible to this key")
+    for model_id in report["generate_content_models"]:
+        marker = "  <- configured" if model_id == configured else ""
+        context.log(f"[models]   {model_id}{marker}")
+    if not report["configured_model_is_available"]:
+        context.log(
+            f"[models] WARNING: configured model {configured!r} is NOT in this key's list. "
+            "Set gemini.model / GFP_GEMINI_MODEL to one of the ids above."
+        )
+    context.record("models_report", write_json(context.run_dir / "MODELS_AVAILABLE.json", report))
     return report
 
 
@@ -593,6 +621,7 @@ def stage_evaluate(context: PipelineContext) -> dict[str, Any]:
 _STAGE_FUNCTIONS = {
     "inspect": stage_inspect,
     "payload": stage_payload,
+    "models": stage_models,
     "gemini": stage_gemini,
     "train": stage_train,
     "evaluate": stage_evaluate,

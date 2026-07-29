@@ -280,7 +280,14 @@ def main(
 
     args = build_parser().parse_args(arguments)
     stage = args.stage
-    needs_api = stage in {"gemini", "all"} and not args.dry_run and not args.offline and not args.no_gemini
+    # `models` always talks to the API (that is its whole point), so it needs the
+    # SDK regardless of the dry-run/offline flags that only apply to generation.
+    needs_api = stage == "models" or (
+        stage in {"gemini", "all"}
+        and not args.dry_run
+        and not args.offline
+        and not args.no_gemini
+    )
     ensure_dependencies(include_gemini=needs_api, skip_install=bool(args.skip_install))
 
     config: PipelineConfig = load_config(
