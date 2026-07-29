@@ -4,16 +4,22 @@ import inspect
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import types
 import unittest
+from unittest import mock
+import warnings
 
 import numpy as np
 
+from Codex_Dementia_ROCAUC import run as run_module
 from Codex_Dementia_ROCAUC.config import make_config
 from Codex_Dementia_ROCAUC.data import _KNOWN_FILES, _target_from_diagnosis
 from Codex_Dementia_ROCAUC.ensemble import fit_blend_policy
 from Codex_Dementia_ROCAUC.features import aggregate_wearable_sequences
 from Codex_Dementia_ROCAUC.leakage import LeakageError, assert_no_forbidden_features
 from Codex_Dementia_ROCAUC.models.base import model_specs
+from Codex_Dementia_ROCAUC.models.tabnet import TabNetBinaryEstimator
 from Codex_Dementia_ROCAUC.models.tabular import select_spec_columns
 from Codex_Dementia_ROCAUC.run import TRAINING_ACKNOWLEDGEMENT
 from Codex_Dementia_ROCAUC.splits import build_repeated_group_plan
@@ -158,17 +164,210 @@ class ZeroFitContracts(unittest.TestCase):
             "I_UNDERSTAND_THIS_RUNS_TRAINING",
         )
 
+    def test_wrong_training_ack_fails_before_dependency_install(self):
+        with mock.patch.object(run_module, "_ensure_dependencies") as ensure:
+            with self.assertRaises(SystemExit) as raised:
+                run_module.main(
+                    [
+                        "train",
+                        "--execute-training",
+                        "NOT_THE_ACKNOWLEDGEMENT",
+                    ],
+                    namespace={},
+                )
+        self.assertEqual(raised.exception.code, 2)
+        ensure.assert_not_called()
+
+    def test_jupyter_kernel_arguments_are_removed_narrowly(self):
+        kernel = "/root/.local/share/jupyter/runtime/kernel-unit-test.json"
+        self.assertEqual(
+            run_module._without_jupyter_kernel_args(["-f", kernel]),
+            [],
+        )
+        self.assertEqual(
+            run_module._without_jupyter_kernel_args([kernel]),
+            [],
+        )
+        explicit = ["train", "--profile", "standard"]
+        self.assertEqual(
+            run_module._without_jupyter_kernel_args(explicit),
+            explicit,
+        )
+
+    def test_original_base_dispatches_unique_standard_training_without_fit(self):
+        project_root = Path(__file__).resolve().parents[3]
+        captured = []
+        fake_train = types.ModuleType(
+            f"{run_module.__package__}.train"
+        )
+        fake_train.run_experiment = captured.append
+        kernel_args = [
+            "--HistoryManager.hist_file=:memory:",
+            "-f",
+            "/root/.local/share/jupyter/runtime/kernel-unit-test.json",
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            data_root = Path(temporary) / "Data"
+            (data_root / "1.Training").mkdir(parents=True)
+            (data_root / "2.Validation").mkdir()
+            namespace = {
+                "PROJECT_ROOT": project_root,
+                "DATA_ROOT": data_root,
+                "USER_ROOT": project_root / "SangHyo",
+                "RUN_PATH": Path(__file__).resolve().parents[1] / "run.py",
+            }
+            drive = Path(temporary) / "MyDrive"
+            drive.mkdir()
+            results_root = drive / "Codex_Dementia_ROCAUC_result"
+            with (
+                mock.patch.object(
+                    run_module,
+                    "DEFAULT_RESULTS_ROOT",
+                    results_root,
+                ),
+                mock.patch.object(
+                    run_module,
+                    "_ensure_dependencies",
+                ) as ensure,
+                mock.patch.dict(
+                    sys.modules,
+                    {f"{run_module.__package__}.train": fake_train},
+                ),
+            ):
+                exit_code = run_module.main(
+                    kernel_args,
+                    namespace=namespace,
+                )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(captured), 1)
+        config = captured[0]
+        self.assertEqual(config.profile, "standard")
+        self.assertEqual(config.data.resolved_root(), data_root.resolve())
+        self.assertEqual(config.neural.device, "auto")
+        self.assertEqual(config.runtime.n_jobs, 4)
+        output = config.runtime.resolved_output()
+        self.assertEqual(output.parent, results_root.resolve())
+        self.assertTrue(output.name.endswith("_utc"))
+        ensure.assert_called_once_with(
+            include_models=True,
+            skip_install=False,
+            enforce_requirements=True,
+        )
+
+    def test_base_dependency_check_uses_experiment_colab_requirements(self):
+        with (
+            mock.patch.object(
+                run_module.importlib.util,
+                "find_spec",
+                return_value=object(),
+            ),
+            mock.patch.object(
+                run_module.importlib,
+                "import_module",
+                return_value=object(),
+            ),
+            mock.patch.object(
+                run_module.subprocess,
+                "run",
+            ) as pip_run,
+        ):
+            run_module._ensure_dependencies(
+                include_models=True,
+                skip_install=False,
+                enforce_requirements=True,
+            )
+
+        command = pip_run.call_args.args[0]
+        self.assertEqual(command[:4], [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+        ])
+        self.assertEqual(
+            command[-2:],
+            ["-r", str(run_module.REQUIREMENTS_COLAB)],
+        )
+        self.assertTrue(run_module.REQUIREMENTS_COLAB.is_file())
+        self.assertTrue(pip_run.call_args.kwargs["check"])
+
+    def test_tabnet_uses_epoch_scheduler_with_no_metric_argument(self):
+        class FakeAdamW:
+            pass
+
+        class FakeStepLR:
+            pass
+
+        class FakeTabNetClassifier:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        fake_torch = types.ModuleType("torch")
+        fake_torch.optim = types.SimpleNamespace(
+            AdamW=FakeAdamW,
+            lr_scheduler=types.SimpleNamespace(StepLR=FakeStepLR),
+        )
+        fake_package = types.ModuleType("pytorch_tabnet")
+        fake_package.__path__ = []
+        fake_tab_model = types.ModuleType("pytorch_tabnet.tab_model")
+        fake_tab_model.TabNetClassifier = FakeTabNetClassifier
+        with mock.patch.dict(
+            sys.modules,
+            {
+                "torch": fake_torch,
+                "pytorch_tabnet": fake_package,
+                "pytorch_tabnet.tab_model": fake_tab_model,
+            },
+        ):
+            model = TabNetBinaryEstimator(
+                device_name="cpu"
+            )._new_classifier()
+
+        self.assertIs(model.kwargs["scheduler_fn"], FakeStepLR)
+        self.assertEqual(
+            model.kwargs["scheduler_params"],
+            {"step_size": 20, "gamma": 0.5},
+        )
+
+    def test_real_tabnet_scheduler_callback_contract_without_fit(self):
+        try:
+            import torch
+            from pytorch_tabnet.callbacks import LRSchedulerCallback
+        except ImportError as error:
+            self.skipTest(f"optional TabNet runtime unavailable: {error}")
+
+        model = TabNetBinaryEstimator(device_name="cpu")._new_classifier()
+        parameter = torch.nn.Parameter(torch.zeros(()))
+        optimizer = torch.optim.AdamW([parameter], lr=0.002)
+        callback = LRSchedulerCallback(
+            scheduler_fn=model.scheduler_fn,
+            scheduler_params=dict(model.scheduler_params),
+            optimizer=optimizer,
+            early_stopping_metric="valid_auc",
+            is_batch_level=False,
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            callback.on_epoch_end(0, {"valid_auc": 0.5})
+        self.assertFalse(callback.is_metric_related)
+
     def test_direct_entrypoint_can_import_repository_sibling_package(self):
         package_root = Path(__file__).resolve().parents[1]
         run_path = package_root / "run.py"
         probe = (
-            "import runpy; "
-            f"runpy.run_path({str(run_path)!r}, run_name='direct_import_probe'); "
-            "from SangHyo.Binary_Google_ROCAUC_Champion.data import AccessAudit; "
-            "assert AccessAudit is not None"
+            "import runpy, sys\n"
+            f"run_path = {str(run_path)!r}\n"
+            "sys.argv = [run_path, '--help']\n"
+            "try:\n"
+            "    runpy.run_path(run_path, run_name='__main__')\n"
+            "except SystemExit as exc:\n"
+            "    assert exc.code in (None, 0)\n"
+            "from SangHyo.Binary_Google_ROCAUC_Champion.data import AccessAudit\n"
+            "assert AccessAudit is not None\n"
         )
         completed = subprocess.run(
-            [sys.executable, "-c", probe],
+            [sys.executable, "-I", "-c", probe],
             cwd=package_root,
             capture_output=True,
             text=True,

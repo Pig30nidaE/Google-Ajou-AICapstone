@@ -119,8 +119,14 @@ class TabNetBinaryEstimator:
                 "lr": float(self.learning_rate),
                 "weight_decay": 1e-4,
             },
-            scheduler_fn=torch.optim.lr_scheduler.ReduceLROnPlateau,
-            scheduler_params={"mode": "max", "factor": 0.5, "patience": 8},
+            # pytorch-tabnet 4.1.0 detects metric-aware schedulers via a
+            # class-level ``is_better`` attribute.  Recent PyTorch versions no
+            # longer expose that class-level marker, so the callback
+            # incorrectly calls ``step()`` without a metric.  StepLR is the
+            # library's documented epoch-level scheduler and has a stable
+            # no-argument callback contract across supported PyTorch versions.
+            scheduler_fn=torch.optim.lr_scheduler.StepLR,
+            scheduler_params={"step_size": 20, "gamma": 0.5},
             mask_type="entmax",
             seed=int(self.seed),
             verbose=0,

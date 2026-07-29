@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+GeminiFeaturePipeline_result/
+GeminiFeaturePipeline_cache/
