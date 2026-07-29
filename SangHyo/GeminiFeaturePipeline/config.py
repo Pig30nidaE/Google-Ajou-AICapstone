@@ -82,12 +82,16 @@ class GeminiConfig:
     max_output_tokens: int = 2048
     response_seed: int | None = 7
     timeout_seconds: float = 120.0
-    max_retries: int = 5
+    max_retries: int = 6
     initial_backoff_seconds: float = 2.0
     backoff_multiplier: float = 2.0
-    max_backoff_seconds: float = 60.0
-    max_concurrency: int = 4
-    min_interval_seconds: float = 0.2
+    max_backoff_seconds: float = 90.0
+    # Defaults are sized for a free-tier API key (observed limit: 5 requests/min
+    # for generate_content on gemini-2.5-flash), not a paid one. Sequential calls
+    # spaced 13s apart stay under that with margin (~4.6 req/min). A paid key can
+    # raise both via config.yaml or GFP_GEMINI_MAX_CONCURRENCY/GFP_GEMINI_MIN_INTERVAL.
+    max_concurrency: int = 1
+    min_interval_seconds: float = 13.0
     dry_run: bool = False
     offline: bool = False
     retry_failed: bool = False

@@ -33,12 +33,15 @@ gemini:
   max_output_tokens: 2048
   response_seed: 7
   timeout_seconds: 120
-  max_retries: 5
+  max_retries: 6
   initial_backoff_seconds: 2.0
   backoff_multiplier: 2.0
-  max_backoff_seconds: 60.0
-  max_concurrency: 4
-  min_interval_seconds: 0.2
+  max_backoff_seconds: 90.0
+  # Sized for a free-tier key (observed limit: 5 req/min for gemini-2.5-flash
+  # generate_content). Sequential calls 13s apart stay under that with margin.
+  # Raise both if your key is on a paid tier with a higher quota.
+  max_concurrency: 1
+  min_interval_seconds: 13.0
   dry_run: false
   offline: false
   retry_failed: false

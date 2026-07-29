@@ -26,6 +26,7 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import re
 import threading
 import time
 from typing import Any, Mapping, Sequence
@@ -58,6 +59,26 @@ _RETRYABLE_MARKERS = (
     "overloaded",
     "internal error",
 )
+# The free tier returns a message like "...Please retry in 55.451847999s." for a
+# 429 RESOURCE_EXHAUSTED. A fixed exponential backoff (a few seconds, doubling)
+# is almost always shorter than that, so every retry keeps hitting the same
+# still-exhausted quota window until max_retries runs out. Honouring the
+# server's own number fixes that; the multiplier and ceiling below are just a
+# safety margin/cap in case the text is ever malformed or absurdly large.
+_RETRY_AFTER_PATTERN = re.compile(r"retry\s+in\s+([0-9]+(?:\.[0-9]+)?)\s*s", re.I)
+_RETRY_AFTER_SAFETY_MARGIN = 1.05
+_RETRY_AFTER_HARD_CEILING_SECONDS = 180.0
+
+
+def _server_requested_retry_delay(error: BaseException) -> float | None:
+    match = _RETRY_AFTER_PATTERN.search(f"{error}")
+    if not match:
+        return None
+    try:
+        seconds = float(match.group(1))
+    except ValueError:
+        return None
+    return min(seconds * _RETRY_AFTER_SAFETY_MARGIN, _RETRY_AFTER_HARD_CEILING_SECONDS)
 
 
 @dataclass(frozen=True)
@@ -337,11 +358,13 @@ class GeminiFeatureExtractor:
                 parsed = json.loads(_strip_code_fence(text))
                 features = validate_feature_payload(parsed)
             except Exception as error:  # noqa: BLE001 - recorded, classified, retried
+                server_delay = _server_requested_retry_delay(error)
                 attempts.append(
                     {
                         "attempt": attempt,
-                        "error": f"{type(error).__name__}: {error}"[:500],
+                        "error": f"{type(error).__name__}: {error}"[:800],
                         "retryable": _is_retryable(error),
+                        "server_requested_retry_delay_seconds": server_delay,
                     }
                 )
                 last = attempt >= int(self.config.max_retries)
@@ -359,10 +382,15 @@ class GeminiFeatureExtractor:
                     return GeminiResult(
                         subject_id, subject_ref, "failed", None, attempts[-1]["error"], record
                     )
-                sleep_for = min(
+                exponential = min(
                     float(self.config.max_backoff_seconds),
                     backoff * (1.0 + random.random() * 0.25),  # jitter
                 )
+                # A quota error's own retry-after is authoritative: retrying sooner
+                # just re-hits the same still-exhausted window, and this may
+                # legitimately exceed max_backoff_seconds (rate-limit waits are
+                # commonly 30-60s+, longer than a generic transient-error backoff).
+                sleep_for = max(exponential, server_delay) if server_delay is not None else exponential
                 time.sleep(sleep_for)
                 backoff = min(
                     float(self.config.max_backoff_seconds),
