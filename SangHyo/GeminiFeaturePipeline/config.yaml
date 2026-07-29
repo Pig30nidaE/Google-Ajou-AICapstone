@@ -31,7 +31,7 @@ gemini:
   # for a freshly created key (confirmed live, 2026-07-29), even though it
   # isn't globally retired -- so it's skipped. gemini-2.5-flash IS reachable
   # (429 quota, not 404 missing) and just needs its free-tier quota respected.
-  model: gemini-2.5-flash
+  model: gemini-3.6-flash
   api_key_env: GEMINI_API_KEY   # only the NAME of the variable; never the key itself
   temperature: 0.0
   top_p: 0.95
