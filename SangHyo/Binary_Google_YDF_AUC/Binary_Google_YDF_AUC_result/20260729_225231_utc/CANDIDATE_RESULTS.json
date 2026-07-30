@@ -1,0 +1,398 @@
+{
+  "axis_all151_top25": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.6918067226890757,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.6894957983193277,
+        0.7012605042016806,
+        0.6855042016806724,
+        0.6928571428571428,
+        0.6899159663865546
+      ],
+      "repeat_roc_auc_sd": 0.0058973398519403695,
+      "subject_mean_oof_roc_auc": 0.7283613445378152
+    },
+    "spec": {
+      "candidate_id": "axis_all151_top25",
+      "corr_threshold": 0.95,
+      "family": "axis_gbt",
+      "params": {
+        "l2_regularization": 1.0,
+        "max_depth": 3,
+        "min_examples": 12,
+        "num_candidate_attributes_ratio": 0.5,
+        "num_trees": 600,
+        "shrinkage": 0.05,
+        "subsample": 0.7
+      },
+      "top_k": 25,
+      "view": "all151"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.6809873949579831,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.6733193277310924,
+        0.6983193277310925,
+        0.6838235294117647,
+        0.6711134453781512,
+        0.678361344537815
+      ],
+      "repeat_roc_auc_sd": 0.010858520023487939,
+      "subject_mean_oof_roc_auc": 0.7102941176470589
+    }
+  },
+  "axis_mmse39_d3": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7167436974789915,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7381302521008403,
+        0.6857142857142857,
+        0.7008403361344537,
+        0.7198529411764706,
+        0.7391806722689076
+      ],
+      "repeat_roc_auc_sd": 0.023378468989679182,
+      "subject_mean_oof_roc_auc": 0.7235294117647059
+    },
+    "spec": {
+      "candidate_id": "axis_mmse39_d3",
+      "corr_threshold": 1.01,
+      "family": "axis_gbt",
+      "params": {
+        "l2_regularization": 1.0,
+        "max_depth": 3,
+        "min_examples": 8,
+        "num_candidate_attributes_ratio": 0.7,
+        "num_trees": 400,
+        "shrinkage": 0.05,
+        "subsample": 0.8
+      },
+      "top_k": 0,
+      "view": "mmse39"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7236764705882353,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.748844537815126,
+        0.6964285714285715,
+        0.7105042016806723,
+        0.7180672268907562,
+        0.7445378151260504
+      ],
+      "repeat_roc_auc_sd": 0.022450209328137617,
+      "subject_mean_oof_roc_auc": 0.7331932773109243
+    }
+  },
+  "axis_mmse_all_d2": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7115336134453781,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7341386554621848,
+        0.6699579831932774,
+        0.7052521008403361,
+        0.7206932773109245,
+        0.727626050420168
+      ],
+      "repeat_roc_auc_sd": 0.02560197417175907,
+      "subject_mean_oof_roc_auc": 0.7214285714285714
+    },
+    "spec": {
+      "candidate_id": "axis_mmse_all_d2",
+      "corr_threshold": 0.99,
+      "family": "axis_gbt",
+      "params": {
+        "l2_regularization": 0.5,
+        "max_depth": 2,
+        "min_examples": 8,
+        "num_candidate_attributes_ratio": 0.7,
+        "num_trees": 600,
+        "shrinkage": 0.05,
+        "subsample": 0.8
+      },
+      "top_k": 0,
+      "view": "mmse_all"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7181512605042017,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7426470588235294,
+        0.6813025210084034,
+        0.714390756302521,
+        0.7236344537815126,
+        0.728781512605042
+      ],
+      "repeat_roc_auc_sd": 0.022995014665275877,
+      "subject_mean_oof_roc_auc": 0.7273109243697479
+    }
+  },
+  "oblique_all151_prior_best": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7439915966386554,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7256302521008403,
+        0.7315126050420169,
+        0.7392857142857143,
+        0.7447478991596639,
+        0.778781512605042
+      ],
+      "repeat_roc_auc_sd": 0.0207720953425297,
+      "subject_mean_oof_roc_auc": 0.7590336134453781
+    },
+    "spec": {
+      "candidate_id": "oblique_all151_prior_best",
+      "corr_threshold": 0.99,
+      "family": "sparse_oblique_gbt",
+      "params": {
+        "l2_regularization": 0.0,
+        "max_depth": 5,
+        "min_examples": 20,
+        "num_candidate_attributes_ratio": 0.3,
+        "num_trees": 600,
+        "shrinkage": 0.08,
+        "sparse_oblique_normalization": "STANDARD_DEVIATION",
+        "sparse_oblique_num_projections_exponent": 1.5,
+        "sparse_oblique_projection_density_factor": 3.0,
+        "subsample": 0.6
+      },
+      "top_k": 70,
+      "view": "all151"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.6900420168067226,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.6788865546218488,
+        0.7033613445378152,
+        0.6693277310924369,
+        0.6577731092436975,
+        0.7408613445378152
+      ],
+      "repeat_roc_auc_sd": 0.032995518357690316,
+      "subject_mean_oof_roc_auc": 0.720063025210084
+    }
+  },
+  "oblique_all151_top25": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.746890756302521,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7378151260504202,
+        0.7615546218487396,
+        0.734453781512605,
+        0.7628151260504201,
+        0.7378151260504202
+      ],
+      "repeat_roc_auc_sd": 0.014035909086126922,
+      "subject_mean_oof_roc_auc": 0.7563025210084033
+    },
+    "spec": {
+      "candidate_id": "oblique_all151_top25",
+      "corr_threshold": 0.95,
+      "family": "sparse_oblique_gbt",
+      "params": {
+        "l2_regularization": 0.5,
+        "max_depth": 3,
+        "min_examples": 12,
+        "num_candidate_attributes_ratio": 0.5,
+        "num_trees": 600,
+        "shrinkage": 0.05,
+        "sparse_oblique_normalization": "STANDARD_DEVIATION",
+        "sparse_oblique_num_projections_exponent": 1.5,
+        "sparse_oblique_projection_density_factor": 3.0,
+        "subsample": 0.7
+      },
+      "top_k": 25,
+      "view": "all151"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7169957983193277,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.6843487394957983,
+        0.7047268907563025,
+        0.7188025210084034,
+        0.7401260504201681,
+        0.7369747899159664
+      ],
+      "repeat_roc_auc_sd": 0.0232044686265343,
+      "subject_mean_oof_roc_auc": 0.7559873949579832
+    }
+  },
+  "oblique_mmse39_d3": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7169957983193278,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7248949579831934,
+        0.6922268907563025,
+        0.6972689075630253,
+        0.7322478991596638,
+        0.7383403361344538
+      ],
+      "repeat_roc_auc_sd": 0.0209359833704865,
+      "subject_mean_oof_roc_auc": 0.7205882352941176
+    },
+    "spec": {
+      "candidate_id": "oblique_mmse39_d3",
+      "corr_threshold": 1.01,
+      "family": "sparse_oblique_gbt",
+      "params": {
+        "l2_regularization": 0.5,
+        "max_depth": 3,
+        "min_examples": 8,
+        "num_candidate_attributes_ratio": 0.7,
+        "num_trees": 400,
+        "shrinkage": 0.05,
+        "sparse_oblique_normalization": "STANDARD_DEVIATION",
+        "sparse_oblique_num_projections_exponent": 1.5,
+        "sparse_oblique_projection_density_factor": 3.0,
+        "subsample": 0.8
+      },
+      "top_k": 0,
+      "view": "mmse39"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7243697478991598,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7290966386554621,
+        0.7003151260504202,
+        0.7057773109243698,
+        0.7342436974789917,
+        0.7524159663865546
+      ],
+      "repeat_roc_auc_sd": 0.021393528769917566,
+      "subject_mean_oof_roc_auc": 0.7380252100840337
+    }
+  },
+  "rf_all151_top25": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7219957983193278,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7142857142857143,
+        0.7470588235294118,
+        0.6920168067226891,
+        0.729516806722689,
+        0.7271008403361344
+      ],
+      "repeat_roc_auc_sd": 0.02042649986558401,
+      "subject_mean_oof_roc_auc": 0.736764705882353
+    },
+    "spec": {
+      "candidate_id": "rf_all151_top25",
+      "corr_threshold": 0.95,
+      "family": "rf",
+      "params": {
+        "max_depth": 8,
+        "min_examples": 5,
+        "num_candidate_attributes_ratio": 0.3,
+        "num_trees": 1000
+      },
+      "top_k": 25,
+      "view": "all151"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7270378151260504,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7232142857142857,
+        0.753046218487395,
+        0.6910714285714286,
+        0.7293067226890756,
+        0.7385504201680673
+      ],
+      "repeat_roc_auc_sd": 0.023034351525214117,
+      "subject_mean_oof_roc_auc": 0.7423319327731093
+    }
+  },
+  "rf_mmse39_d6": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.741953781512605,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7574579831932774,
+        0.719327731092437,
+        0.7190126050420168,
+        0.7510504201680673,
+        0.7629201680672268
+      ],
+      "repeat_roc_auc_sd": 0.021218825398755577,
+      "subject_mean_oof_roc_auc": 0.7512605042016807
+    },
+    "spec": {
+      "candidate_id": "rf_mmse39_d6",
+      "corr_threshold": 1.01,
+      "family": "rf",
+      "params": {
+        "max_depth": 6,
+        "min_examples": 5,
+        "num_candidate_attributes_ratio": 0.5,
+        "num_trees": 800
+      },
+      "top_k": 0,
+      "view": "mmse39"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7494537815126051,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7696428571428573,
+        0.7256302521008403,
+        0.7279411764705883,
+        0.7560924369747899,
+        0.7679621848739495
+      ],
+      "repeat_roc_auc_sd": 0.021357576205312322,
+      "subject_mean_oof_roc_auc": 0.7602941176470589
+    }
+  },
+  "rf_mmse_all_d8": {
+    "raw_probability": {
+      "mean_repeat_roc_auc": 0.7322268907563025,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7497899159663866,
+        0.7055672268907563,
+        0.7061974789915966,
+        0.7454831932773109,
+        0.7540966386554622
+      ],
+      "repeat_roc_auc_sd": 0.024242231943819963,
+      "subject_mean_oof_roc_auc": 0.7409663865546219
+    },
+    "spec": {
+      "candidate_id": "rf_mmse_all_d8",
+      "corr_threshold": 0.99,
+      "family": "rf",
+      "params": {
+        "max_depth": 8,
+        "min_examples": 5,
+        "num_candidate_attributes_ratio": 0.5,
+        "num_trees": 800
+      },
+      "top_k": 0,
+      "view": "mmse_all"
+    },
+    "training_reference_ecdf": {
+      "mean_repeat_roc_auc": 0.7386134453781512,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7546218487394958,
+        0.715861344537815,
+        0.7092436974789915,
+        0.7494747899159665,
+        0.7638655462184875
+      ],
+      "repeat_roc_auc_sd": 0.024454787693354497,
+      "subject_mean_oof_roc_auc": 0.7502100840336134
+    }
+  }
+}

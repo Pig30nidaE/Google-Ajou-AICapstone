@@ -1,0 +1,1244 @@
+{
+  "all_gemma_candidates": [
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7805672268907564,
+          0.781827731092437,
+          0.7757352941176471,
+          0.7775210084033615,
+          0.7700630252100841,
+          0.7814075630252101,
+          0.7679621848739495,
+          0.7827731092436975,
+          0.7919117647058824,
+          0.7748949579831933
+        ],
+        "repeat_roc_auc_sd": 0.0068779129814700996,
+        "selection_value_mean_repeat_roc_auc": 0.7784663865546219,
+        "subject_mean_oof_roc_auc": 0.7817226890756303
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_0p01",
+      "params": {
+        "C": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7805672268907564,
+          0.781827731092437,
+          0.7757352941176471,
+          0.7775210084033615,
+          0.7700630252100841,
+          0.7814075630252101,
+          0.7679621848739495,
+          0.7827731092436975,
+          0.7919117647058824,
+          0.7748949579831933
+        ],
+        "repeat_roc_auc_sd": 0.0068779129814700996,
+        "selection_value_mean_repeat_roc_auc": 0.7784663865546219,
+        "subject_mean_oof_roc_auc": 0.7817226890756303
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_1.00",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 1.0,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.780672268907563,
+          0.7797268907563025,
+          0.7746848739495799,
+          0.7767857142857143,
+          0.7709033613445379,
+          0.779936974789916,
+          0.7663865546218487,
+          0.7815126050420167,
+          0.7911764705882354,
+          0.7751050420168067
+        ],
+        "repeat_roc_auc_sd": 0.006707755062861971,
+        "selection_value_mean_repeat_roc_auc": 0.7776890756302521,
+        "subject_mean_oof_roc_auc": 0.7800420168067227
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.90",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.9,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.779936974789916,
+          0.7790966386554622,
+          0.775,
+          0.7744747899159663,
+          0.7709033613445379,
+          0.7795168067226892,
+          0.7678571428571429,
+          0.780672268907563,
+          0.792016806722689,
+          0.776155462184874
+        ],
+        "repeat_roc_auc_sd": 0.0065576661631962085,
+        "selection_value_mean_repeat_roc_auc": 0.777563025210084,
+        "subject_mean_oof_roc_auc": 0.7789915966386555
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.80",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.8,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7802521008403361,
+          0.780672268907563,
+          0.7747899159663866,
+          0.7757352941176471,
+          0.7684873949579832,
+          0.7789915966386555,
+          0.7672268907563026,
+          0.7794117647058824,
+          0.790126050420168,
+          0.7736344537815126
+        ],
+        "repeat_roc_auc_sd": 0.006598667817581546,
+        "selection_value_mean_repeat_roc_auc": 0.7769327731092438,
+        "subject_mean_oof_roc_auc": 0.7777310924369748
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.70",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.7000000000000001,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.778781512605042,
+          0.7781512605042017,
+          0.7752100840336135,
+          0.7755252100840336,
+          0.7678571428571428,
+          0.7803571428571429,
+          0.7633403361344537,
+          0.778781512605042,
+          0.7903361344537815,
+          0.7722689075630252
+        ],
+        "repeat_roc_auc_sd": 0.0073478457067831,
+        "selection_value_mean_repeat_roc_auc": 0.7760609243697479,
+        "subject_mean_oof_roc_auc": 0.7756302521008404
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.60",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.6000000000000001,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.778046218487395,
+          0.7784663865546217,
+          0.7793067226890756,
+          0.7771008403361345,
+          0.7608193277310924,
+          0.7757352941176471,
+          0.7626050420168067,
+          0.7732142857142857,
+          0.7945378151260505,
+          0.7706932773109243
+        ],
+        "repeat_roc_auc_sd": 0.009445510698901536,
+        "selection_value_mean_repeat_roc_auc": 0.7750525210084034,
+        "subject_mean_oof_roc_auc": 0.7762605042016806
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_0p03",
+      "params": {
+        "C": 0.03
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.776890756302521,
+          0.7800420168067226,
+          0.7752100840336135,
+          0.7737394957983195,
+          0.7633403361344537,
+          0.7786764705882353,
+          0.7597689075630252,
+          0.7756302521008404,
+          0.7887605042016806,
+          0.7703781512605042
+        ],
+        "repeat_roc_auc_sd": 0.008282984684941722,
+        "selection_value_mean_repeat_roc_auc": 0.7742436974789916,
+        "subject_mean_oof_roc_auc": 0.7760504201680672
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.50",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.5,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7755252100840336,
+          0.7809873949579832,
+          0.774264705882353,
+          0.7738445378151261,
+          0.7586134453781512,
+          0.7747899159663866,
+          0.759138655462185,
+          0.7753151260504203,
+          0.7896008403361343,
+          0.7686974789915966
+        ],
+        "repeat_roc_auc_sd": 0.009274819489223571,
+        "selection_value_mean_repeat_roc_auc": 0.773077731092437,
+        "subject_mean_oof_roc_auc": 0.7760504201680672
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.40",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.4,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.774579831932773,
+          0.7794117647058824,
+          0.7735294117647059,
+          0.7744747899159664,
+          0.7584033613445378,
+          0.7733193277310925,
+          0.7589285714285714,
+          0.7755252100840336,
+          0.789390756302521,
+          0.7674369747899159
+        ],
+        "repeat_roc_auc_sd": 0.009193667129522826,
+        "selection_value_mean_repeat_roc_auc": 0.7725,
+        "subject_mean_oof_roc_auc": 0.7752100840336134
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.30",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.30000000000000004,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7728991596638655,
+          0.7775210084033614,
+          0.7738445378151261,
+          0.7738445378151261,
+          0.7578781512605043,
+          0.771218487394958,
+          0.7579831932773109,
+          0.7735294117647059,
+          0.7900210084033614,
+          0.7673319327731093
+        ],
+        "repeat_roc_auc_sd": 0.00932110052143406,
+        "selection_value_mean_repeat_roc_auc": 0.7716071428571428,
+        "subject_mean_oof_roc_auc": 0.772689075630252
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.20",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.2,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.772689075630252,
+          0.7763655462184874,
+          0.7728991596638655,
+          0.7740546218487395,
+          0.7582983193277312,
+          0.7695378151260505,
+          0.755672268907563,
+          0.7714285714285714,
+          0.7882352941176471,
+          0.7647058823529411
+        ],
+        "repeat_roc_auc_sd": 0.00928623314392562,
+        "selection_value_mean_repeat_roc_auc": 0.7703886554621848,
+        "subject_mean_oof_roc_auc": 0.7722689075630252
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.10",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.1,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7715336134453782,
+          0.776155462184874,
+          0.7724789915966387,
+          0.7724789915966387,
+          0.7580882352941176,
+          0.7693277310924369,
+          0.7555672268907563,
+          0.7702731092436975,
+          0.7875,
+          0.7640756302521008
+        ],
+        "repeat_roc_auc_sd": 0.009091917682625794,
+        "selection_value_mean_repeat_roc_auc": 0.7697478991596638,
+        "subject_mean_oof_roc_auc": 0.7699579831932774
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_0p3__g_0p01",
+      "params": {
+        "C": 0.3,
+        "gamma": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7715336134453782,
+          0.776155462184874,
+          0.7724789915966387,
+          0.7724789915966387,
+          0.7580882352941176,
+          0.7693277310924369,
+          0.7555672268907563,
+          0.7702731092436975,
+          0.7875,
+          0.7640756302521008
+        ],
+        "repeat_roc_auc_sd": 0.009091917682625794,
+        "selection_value_mean_repeat_roc_auc": 0.7697478991596638,
+        "subject_mean_oof_roc_auc": 0.7699579831932774
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.00",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.0,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7607142857142857,
+          0.773109243697479,
+          0.7614495798319327,
+          0.7819327731092437,
+          0.7510504201680672,
+          0.753781512605042,
+          0.7531512605042017,
+          0.7576680672268907,
+          0.7875,
+          0.7648109243697478
+        ],
+        "repeat_roc_auc_sd": 0.012481085973634825,
+        "selection_value_mean_repeat_roc_auc": 0.764516806722689,
+        "subject_mean_oof_roc_auc": 0.7699579831932772
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_0p1",
+      "params": {
+        "C": 0.1
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7709033613445377,
+          0.7640756302521009,
+          0.7775210084033614,
+          0.7690126050420169,
+          0.7536764705882353,
+          0.7643907563025211,
+          0.748844537815126,
+          0.7669117647058824,
+          0.7756302521008402,
+          0.7459033613445378
+        ],
+        "repeat_roc_auc_sd": 0.010864169446275091,
+        "selection_value_mean_repeat_roc_auc": 0.763686974789916,
+        "subject_mean_oof_roc_auc": 0.765126050420168
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_0p1__g_scale",
+      "params": {
+        "C": 0.1,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7745798319327731,
+          0.7651260504201681,
+          0.7657563025210083,
+          0.7672268907563026,
+          0.7598739495798319,
+          0.7491596638655462,
+          0.7442226890756303,
+          0.7579831932773109,
+          0.7831932773109244,
+          0.7686974789915967
+        ],
+        "repeat_roc_auc_sd": 0.011450388230740708,
+        "selection_value_mean_repeat_roc_auc": 0.7635819327731093,
+        "subject_mean_oof_roc_auc": 0.7674369747899159
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_1p0__g_0p01",
+      "params": {
+        "C": 1.0,
+        "gamma": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7843487394957984,
+          0.7618697478991596,
+          0.7581932773109245,
+          0.7643907563025211,
+          0.7618697478991596,
+          0.7612394957983194,
+          0.7391806722689076,
+          0.7623949579831933,
+          0.7766806722689076,
+          0.7639705882352941
+        ],
+        "repeat_roc_auc_sd": 0.011740614296727748,
+        "selection_value_mean_repeat_roc_auc": 0.7634138655462185,
+        "subject_mean_oof_roc_auc": 0.7659663865546218
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_1p0__g_scale",
+      "params": {
+        "C": 1.0,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7984243697478991,
+          0.77468487394958,
+          0.7656512605042017,
+          0.7682773109243697,
+          0.7382352941176471,
+          0.7439075630252102,
+          0.7115546218487395,
+          0.7788865546218487,
+          0.8045168067226891,
+          0.745063025210084
+        ],
+        "repeat_roc_auc_sd": 0.028574346256253255,
+        "selection_value_mean_repeat_roc_auc": 0.7629201680672268,
+        "subject_mean_oof_roc_auc": 0.7728991596638656
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_3p0__g_0p03",
+      "params": {
+        "C": 3.0,
+        "gamma": 0.03
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7930672268907564,
+          0.7669117647058823,
+          0.7550420168067227,
+          0.7623949579831933,
+          0.7648109243697478,
+          0.753781512605042,
+          0.7322478991596639,
+          0.7664915966386555,
+          0.7775210084033614,
+          0.7529411764705882
+        ],
+        "repeat_roc_auc_sd": 0.016120807137278776,
+        "selection_value_mean_repeat_roc_auc": 0.7625210084033613,
+        "subject_mean_oof_roc_auc": 0.7665966386554621
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_1p0__g_0p03",
+      "params": {
+        "C": 1.0,
+        "gamma": 0.03
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7968487394957984,
+          0.7675420168067226,
+          0.7620798319327731,
+          0.7663865546218488,
+          0.7448529411764706,
+          0.7419117647058824,
+          0.7283613445378151,
+          0.7638655462184873,
+          0.7941176470588236,
+          0.7419117647058824
+        ],
+        "repeat_roc_auc_sd": 0.022403823049220225,
+        "selection_value_mean_repeat_roc_auc": 0.7607878151260505,
+        "subject_mean_oof_roc_auc": 0.7716386554621849
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_3p0__g_scale",
+      "params": {
+        "C": 3.0,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7822478991596639,
+          0.7554621848739496,
+          0.7619747899159665,
+          0.7680672268907563,
+          0.7585084033613445,
+          0.7625,
+          0.7259453781512605,
+          0.7514705882352941,
+          0.778046218487395,
+          0.7608193277310924
+        ],
+        "repeat_roc_auc_sd": 0.015453438413428807,
+        "selection_value_mean_repeat_roc_auc": 0.7605042016806723,
+        "subject_mean_oof_roc_auc": 0.7693277310924369
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_3p0__g_0p01",
+      "params": {
+        "C": 3.0,
+        "gamma": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7642857142857143,
+          0.7521008403361344,
+          0.7558823529411764,
+          0.7648109243697478,
+          0.753046218487395,
+          0.744327731092437,
+          0.7364495798319328,
+          0.7569327731092437,
+          0.7732142857142857,
+          0.7486344537815126
+        ],
+        "repeat_roc_auc_sd": 0.010695280052905837,
+        "selection_value_mean_repeat_roc_auc": 0.7549684873949579,
+        "subject_mean_oof_roc_auc": 0.7558823529411764
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_0p3__g_scale",
+      "params": {
+        "C": 0.3,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7391806722689076,
+          0.7642857142857143,
+          0.7440126050420168,
+          0.7659663865546219,
+          0.740861344537815,
+          0.7399159663865547,
+          0.7392857142857143,
+          0.7392857142857143,
+          0.7774159663865546,
+          0.7487394957983193
+        ],
+        "repeat_roc_auc_sd": 0.014062646435807846,
+        "selection_value_mean_repeat_roc_auc": 0.7498949579831933,
+        "subject_mean_oof_roc_auc": 0.759453781512605
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_0p3",
+      "params": {
+        "C": 0.3
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7751050420168067,
+          0.7351890756302522,
+          0.7456932773109243,
+          0.726155462184874,
+          0.7496848739495798,
+          0.725420168067227,
+          0.7133403361344538,
+          0.7369747899159664,
+          0.746953781512605,
+          0.7402310924369748
+        ],
+        "repeat_roc_auc_sd": 0.01683746313349462,
+        "selection_value_mean_repeat_roc_auc": 0.7394747899159665,
+        "subject_mean_oof_roc_auc": 0.7731092436974789
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_10p0__g_scale",
+      "params": {
+        "C": 10.0,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7106092436974789,
+          0.7494747899159664,
+          0.7115546218487394,
+          0.7468487394957983,
+          0.7294117647058823,
+          0.7347689075630252,
+          0.7243697478991598,
+          0.7242647058823529,
+          0.7548319327731093,
+          0.7400210084033614
+        ],
+        "repeat_roc_auc_sd": 0.01533223685171557,
+        "selection_value_mean_repeat_roc_auc": 0.7326155462184875,
+        "subject_mean_oof_roc_auc": 0.7441176470588236
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_1p0",
+      "params": {
+        "C": 1.0
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.767436974789916,
+          0.7274159663865546,
+          0.7243697478991596,
+          0.704936974789916,
+          0.7342436974789915,
+          0.7100840336134454,
+          0.6906512605042017,
+          0.7425420168067227,
+          0.733298319327731,
+          0.7417016806722689
+        ],
+        "repeat_roc_auc_sd": 0.0218117414603258,
+        "selection_value_mean_repeat_roc_auc": 0.7276680672268907,
+        "subject_mean_oof_roc_auc": 0.7611344537815126
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_10p0__g_0p03",
+      "params": {
+        "C": 10.0,
+        "gamma": 0.03
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7022058823529411,
+          0.7405462184873949,
+          0.6923319327731092,
+          0.745798319327731,
+          0.7123949579831933,
+          0.7320378151260505,
+          0.7160714285714286,
+          0.7158613445378151,
+          0.7497899159663866,
+          0.7300420168067228
+        ],
+        "repeat_roc_auc_sd": 0.01902031236447994,
+        "selection_value_mean_repeat_roc_auc": 0.7237079831932773,
+        "subject_mean_oof_roc_auc": 0.7376050420168067
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_3p0",
+      "params": {
+        "C": 3.0
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.683718487394958,
+          0.7271008403361345,
+          0.6730042016806722,
+          0.735609243697479,
+          0.7067226890756303,
+          0.7280462184873949,
+          0.7173319327731094,
+          0.7013655462184873,
+          0.7321428571428571,
+          0.7286764705882353
+        ],
+        "repeat_roc_auc_sd": 0.021596861749384525,
+        "selection_value_mean_repeat_roc_auc": 0.7133718487394958,
+        "subject_mean_oof_roc_auc": 0.7327731092436975
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_10p0",
+      "params": {
+        "C": 10.0
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7557773109243697,
+          0.7240546218487395,
+          0.7113445378151261,
+          0.6956932773109245,
+          0.6998949579831933,
+          0.7031512605042016,
+          0.6858193277310924,
+          0.7235294117647059,
+          0.7336134453781513,
+          0.6667016806722689
+        ],
+        "repeat_roc_auc_sd": 0.02549220641870886,
+        "selection_value_mean_repeat_roc_auc": 0.7099579831932773,
+        "subject_mean_oof_roc_auc": 0.7265756302521008
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_1p0__g_0p1",
+      "params": {
+        "C": 1.0,
+        "gamma": 0.1
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7359243697478991,
+          0.7226890756302521,
+          0.7322478991596638,
+          0.7233193277310924,
+          0.717436974789916,
+          0.6933823529411764,
+          0.6717436974789917,
+          0.6755252100840335,
+          0.7090336134453782,
+          0.6808823529411765
+        ],
+        "repeat_roc_auc_sd": 0.024024854266926517,
+        "selection_value_mean_repeat_roc_auc": 0.7062184873949579,
+        "subject_mean_oof_roc_auc": 0.7406512605042017
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_30p0__g_scale",
+      "params": {
+        "C": 30.0,
+        "gamma": "scale"
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.6883403361344538,
+          0.6649159663865546,
+          0.6192226890756303,
+          0.640546218487395,
+          0.6628151260504203,
+          0.6727941176470589,
+          0.6443277310924369,
+          0.6699579831932774,
+          0.6805672268907562,
+          0.6156512605042017
+        ],
+        "repeat_roc_auc_sd": 0.02496182078300063,
+        "selection_value_mean_repeat_roc_auc": 0.6559138655462184,
+        "subject_mean_oof_roc_auc": 0.695063025210084
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_3p0__g_0p1",
+      "params": {
+        "C": 3.0,
+        "gamma": 0.1
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    }
+  ],
+  "auc_difference_champion_minus_baseline": 0.0037184873949579478,
+  "baseline_ablation": {
+    "auc": {
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7771008403361345,
+        0.7765756302521009,
+        0.7748949579831933,
+        0.76859243697479,
+        0.7607142857142857,
+        0.7740546218487394,
+        0.7740546218487395,
+        0.7724789915966387,
+        0.7968487394957984,
+        0.7721638655462185
+      ],
+      "repeat_roc_auc_sd": 0.009098010540377894,
+      "selection_value_mean_repeat_roc_auc": 0.7747478991596639,
+      "subject_mean_oof_roc_auc": 0.7747899159663865
+    },
+    "contains_gemma": false,
+    "family": "rank_blend",
+    "name": "rank_blend__lr_0.70",
+    "params": {
+      "lr_candidate": "lr__c_0p01",
+      "lr_weight": 0.7000000000000001,
+      "rbf_candidate": "rbf__c_1p0__g_0p01"
+    },
+    "preprocessing": "component-specific fold-local preprocessing",
+    "score": "convex blend of two training-CDF rank scores",
+    "view": "baseline_anchor39"
+  },
+  "baseline_candidate_finalists": {
+    "lr__c_0p01": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7682773109243697,
+          0.7703781512605042,
+          0.7751050420168066,
+          0.7677521008403361,
+          0.7597689075630252,
+          0.7743697478991597,
+          0.7740546218487395,
+          0.7739495798319328,
+          0.7924369747899159,
+          0.7667016806722688
+        ],
+        "repeat_roc_auc_sd": 0.008513869841969168,
+        "selection_value_mean_repeat_roc_auc": 0.7722794117647058,
+        "subject_mean_oof_roc_auc": 0.7735294117647059
+      },
+      "contains_gemma": false,
+      "family": "lr",
+      "name": "lr__c_0p01",
+      "params": {
+        "C": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "baseline_anchor39"
+    },
+    "rank_blend__lr_0.70": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7771008403361345,
+          0.7765756302521009,
+          0.7748949579831933,
+          0.76859243697479,
+          0.7607142857142857,
+          0.7740546218487394,
+          0.7740546218487395,
+          0.7724789915966387,
+          0.7968487394957984,
+          0.7721638655462185
+        ],
+        "repeat_roc_auc_sd": 0.009098010540377894,
+        "selection_value_mean_repeat_roc_auc": 0.7747478991596639,
+        "subject_mean_oof_roc_auc": 0.7747899159663865
+      },
+      "contains_gemma": false,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_0.70",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 0.7000000000000001,
+        "rbf_candidate": "rbf__c_1p0__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "baseline_anchor39"
+    },
+    "rbf__c_1p0__g_0p01": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7867647058823529,
+          0.7712184873949579,
+          0.7607142857142857,
+          0.7718487394957984,
+          0.7616596638655463,
+          0.7656512605042017,
+          0.7608193277310924,
+          0.7701680672268907,
+          0.7969537815126051,
+          0.7728991596638655
+        ],
+        "repeat_roc_auc_sd": 0.011761141416802599,
+        "selection_value_mean_repeat_roc_auc": 0.7718697478991597,
+        "subject_mean_oof_roc_auc": 0.7758403361344537
+      },
+      "contains_gemma": false,
+      "family": "rbf",
+      "name": "rbf__c_1p0__g_0p01",
+      "params": {
+        "C": 1.0,
+        "gamma": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "baseline_anchor39"
+    }
+  },
+  "champion": {
+    "auc": {
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7805672268907564,
+        0.781827731092437,
+        0.7757352941176471,
+        0.7775210084033615,
+        0.7700630252100841,
+        0.7814075630252101,
+        0.7679621848739495,
+        0.7827731092436975,
+        0.7919117647058824,
+        0.7748949579831933
+      ],
+      "repeat_roc_auc_sd": 0.0068779129814700996,
+      "selection_value_mean_repeat_roc_auc": 0.7784663865546219,
+      "subject_mean_oof_roc_auc": 0.7817226890756303
+    },
+    "contains_gemma": true,
+    "family": "rank_blend",
+    "name": "rank_blend__lr_1.00",
+    "params": {
+      "lr_candidate": "lr__c_0p01",
+      "lr_weight": 1.0,
+      "rbf_candidate": "rbf__c_0p3__g_0p01"
+    },
+    "preprocessing": "component-specific fold-local preprocessing",
+    "score": "convex blend of two training-CDF rank scores",
+    "view": "gemma_augmented"
+  },
+  "cv": {
+    "folds": 5,
+    "profile": "default",
+    "repeats": 10,
+    "same_splits_all_candidates": true,
+    "subject_level": true
+  },
+  "deployment": {
+    "full_refit": true,
+    "joblib_roundtrip_verified": true,
+    "path": "/content/drive/MyDrive/Binary_Gemma_CognitiveFeature_AUC_result/20260729_225209_utc/deployment/model.joblib"
+  },
+  "experiment": "Binary_Gemma_CognitiveFeature_AUC",
+  "gemma_candidate_finalists": {
+    "lr__c_0p01": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7805672268907564,
+          0.781827731092437,
+          0.7757352941176471,
+          0.7775210084033615,
+          0.7700630252100841,
+          0.7814075630252101,
+          0.7679621848739495,
+          0.7827731092436975,
+          0.7919117647058824,
+          0.7748949579831933
+        ],
+        "repeat_roc_auc_sd": 0.0068779129814700996,
+        "selection_value_mean_repeat_roc_auc": 0.7784663865546219,
+        "subject_mean_oof_roc_auc": 0.7817226890756303
+      },
+      "contains_gemma": true,
+      "family": "lr",
+      "name": "lr__c_0p01",
+      "params": {
+        "C": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    },
+    "rank_blend__lr_1.00": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7805672268907564,
+          0.781827731092437,
+          0.7757352941176471,
+          0.7775210084033615,
+          0.7700630252100841,
+          0.7814075630252101,
+          0.7679621848739495,
+          0.7827731092436975,
+          0.7919117647058824,
+          0.7748949579831933
+        ],
+        "repeat_roc_auc_sd": 0.0068779129814700996,
+        "selection_value_mean_repeat_roc_auc": 0.7784663865546219,
+        "subject_mean_oof_roc_auc": 0.7817226890756303
+      },
+      "contains_gemma": true,
+      "family": "rank_blend",
+      "name": "rank_blend__lr_1.00",
+      "params": {
+        "lr_candidate": "lr__c_0p01",
+        "lr_weight": 1.0,
+        "rbf_candidate": "rbf__c_0p3__g_0p01"
+      },
+      "preprocessing": "component-specific fold-local preprocessing",
+      "score": "convex blend of two training-CDF rank scores",
+      "view": "gemma_augmented"
+    },
+    "rbf__c_0p3__g_0p01": {
+      "auc": {
+        "metric": "ROC-AUC",
+        "repeat_roc_auc": [
+          0.7715336134453782,
+          0.776155462184874,
+          0.7724789915966387,
+          0.7724789915966387,
+          0.7580882352941176,
+          0.7693277310924369,
+          0.7555672268907563,
+          0.7702731092436975,
+          0.7875,
+          0.7640756302521008
+        ],
+        "repeat_roc_auc_sd": 0.009091917682625794,
+        "selection_value_mean_repeat_roc_auc": 0.7697478991596638,
+        "subject_mean_oof_roc_auc": 0.7699579831932774
+      },
+      "contains_gemma": true,
+      "family": "rbf",
+      "name": "rbf__c_0p3__g_0p01",
+      "params": {
+        "C": 0.3,
+        "gamma": 0.01
+      },
+      "preprocessing": "fold-local median imputation + standard scaling",
+      "score": "decision margin located in fitted training empirical CDF",
+      "view": "gemma_augmented"
+    }
+  },
+  "metric_contract": {
+    "candidate_selection_metric": "mean repeated subject-level OOF ROC-AUC",
+    "nested": false,
+    "other_metrics_used_for_selection": [],
+    "primary_metric": "mean repeated subject-level OOF ROC-AUC",
+    "selection_note": "Candidate and blend selection is deliberately non-nested and therefore optimistic; preprocessing remains fold-local and no test label enters a fit."
+  },
+  "task": {
+    "class_counts": {
+      "CN": 85,
+      "MCI_or_Dem": 56
+    },
+    "n_subjects": 141,
+    "negative": "CN",
+    "positive": "MCI + Dem"
+  }
+}

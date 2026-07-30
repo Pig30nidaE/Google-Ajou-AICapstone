@@ -1,0 +1,98 @@
+# Binary_PooledMaxAUC default configuration.
+# Override precedence: CLI > BPM_* environment variable > this file > code default.
+
+run:
+  experiment_name: Binary_PooledMaxAUC
+  run_id: null            # null -> UTC timestamp, one new directory per run
+  seed: 20260730
+  n_jobs: 1
+  subject_hash_salt: Binary_PooledMaxAUC
+  profile: default        # fast(3 repeats) | default(10) | max(20)
+
+paths:
+  data_root: null         # null -> base.ipynb DATA_ROOT, else <repo>/Data
+  output_root: null       # null -> /content/drive/MyDrive/<experiment>_result on Colab
+  cache_root: null        # parsed daily-table cache; survives across runs
+
+data:
+  # Pooling Training(141) + Validation(33) = 174 subjects.
+  # This is NOT direct leakage, but it consumes the last untouched hold-out.
+  # Set to [train] to reproduce the 141-subject numbers used by every other
+  # SangHyo experiment (then results become directly comparable to them).
+  splits: [train, val]
+  positive_diagnoses: [MCI, Dem]
+  negative_diagnoses: [CN]
+  min_days_per_subject: 28
+  strict_cohort_contract: true
+  expected_subjects:
+    train: 141
+    val: 33
+  expected_pooled_diagnoses:
+    CN: 111
+    MCI: 51
+    Dem: 12
+
+features:
+  include_intraday: true
+  views: [mmse_core, mmse_plus, mmse_wear_small, all]
+  wearable_stats:
+    - mean
+    - sd
+    - cv
+    - median
+    - iqr
+    - p10
+    - p90
+    - trend_per_week
+    - late_minus_early
+    - weekend_minus_weekday
+  small_wearable_channels:
+    - slp_deep_ratio
+    - slp_light_ratio
+    - slp_restless
+    - slp_awake_minutes
+    - slp_efficiency
+    - act_rest_minutes
+    - act_score
+    - act_steps
+  small_wearable_stats: [mean, sd, cv]
+  mmse_item_max: 2.0
+
+cv:
+  n_splits: 5
+  n_repeats: 10           # overridden by run.profile
+  min_positive_per_validation_fold: 2
+
+screening:
+  enabled: true
+  top_k_grid: [15, 25, 40, 70]
+  correlation_threshold: 0.95
+  winsorize_quantile: 0.01
+
+candidates:
+  families:
+    - logreg
+    - svm_rbf
+    - extratrees
+    - randomforest
+    - hgb
+    - lightgbm
+    - catboost
+    - xgboost
+    - ydf_oblique
+  logreg_c_grid: [0.01, 0.03, 0.1, 0.3, 1.0, 3.0]
+  svm_c_grid: [0.3, 1.0, 3.0]
+  svm_gamma_grid: [0.003, 0.01, 0.03]
+  class_weight_balanced: true
+
+ensemble:
+  enabled: true
+  n_top_candidates: 8
+  n_simplex_draws: 8192
+  include_structured_blends: true
+
+# Adds a fully nested (inner-CV selection) arm so the report can quantify how
+# much of the headline number is selection optimism. Roughly doubles runtime.
+honest_nested_comparison: false
+
+target_roc_auc: 0.85

@@ -1,0 +1,165 @@
+{
+  "data_root": "/content/drive/MyDrive/GoogleAI_contest/Data",
+  "experiment": "Binary_Google_YDF_AUC",
+  "historical_eval": false,
+  "num_threads": 8,
+  "output_dir": "/content/drive/MyDrive/Binary_Google_YDF_AUC_result/20260729_225231_utc",
+  "primary_metric": "ROC-AUC",
+  "profile": {
+    "bag_seeds": 3,
+    "blend_draws": 4096,
+    "candidates": [
+      {
+        "candidate_id": "axis_mmse39_d3",
+        "corr_threshold": 1.01,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 1.0,
+          "max_depth": 3,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 400,
+          "shrinkage": 0.05,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "axis_mmse_all_d2",
+        "corr_threshold": 0.99,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 2,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse_all"
+      },
+      {
+        "candidate_id": "axis_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 1.0,
+          "max_depth": 3,
+          "min_examples": 12,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "subsample": 0.7
+        },
+        "top_k": 25,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "oblique_mmse39_d3",
+        "corr_threshold": 1.01,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 3,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 400,
+          "shrinkage": 0.05,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "oblique_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 3,
+          "min_examples": 12,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.7
+        },
+        "top_k": 25,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "oblique_all151_prior_best",
+        "corr_threshold": 0.99,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.0,
+          "max_depth": 5,
+          "min_examples": 20,
+          "num_candidate_attributes_ratio": 0.3,
+          "num_trees": 600,
+          "shrinkage": 0.08,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.6
+        },
+        "top_k": 70,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "rf_mmse39_d6",
+        "corr_threshold": 1.01,
+        "family": "rf",
+        "params": {
+          "max_depth": 6,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 800
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "rf_mmse_all_d8",
+        "corr_threshold": 0.99,
+        "family": "rf",
+        "params": {
+          "max_depth": 8,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 800
+        },
+        "top_k": 0,
+        "view": "mmse_all"
+      },
+      {
+        "candidate_id": "rf_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "rf",
+        "params": {
+          "max_depth": 8,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.3,
+          "num_trees": 1000
+        },
+        "top_k": 25,
+        "view": "all151"
+      }
+    ],
+    "name": "default",
+    "outer_folds": 5,
+    "outer_repeats": 5,
+    "reportable": true
+  },
+  "seed": 20260730,
+  "stage": "all",
+  "subject_tokenization": "SHA-256 with a run-local random secret that is not persisted"
+}

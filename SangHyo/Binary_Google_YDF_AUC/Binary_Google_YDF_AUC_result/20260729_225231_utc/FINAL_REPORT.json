@@ -1,0 +1,238 @@
+{
+  "candidate_count": 9,
+  "candidate_results_path": "/content/drive/MyDrive/Binary_Google_YDF_AUC_result/20260729_225231_utc/CANDIDATE_RESULTS.json",
+  "champion_policy": {
+    "auc": {
+      "mean_repeat_roc_auc": 0.7660714285714285,
+      "metric": "ROC-AUC",
+      "repeat_roc_auc": [
+        0.7721638655462184,
+        0.753781512605042,
+        0.7473739495798319,
+        0.7808823529411765,
+        0.776155462184874
+      ],
+      "repeat_roc_auc_sd": 0.014652702464027889,
+      "subject_mean_oof_roc_auc": 0.7834033613445379
+    },
+    "components": [
+      "axis_mmse39_d3",
+      "oblique_all151_top25",
+      "rf_mmse39_d6"
+    ],
+    "name": "auc_simplex_family_winners_ecdf",
+    "score_space": "ecdf",
+    "selection_type": "auc_optimized_simplex",
+    "subject_mean_oof_roc_auc": 0.7834033613445379,
+    "weights": [
+      0.010703533782032508,
+      0.6315983340225886,
+      0.3576981321953789
+    ]
+  },
+  "cv": {
+    "all_subject_overlap_checks_passed": true,
+    "bag_seeds": 3,
+    "folds": 5,
+    "repeats": 5,
+    "subject_level": true
+  },
+  "deployment": {
+    "full_training_refit": true,
+    "path": "/content/drive/MyDrive/Binary_Google_YDF_AUC_result/20260729_225231_utc/deployment",
+    "roundtrip": {
+      "component_checkpoint_hashes_verified_on_load": true,
+      "deployment_manifest_sha256": "33db626b77b06224f30a35fdddb70f25fd1d95d3a35826d419b3b2ee8cbf1d52",
+      "max_abs_difference": 0.0,
+      "verified": true
+    }
+  },
+  "engine_contract": {
+    "distribution": "ydf",
+    "engine": "google_ydf",
+    "fallback_permitted": false,
+    "models_in_champion": [
+      "google_ydf"
+    ],
+    "sklearn_estimator_in_champion": false,
+    "sparse_oblique_downgrade_permitted": false,
+    "version": "0.15.0"
+  },
+  "experiment": "Binary_Google_YDF_AUC",
+  "metric_contract": {
+    "candidate_selection": "subject-mean repeated OOF ROC-AUC",
+    "ensemble_weight_selection": "subject-mean repeated OOF ROC-AUC",
+    "nested": false,
+    "other_metrics_used_for_selection": [],
+    "primary": "ROC-AUC",
+    "selection_note": "The predeclared model/configuration/blend winner is selected on these repeated OOF labels, so the development score is selection-optimistic. Each individual OOF score remains from a model and feature screen that excluded that subject."
+  },
+  "profile": {
+    "bag_seeds": 3,
+    "blend_draws": 4096,
+    "candidates": [
+      {
+        "candidate_id": "axis_mmse39_d3",
+        "corr_threshold": 1.01,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 1.0,
+          "max_depth": 3,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 400,
+          "shrinkage": 0.05,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "axis_mmse_all_d2",
+        "corr_threshold": 0.99,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 2,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse_all"
+      },
+      {
+        "candidate_id": "axis_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "axis_gbt",
+        "params": {
+          "l2_regularization": 1.0,
+          "max_depth": 3,
+          "min_examples": 12,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "subsample": 0.7
+        },
+        "top_k": 25,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "oblique_mmse39_d3",
+        "corr_threshold": 1.01,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 3,
+          "min_examples": 8,
+          "num_candidate_attributes_ratio": 0.7,
+          "num_trees": 400,
+          "shrinkage": 0.05,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.8
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "oblique_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.5,
+          "max_depth": 3,
+          "min_examples": 12,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 600,
+          "shrinkage": 0.05,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.7
+        },
+        "top_k": 25,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "oblique_all151_prior_best",
+        "corr_threshold": 0.99,
+        "family": "sparse_oblique_gbt",
+        "params": {
+          "l2_regularization": 0.0,
+          "max_depth": 5,
+          "min_examples": 20,
+          "num_candidate_attributes_ratio": 0.3,
+          "num_trees": 600,
+          "shrinkage": 0.08,
+          "sparse_oblique_normalization": "STANDARD_DEVIATION",
+          "sparse_oblique_num_projections_exponent": 1.5,
+          "sparse_oblique_projection_density_factor": 3.0,
+          "subsample": 0.6
+        },
+        "top_k": 70,
+        "view": "all151"
+      },
+      {
+        "candidate_id": "rf_mmse39_d6",
+        "corr_threshold": 1.01,
+        "family": "rf",
+        "params": {
+          "max_depth": 6,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 800
+        },
+        "top_k": 0,
+        "view": "mmse39"
+      },
+      {
+        "candidate_id": "rf_mmse_all_d8",
+        "corr_threshold": 0.99,
+        "family": "rf",
+        "params": {
+          "max_depth": 8,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.5,
+          "num_trees": 800
+        },
+        "top_k": 0,
+        "view": "mmse_all"
+      },
+      {
+        "candidate_id": "rf_all151_top25",
+        "corr_threshold": 0.95,
+        "family": "rf",
+        "params": {
+          "max_depth": 8,
+          "min_examples": 5,
+          "num_candidate_attributes_ratio": 0.3,
+          "num_trees": 1000
+        },
+        "top_k": 25,
+        "view": "all151"
+      }
+    ],
+    "name": "default",
+    "outer_folds": 5,
+    "outer_repeats": 5,
+    "reportable": true
+  },
+  "reportability": {
+    "reportable_full_profile": true,
+    "smoke_is_wiring_only": false
+  },
+  "task": {
+    "diagnosis_counts": {
+      "CN": 85,
+      "Dem": 9,
+      "MCI": 47
+    },
+    "n_subjects": 141,
+    "negative": "CN",
+    "positive": "MCI + Dem"
+  }
+}

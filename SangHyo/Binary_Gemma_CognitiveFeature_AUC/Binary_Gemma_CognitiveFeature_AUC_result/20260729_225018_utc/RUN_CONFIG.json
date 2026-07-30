@@ -1,0 +1,105 @@
+{
+  "api_key_env": "GEMINI_API_KEY",
+  "cache_dir": "/content/drive/MyDrive/Binary_Gemma_CognitiveFeature_AUC_cache",
+  "class_mapping": {
+    "CN": 0,
+    "MCI_or_Dem": 1
+  },
+  "data_root": "/content/drive/MyDrive/GoogleAI_contest/Data",
+  "experiment": "Binary_Gemma_CognitiveFeature_AUC",
+  "historical_eval": false,
+  "min_interval_seconds": 13.0,
+  "model": "gemma-4-31b-it",
+  "offline": false,
+  "output_dir": "/content/drive/MyDrive/Binary_Gemma_CognitiveFeature_AUC_result/20260729_225018_utc",
+  "profile": {
+    "blend_weights": [
+      0.0,
+      0.1,
+      0.2,
+      0.30000000000000004,
+      0.4,
+      0.5,
+      0.6000000000000001,
+      0.7000000000000001,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "folds": 5,
+    "lr_c": [
+      0.01,
+      0.03,
+      0.1,
+      0.3,
+      1.0,
+      3.0,
+      10.0
+    ],
+    "name": "default",
+    "rbf": [
+      [
+        0.1,
+        "scale"
+      ],
+      [
+        0.3,
+        "scale"
+      ],
+      [
+        1.0,
+        "scale"
+      ],
+      [
+        3.0,
+        "scale"
+      ],
+      [
+        10.0,
+        "scale"
+      ],
+      [
+        30.0,
+        "scale"
+      ],
+      [
+        0.3,
+        0.01
+      ],
+      [
+        1.0,
+        0.01
+      ],
+      [
+        3.0,
+        0.01
+      ],
+      [
+        1.0,
+        0.03
+      ],
+      [
+        3.0,
+        0.03
+      ],
+      [
+        10.0,
+        0.03
+      ],
+      [
+        1.0,
+        0.1
+      ],
+      [
+        3.0,
+        0.1
+      ]
+    ],
+    "repeats": 10
+  },
+  "prompt_hash": "4829331ca75f557bdb6a142a8f56ae3dd80d30d36d1d8212f1e2dd3c83f11083",
+  "schema_hash": "a76f5ed55379f194322e1a991e7c8ceb96d5a5d9c45582b914fd4a05e05fd539",
+  "seed": 20260730,
+  "stage": "all",
+  "subject_tokenization": "SHA-256 with a run-local random secret that is not persisted"
+}

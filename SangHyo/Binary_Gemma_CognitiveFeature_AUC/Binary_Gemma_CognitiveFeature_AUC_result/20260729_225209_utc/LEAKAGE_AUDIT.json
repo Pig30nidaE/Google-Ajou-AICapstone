@@ -1,0 +1,193 @@
+{
+  "allowed_non_nested_optimism": {
+    "blend_selected_on_same_repeated_oof": true,
+    "candidate_selected_on_same_repeated_oof": true,
+    "reported_explicitly": true
+  },
+  "direct_leakage_checks": {
+    "diagnosis_admin_identifier_features": false,
+    "fold_train_test_subject_overlap": 0,
+    "historical_labels_opened_after_prediction_freeze": false,
+    "historical_validation_subject_overlap_checked": false,
+    "observation_or_collection_volume_features": false,
+    "preprocessing_fit_on_fold_training_only": true,
+    "subject_identifier_sent_to_api": false,
+    "subject_label_or_diagnosis_sent_to_api": false,
+    "subject_level_oof": true
+  },
+  "source_access": {
+    "cognitive_reads": [
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/SourceData/3.CognitiveFunction/train_mmse.csv",
+        "purpose": "train MMSE scores; diagnosis/admin columns excluded by usecols",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "TOTAL",
+          "Q01",
+          "Q02",
+          "Q03",
+          "Q04",
+          "Q05",
+          "Q06",
+          "Q07",
+          "Q08",
+          "Q09",
+          "Q10",
+          "Q11_1",
+          "Q11_2",
+          "Q11_3",
+          "Q12_1",
+          "Q12_2",
+          "Q12_3",
+          "Q12_4",
+          "Q12_5",
+          "Q13_1",
+          "Q13_2",
+          "Q13_3",
+          "Q14_1",
+          "Q14_2",
+          "Q15",
+          "Q16_1",
+          "Q16_2",
+          "Q16_3",
+          "Q17",
+          "Q18",
+          "Q19"
+        ]
+      },
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/SourceData/3.CognitiveFunction/train_mmse.csv",
+        "purpose": "train MMSE scores; diagnosis/admin columns excluded by usecols",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "TOTAL",
+          "Q01",
+          "Q02",
+          "Q03",
+          "Q04",
+          "Q05",
+          "Q06",
+          "Q07",
+          "Q08",
+          "Q09",
+          "Q10",
+          "Q11_1",
+          "Q11_2",
+          "Q11_3",
+          "Q12_1",
+          "Q12_2",
+          "Q12_3",
+          "Q12_4",
+          "Q12_5",
+          "Q13_1",
+          "Q13_2",
+          "Q13_3",
+          "Q14_1",
+          "Q14_2",
+          "Q15",
+          "Q16_1",
+          "Q16_2",
+          "Q16_3",
+          "Q17",
+          "Q18",
+          "Q19"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/SourceData/3.CognitiveFunction/train_mmse.csv",
+        "purpose": "train MMSE scores; diagnosis/admin columns excluded by usecols",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "TOTAL",
+          "Q01",
+          "Q02",
+          "Q03",
+          "Q04",
+          "Q05",
+          "Q06",
+          "Q07",
+          "Q08",
+          "Q09",
+          "Q10",
+          "Q11_1",
+          "Q11_2",
+          "Q11_3",
+          "Q12_1",
+          "Q12_2",
+          "Q12_3",
+          "Q12_4",
+          "Q12_5",
+          "Q13_1",
+          "Q13_2",
+          "Q13_3",
+          "Q14_1",
+          "Q14_2",
+          "Q15",
+          "Q16_1",
+          "Q16_2",
+          "Q16_3",
+          "Q17",
+          "Q18",
+          "Q19"
+        ]
+      },
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/SourceData/3.CognitiveFunction/train_mmse.csv",
+        "purpose": "train MMSE scores; diagnosis/admin columns excluded by usecols",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "TOTAL",
+          "Q01",
+          "Q02",
+          "Q03",
+          "Q04",
+          "Q05",
+          "Q06",
+          "Q07",
+          "Q08",
+          "Q09",
+          "Q10",
+          "Q11_1",
+          "Q11_2",
+          "Q11_3",
+          "Q12_1",
+          "Q12_2",
+          "Q12_3",
+          "Q12_4",
+          "Q12_5",
+          "Q13_1",
+          "Q13_2",
+          "Q13_3",
+          "Q14_1",
+          "Q14_2",
+          "Q15",
+          "Q16_1",
+          "Q16_2",
+          "Q16_3",
+          "Q17",
+          "Q18",
+          "Q19"
+        ]
+      },
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/LabelingData/1.Gait/training_label.csv",
+        "purpose": "train Gait diagnosis copy",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "DIAG_NM"
+        ]
+      },
+      {
+        "path": "/content/drive/MyDrive/GoogleAI_contest/Data/1.Training/LabelingData/2.Sleep/training_label.csv",
+        "purpose": "train Sleep diagnosis copy",
+        "selected_columns": [
+          "SAMPLE_EMAIL",
+          "DIAG_NM"
+        ]
+      }
+    ],
+    "n_reads": 4
+  }
+}

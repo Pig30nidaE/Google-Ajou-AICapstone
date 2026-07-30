@@ -1,0 +1,9 @@
+{
+  "elapsed_seconds": 4.93381079400001,
+  "error": "Gemma extraction failed after bounded retries: RuntimeError: GEMINI_API_KEY is empty; configure the Colab secret or use --offline with a complete exact-request cache",
+  "error_type": "RuntimeError",
+  "experiment": "Binary_Gemma_CognitiveFeature_AUC",
+  "stage": "all",
+  "status": "failed",
+  "updated_utc": "2026-07-29T22:50:23.392757+00:00"
+}

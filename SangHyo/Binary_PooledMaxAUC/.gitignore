@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+Binary_PooledMaxAUC_result/
+Binary_PooledMaxAUC_cache/
+catboost_info/
