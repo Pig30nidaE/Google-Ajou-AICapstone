@@ -1,0 +1,23 @@
+{
+  "observed_auc": 0.9087542087542086,
+  "observed_sd": 0.005092109471167536,
+  "bootstrap_ci": [
+    0.8429289658686386,
+    0.9716120684620432
+  ],
+  "permB": {
+    "null_mean": 0.4746509539842873,
+    "null_sd": 0.10362074040475845,
+    "p_value": 0.000999000999000999,
+    "n": 1000
+  },
+  "permC": {
+    "best_feature": "activity_low_std",
+    "best_auc": 0.9102132435465768,
+    "null_mean": 0.7059338757949868,
+    "null_sd": 0.03616738999869415,
+    "p_value": 0.004975124378109453,
+    "n": 200
+  },
+  "bootstrap_note": "direction-corrected: activity_low_std is inversely associated with dementia"
+}
