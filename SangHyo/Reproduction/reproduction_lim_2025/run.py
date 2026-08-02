@@ -300,7 +300,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | None = None) -> dict[str, Any]:
     namespace = globals() if namespace is None else namespace
-    args = build_parser().parse_args(argv)
+    # base.ipynb runs this file via runpy.run_path() with no argv of its own, so
+    # sys.argv is whatever the Jupyter/Colab kernel launched with (e.g. "-f
+    # kernel-xxx.json"). parse_known_args() -- the same pattern
+    # Binary_Google_DemScreen/run.py uses -- ignores those instead of crashing.
+    args, _unknown_argv = build_parser().parse_known_args(argv)
 
     no_training = args.dry_run or args.audit_only or args.inspect_data or args.compare
 
@@ -332,7 +336,12 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         return mode_inspect_data(data_root, output_dir)
 
     if not args.config:
-        raise SystemExit("--config is required (or use --inspect-data / --compare)")
+        raise SystemExit(
+            "--config is required (or use --inspect-data / --compare). "
+            "If running via base.ipynb Cell 5, set sys.argv before that cell, e.g.:\n"
+            "  import sys; sys.argv = ['run.py', '--config', "
+            "'configs/paper_reproduction.yaml']"
+        )
 
     from src.utils.config import load_config
 
