@@ -9,33 +9,32 @@
 
 먼저 ``--dry-run``으로 절차와 규모를 확인한 뒤 실제 학습을 시작하는 것을 권장한다.
 
-Colab / ``base.ipynb``
------------------------
-저장소 루트 ``base.ipynb``의 Cell 2에 ``RUN_FILE = "Reproduction/reproduction_lee_lee_2025_vae/run.py"``
-만 지정하고 Cell 5를 그대로 실행하는 방식은 **이 스크립트에서 동작하지 않는다.**
-Cell 5는 ``runpy.run_path(..., run_name="__main__")``로 파일을 실행하는데, 이때
-``sys.argv``는 노트북이 아니라 **Jupyter 커널 자신의 인자**(예: ``-f kernel-xxxx.json``)이고,
-이 파일의 ``argparse``가 그 인자를 만나 즉시 ``SystemExit(2)``를 던진다(실측 확인함).
-``--config`` 없이 실행하는 ``--inspect-data``도 마찬가지로 크래시한다.
+Colab / ``base.ipynb`` — 한 번에 실행
+--------------------------------------
+저장소 루트 ``base.ipynb``의 **Cell 2만 수정하고 그대로 위에서 아래로 실행**하면 된다::
 
-**검증된 안전한 방법**: base.ipynb의 Cell 1(환경 준비: clone, ``PROJECT_ROOT``/``DATA_ROOT``
-설정)까지만 실행한 뒤, Cell 2·4·5 대신 아래 셀을 새로 추가한다.
+    USER_FOLDER = "SangHyo"
+    RUN_FILE    = "Reproduction/reproduction_lee_lee_2025_vae/run.py"
 
-.. code-block:: python
+``Reproduction/`` 한 단계를 빠뜨리면 Cell 3에서 ``FileNotFoundError``가 난다.
+
+이 스크립트는 base.ipynb Cell 5의 실행 방식(``runpy.run_path(..., run_name="__main__")``)을
+스스로 감지한다. 그 경로에서는 ``sys.argv``가 노트북 인자가 아니라 **Jupyter 커널 자신의
+인자**(``-f kernel-xxxx.json``)이므로, argparse에 넘기면 ``unrecognized arguments``로 죽는다.
+그래서 커널 argv를 감지하면 **무시하고 전체 파이프라인(:func:`run_all`)을 실행**한다.
+Cell 1이 주입한 ``PROJECT_ROOT``/``DATA_ROOT``도 자동으로 사용한다.
+
+노트북에서 특정 단계만 돌리고 싶으면 Cell 5 **앞에** 환경변수를 지정한다::
+
+    import os
+    os.environ["VAE2025_ARGS"] = "--config configs/leakage_controlled_non_nested.yaml --dry-run"
+
+또는 셀에서 직접 함수를 부른다 (``argv``를 명시하면 커널 argv를 완전히 무시한다)::
 
     import sys
     sys.path.insert(0, str(PROJECT_ROOT / "SangHyo/Reproduction/reproduction_lee_lee_2025_vae"))
     from run import run_pipeline
-
-    run_pipeline(
-        namespace=globals(),      # base.ipynb Cell 1이 만든 PROJECT_ROOT/DATA_ROOT를 사용
-        argv=["--config", "configs/leakage_controlled_non_nested.yaml", "--dry-run"],
-    )
-
-``argv``를 리스트로 명시하면 ``sys.argv``(=커널 인자)를 완전히 무시하므로 안전하다.
-``namespace=globals()``를 넘기면 base.ipynb Cell 1이 정한
-``DATA_ROOT``(Colab: ``/content/drive/Shareddrives/GoogleAI_contest/Data``)를
-``--data-root`` 없이도 자동으로 사용한다.
+    run_pipeline(namespace=globals(), argv=["--config", "configs/base.yaml", "--dry-run"])
 
 GPU / 런타임
 ------------
@@ -53,8 +52,12 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import logging
+import os
+import shlex
 import subprocess
 import sys
+import time
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -73,6 +76,55 @@ EXPERIMENT_DISPATCH = {
 COLAB_SHARED_DATA_ROOT = Path("/content/drive/Shareddrives/GoogleAI_contest/Data")
 #: 저장소 어디서든 데이터 경로를 override할 때 쓰는 환경변수 (다른 SangHyo 실험과 동일 이름).
 DATA_ROOT_ENV_VAR = "SANGHYO_DATA_ROOT"
+#: 노트북에서 CLI 인자를 넘기고 싶을 때 쓰는 환경변수.
+ARGS_ENV_VAR = "VAE2025_ARGS"
+
+#: 한 번에 실행(run_all)할 때 쓰는 실험 A config.
+#: A1(percentile)은 Dem이 6행만 남아 8:1:1 분할이 불가능하므로(I-1 증거 F)
+#: 기본 파이프라인은 A3(Isolation Forest)를 쓴다. A1은 실패를 기록만 하고 넘어간다.
+RUN_ALL_CONFIGS = {
+    "A": "configs/paper_isoforest_latent500.yaml",
+    "B": "configs/leakage_controlled_non_nested.yaml",
+    "C": "configs/nested_subject_independent.yaml",
+}
+RUN_ALL_A_PRIMARY = "configs/paper_percentile_latent500.yaml"
+
+
+def _running_under_kernel() -> bool:
+    """base.ipynb Cell 5처럼 Jupyter/Colab 커널 안에서 실행 중인지 판정한다.
+
+    이 경우 ``sys.argv``는 노트북 인자가 아니라 커널 런처의 인자이므로
+    argparse에 넘기면 안 된다.
+    """
+    try:
+        get_ipython  # type: ignore[name-defined]  # noqa: B018
+        return True
+    except NameError:
+        pass
+    if "ipykernel" in sys.modules or "google.colab" in sys.modules:
+        return True
+    prog = Path(sys.argv[0]).name.lower() if sys.argv else ""
+    if any(k in prog for k in ("ipykernel_launcher", "colab_kernel_launcher", "colab-fileshim")):
+        return True
+    rest = sys.argv[1:]
+    return "-f" in rest and any("kernel-" in a and a.endswith(".json") for a in rest)
+
+
+def _resolve_argv(argv: list[str] | None) -> list[str] | None:
+    """실제로 사용할 CLI 인자를 정한다.
+
+    Returns:
+        인자 리스트, 또는 ``None``(= 전체 파이프라인을 한 번에 실행하라는 뜻).
+    """
+    if argv is not None:
+        return list(argv)
+    env = os.environ.get(ARGS_ENV_VAR)
+    if env is not None and env.strip():
+        log.info("%s에서 인자를 읽는다: %s", ARGS_ENV_VAR, env)
+        return shlex.split(env)
+    if _running_under_kernel():
+        return None
+    return sys.argv[1:]
 
 #: --inspect-data / --dry-run 은 이 목록만 있으면 동작한다.
 _CORE_DEPS = {"numpy": "numpy", "pandas": "pandas", "scikit-learn": "sklearn",
@@ -181,18 +233,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--models", type=str, default=None, help="쉼표로 구분한 모델 목록")
     p.add_argument("--skip-install", action="store_true", help="의존성 자동 설치를 건너뛴다")
+    p.add_argument("--all", action="store_true",
+                   help="점검·감사·실험 A/B/C·비교표를 한 번에 실행 (노트북 기본 동작)")
     p.add_argument("-v", "--verbose", action="store_true")
     return p
 
 
 def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | None = None) -> int:
-    """실제 진입점. CLI에서는 ``argv=None``으로 ``sys.argv``를 읽고,
-    base.ipynb 노트북 셀에서는 ``run_pipeline(namespace=globals(), argv=[...])``로
-    명시 호출한다 (모듈 상단 docstring 참조 — bare ``python run.py`` 방식은
-    Jupyter 커널 자체 인자와 충돌해 크래시하므로 노트북에서는 반드시 이 형태로 부른다).
+    """실제 진입점.
+
+    ``argv``가 ``None``이면 실행 환경을 보고 스스로 정한다:
+
+    * 일반 셸 → ``sys.argv[1:]``
+    * ``VAE2025_ARGS`` 환경변수가 있으면 그것을 파싱
+    * Jupyter/Colab 커널(= base.ipynb Cell 5) → 커널 argv를 무시하고
+      :func:`run_all`로 전체 파이프라인을 한 번에 실행
     """
     namespace = globals() if namespace is None else namespace
-    args = build_parser().parse_args(argv)
+    resolved = _resolve_argv(argv)
+    if resolved is None:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        return run_all(namespace=namespace)
+
+    args = build_parser().parse_args(resolved)
+    if args.all:
+        logging.basicConfig(
+            level=logging.DEBUG if args.verbose else logging.INFO,
+            format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+            datefmt="%H:%M:%S",
+        )
+        return run_all(namespace=namespace, seed=args.seed, skip_install=args.skip_install)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
@@ -300,7 +374,9 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
             "실험 A는 논문 절차의 누수를 의도적으로 재현한다. "
             "관측된 위반은 leakage_observation.json에 정리되어 있다."
         )
-    return 0
+    # run_all이 교차 비교표를 만들 수 있도록 결과 dict를 그대로 돌려준다.
+    # (셸 종료코드로 쓰이는 경로에서는 main()이 int가 아닌 값을 0으로 처리한다.)
+    return res
 
 
 def _dry_run(data, cfg, kind, out_root, label, seed, args) -> int:
@@ -435,8 +511,116 @@ def _audit_outlier(data, cfg, out_root, label) -> None:
     save_table(df, Path(out_root) / f"A_{label}" / "outlier_method_audit.csv")
 
 
+# ======================================================================================
+# 한 번에 실행 (base.ipynb Cell 5 기본 동작)
+# ======================================================================================
+
+def _stage(name: str, index: int, total: int) -> None:
+    print("\n" + "=" * 78, flush=True)
+    print(f"[{index}/{total}] {name}", flush=True)
+    print("=" * 78, flush=True)
+
+
+def run_all(
+    *,
+    namespace: dict[str, Any] | None = None,
+    seed: int | None = None,
+    skip_install: bool = False,
+) -> int:
+    """점검 → 감사 → dry-run → 실험 A·B·C → 비교표를 한 번에 실행한다.
+
+    각 단계는 독립적으로 실패를 흡수한다. 예컨대 primary config(A1)는
+    논문 §5.1 본문 방식이 Dem 6행만 남겨 8:1:1 분할이 불가능하므로 반드시 실패하는데
+    (report_inconsistencies.md I-1 증거 F), 그 실패는 **결과의 일부**이므로
+    기록하고 다음 단계로 넘어간다.
+    """
+    namespace = globals() if namespace is None else namespace
+    started = time.monotonic()
+    common: list[str] = []
+    if seed is not None:
+        common += ["--seed", str(seed)]
+    if skip_install:
+        common.append("--skip-install")
+
+    # (표시 이름, argv, 결과를 어느 실험으로 수집할지)
+    stages: list[tuple[str, list[str], str | None]] = [
+        ("데이터 점검 (--inspect-data)", ["--inspect-data"], None),
+        ("이상치 방식 검증 (--audit-only)",
+         ["--config", RUN_ALL_CONFIGS["A"], "--audit-only"], None),
+        ("실험 A primary(A1) 실행 가능성 확인 — 실패가 예상되며 그 자체가 결과다",
+         ["--config", RUN_ALL_A_PRIMARY, "--dry-run"], None),
+        ("실험 A dry-run", ["--config", RUN_ALL_CONFIGS["A"], "--dry-run"], None),
+        ("실험 B dry-run", ["--config", RUN_ALL_CONFIGS["B"], "--dry-run"], None),
+        ("실험 C dry-run", ["--config", RUN_ALL_CONFIGS["C"], "--dry-run"], None),
+        ("실험 A 실행 (논문 방법 재구성)", ["--config", RUN_ALL_CONFIGS["A"]], "A"),
+        ("실험 B 실행 (누수 통제 non-nested)", ["--config", RUN_ALL_CONFIGS["B"]], "B"),
+        ("실험 C 실행 (Nested Group CV)", ["--config", RUN_ALL_CONFIGS["C"]], "C"),
+    ]
+
+    from src.experiments.compare import CrossExperimentResults
+
+    collected = CrossExperimentResults()
+    collect = {"A": collected.add_experiment_a,
+               "B": collected.add_experiment_b,
+               "C": collected.add_experiment_c}
+    outcomes: list[dict] = []
+    total = len(stages) + 1
+
+    for i, (name, argv, kind) in enumerate(stages, start=1):
+        _stage(name, i, total)
+        t0 = time.monotonic()
+        try:
+            result = run_pipeline(namespace=namespace, argv=argv + common)
+            ok = isinstance(result, dict) or result in (0, None)
+            if kind and isinstance(result, dict):
+                collect[kind](result)
+            outcomes.append({"stage": name, "status": "ok" if ok else "nonzero_exit",
+                             "seconds": round(time.monotonic() - t0, 1)})
+        except Exception as error:  # noqa: BLE001 - 단계 실패를 결과로 남긴다
+            outcomes.append({
+                "stage": name, "status": "failed",
+                "error_type": type(error).__name__, "error": str(error),
+                "seconds": round(time.monotonic() - t0, 1),
+            })
+            print(f"\n[단계 실패] {type(error).__name__}: {error}", flush=True)
+            log.debug("%s", traceback.format_exc())
+
+    # ---- 비교표
+    _stage("교차 실험 비교표 생성", total, total)
+    out_root = str(REPO_ROOT / "outputs")
+    summary: dict = {}
+    try:
+        from src.experiments.compare import assemble_comparison
+
+        summary = assemble_comparison(collected, out_root=out_root)
+        print(f"비교표 저장 -> {Path(out_root) / 'COMPARISON'}", flush=True)
+    except Exception as error:  # noqa: BLE001
+        print(f"[비교표 실패] {type(error).__name__}: {error}", flush=True)
+        log.debug("%s", traceback.format_exc())
+
+    from src.utils.io import save_json
+
+    elapsed = time.monotonic() - started
+    save_json(
+        {"stages": outcomes, "comparison": summary, "elapsed_seconds": round(elapsed, 1)},
+        Path(out_root) / "RUN_ALL_SUMMARY.json",
+    )
+
+    print("\n" + "=" * 78, flush=True)
+    print(f"전체 완료 — {int(elapsed // 60):02d}:{int(elapsed % 60):02d} 소요", flush=True)
+    for o in outcomes:
+        mark = {"ok": "✅", "nonzero_exit": "⚠️", "failed": "❌"}.get(o["status"], "?")
+        print(f"  {mark} {o['stage']}  ({o['seconds']}s)", flush=True)
+    print(f"\n산출물: {out_root}", flush=True)
+    print("=" * 78, flush=True)
+    return 0
+
+
 def main() -> None:
-    raise SystemExit(run_pipeline())
+    rc = run_pipeline()
+    # 노트북 안에서 SystemExit를 던지면 셀이 예외로 붉게 표시되므로 셸에서만 던진다.
+    if not _running_under_kernel():
+        raise SystemExit(rc if isinstance(rc, int) else 0)
 
 
 if __name__ == "__main__":

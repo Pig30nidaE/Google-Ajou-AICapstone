@@ -183,6 +183,9 @@ def run_experiment_a(
     test0 = data.take(split.test_idx)
 
     results: dict[tuple[str, str], dict] = {}
+    # 논문은 기록 단위로만 평가했다. 교차 실험 비교(실험 B·C는 피험자 단위)를 위해
+    # 같은 예측에서 피험자 단위 지표도 함께 보관한다 — 평가단위를 섞지 않기 위해서다.
+    results_subject: dict[tuple[str, str], dict] = {}
     per_run: list[dict] = []
     aug_diags: dict[str, dict] = {}
 
@@ -225,6 +228,7 @@ def run_experiment_a(
             )
             m_sub = compute_metrics(subj.y, subj.proba, unit="subject")
             results[(model_name, aug)] = m_rec
+            results_subject[(model_name, aug)] = m_sub
             per_run.append(
                 {
                     "experiment": "A",
@@ -255,6 +259,7 @@ def run_experiment_a(
 
     return {
         "results": results,
+        "results_subject": results_subject,
         "metrics_frame": metrics_df,
         "audit": auditor.summary(),
         "paths": paths,

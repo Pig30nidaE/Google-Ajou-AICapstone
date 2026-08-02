@@ -105,8 +105,13 @@ def _fit_predict(
         model_name, seed=seed, device=device, overrides=overrides, training=training
     )
     if registry.is_sequence_model(model_name):
-        model.fit(train_rep.X, train_rep.y, lengths=train_rep.lengths, seed=seed)
-        probabilities = model.predict_proba(test_rep.X, lengths=test_rep.lengths)
+        # pack_padded_sequence and the Conv1d pooling mask both require the valid
+        # steps at the front, so hand them a left-aligned view regardless of the
+        # configured padding side.
+        train_X, train_lengths = train_rep.left_aligned()
+        test_X, test_lengths = test_rep.left_aligned()
+        model.fit(train_X, train_rep.y, lengths=train_lengths, seed=seed)
+        probabilities = model.predict_proba(test_X, lengths=test_lengths)
     else:
         model.fit(train_rep.X, train_rep.y)
         probabilities = model.predict_proba(test_rep.X)

@@ -190,54 +190,73 @@ python run.py --config configs/nested_subject_independent.yaml
 
 ## Colab Pro+ 실행 (base.ipynb 기준)
 
-### ⚠️ base.ipynb의 기본 방식(Cell 2에 RUN_FILE만 지정 → Cell 5 실행)은 이 스크립트에서 크래시한다
+### 한 번에 실행 — Cell 2만 고치고 위에서 아래로 실행
 
-base.ipynb Cell 5는 `runpy.run_path(RUN_PATH, run_name="__main__")`로 파일을 실행하는데,
-이때 `sys.argv`는 노트북 인자가 아니라 **Jupyter 커널 자신의 인자**(`-f kernel-xxxx.json` 등)다.
-`run.py`의 `argparse`가 이 인자를 만나 `unrecognized arguments: -f ...`로 즉시 죽는 것을
-직접 실행해 확인했다. `--config` 없이 도는 `--inspect-data`도 마찬가지다.
+```python
+USER_FOLDER = "SangHyo"
+RUN_FILE    = "Reproduction/reproduction_lee_lee_2025_vae/run.py"
+```
 
-### 검증된 실행 방법
+> ⚠️ **`Reproduction/` 한 단계를 빠뜨리면 Cell 3에서 `FileNotFoundError`가 난다.**
+> `RUN_FILE`은 `USER_FOLDER`(=`SangHyo`) 기준 상대경로다.
+> `"reproduction_lee_lee_2025_vae/run.py"` (✗) → `"Reproduction/reproduction_lee_lee_2025_vae/run.py"` (✓)
 
-**1) base.ipynb Cell 1만 그대로 실행한다** (환경 준비: git clone, `PROJECT_ROOT`/`DATA_ROOT` 생성).
-Cell 2·3·4·5는 이 프로젝트에 쓰지 않는다.
+이대로 Cell 1 → 2 → 3 → 4 → 5를 순서대로 실행하면 **전체 파이프라인이 한 번에 돈다**.
 
-**2) 새 코드 셀을 추가해 `run_pipeline`을 직접 호출한다**:
+| 단계 | 내용 |
+| ---: | --- |
+| 1/10 | 데이터 점검 (`--inspect-data`) |
+| 2/10 | 이상치 방식 검증 (`--audit-only`) — Isolation Forest vs 상·하위 10% |
+| 3/10 | 실험 A primary(A1) 실행 가능성 확인 — **실패가 예상되며 그 자체가 결과다** |
+| 4~6/10 | 실험 A·B·C dry-run (fold 구성·누수 검사) |
+| 7/10 | 실험 A 실행 (논문 방법 재구성) |
+| 8/10 | 실험 B 실행 (누수 통제 non-nested) |
+| 9/10 | 실험 C 실행 (Nested Group CV) |
+| 10/10 | 교차 실험 비교표 생성 → `outputs/COMPARISON/` |
+
+각 단계는 독립적으로 실패를 흡수한다. 3단계(A1)는 논문 §5.1 본문 방식이 Dem을 6행만 남겨
+8:1:1 분할이 불가능하므로 **반드시 실패하며, 그 실패 기록이 본 재현의 핵심 발견 중 하나**다
+(`report_inconsistencies.md` I-1 증거 F). 나머지 단계는 그대로 진행된다.
+마지막에 단계별 성공/실패 요약과 소요 시간이 출력되고 `outputs/RUN_ALL_SUMMARY.json`에 저장된다.
+
+**동작 원리**: base.ipynb Cell 5는 `runpy.run_path(..., run_name="__main__")`로 실행하는데,
+그 경로에서 `sys.argv`는 노트북 인자가 아니라 **Jupyter 커널 자신의 인자**(`-f kernel-xxxx.json`)다.
+그대로 argparse에 넘기면 `unrecognized arguments: -f ...`로 즉사하므로,
+`run.py`가 이를 감지해 커널 argv를 무시하고 `run_all()`을 돌린다.
+Cell 1이 주입한 `PROJECT_ROOT`/`DATA_ROOT`도 자동으로 쓴다.
+
+### 일부 단계만 돌리고 싶을 때
+
+Cell 5 **앞에** 새 셀을 하나 넣어 환경변수로 인자를 지정한다.
+
+```python
+import os
+os.environ["VAE2025_ARGS"] = "--config configs/leakage_controlled_non_nested.yaml --dry-run"
+```
+
+지우면 다시 전체 실행으로 돌아온다.
+
+```python
+import os
+os.environ.pop("VAE2025_ARGS", None)
+```
+
+또는 셀에서 함수를 직접 부른다 (`argv`를 명시하면 커널 argv를 완전히 무시한다).
 
 ```python
 import sys
 sys.path.insert(0, str(PROJECT_ROOT / "SangHyo/Reproduction/reproduction_lee_lee_2025_vae"))
 from run import run_pipeline
-
-run_pipeline(
-    namespace=globals(),      # Cell 1이 만든 PROJECT_ROOT/DATA_ROOT를 자동으로 쓴다
-    argv=["--inspect-data"],
-)
+run_pipeline(namespace=globals(), argv=["--inspect-data"])
 ```
 
-`argv`를 리스트로 명시하면 Jupyter 커널의 `sys.argv`를 완전히 무시하므로 안전하다.
-이후 셀마다 `argv`만 바꿔서 재사용한다:
+### 의존성
 
-```python
-run_pipeline(namespace=globals(),
-             argv=["--config", "configs/paper_isoforest_latent500.yaml", "--dry-run"])
-```
-
-```python
-run_pipeline(namespace=globals(),
-             argv=["--config", "configs/leakage_controlled_non_nested.yaml"])
-```
-
-```python
-run_pipeline(namespace=globals(),
-             argv=["--config", "configs/nested_subject_independent.yaml"])
-```
-
-의존성은 `run_pipeline` 내부의 `_ensure_dependencies()`가 스스로 설치한다
-(`requirements_colab.txt`, torch는 Colab 사전 설치를 건드리지 않고 없을 때만 설치).
+`run.py`가 스스로 설치한다(`requirements_colab.txt`). torch는 Colab이 CUDA와 맞물려
+미리 설치해 둔 것을 건드리지 않고, 없을 때만 설치한다.
 base.ipynb Cell 4(개인 폴더 `requirements.txt` 자동 설치)는 `SangHyo/requirements.txt`만
 보고 이 폴더처럼 중첩된 경로는 찾지 못하므로 이 프로젝트에는 적용되지 않는다 — 그래서
-설치를 스크립트 스스로 책임지도록 만들었다.
+설치를 스크립트가 책임지도록 만들었다.
 
 ### 순수 셸에서 직접 실행 (base.ipynb를 아예 안 쓸 경우)
 

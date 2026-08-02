@@ -145,8 +145,23 @@ def run_experiment_c(
     label: str,
     seed: int = 42,
     only_fold: int | None = None,
+    restrict_classifier: str | None = None,
+    restrict_augmentation: str | None = None,
+    max_evals: int | None = None,
 ) -> dict:
-    """피험자 독립 반복 Nested Group CV."""
+    """피험자 독립 반복 Nested Group CV.
+
+    Args:
+        restrict_classifier: 지정하면 분류기를 고정하고 나머지(전처리·증강 강도 등)만
+            inner CV에서 탐색한다. 결과표의 모델별 칸을 채울 때 쓴다.
+        restrict_augmentation: 지정하면 증강 조건도 고정한다. ``restrict_classifier``와
+            함께 쓰면 결과표의 (모델 × 증강) 칸 하나에 대응하는 nested 결과가 된다.
+        max_evals: inner 탐색 후보 수 상한 override (per-cell 실행 시 비용 절감용).
+
+    두 restrict 인자를 모두 주면 "이 모델·이 증강으로 고정했을 때, 전처리와
+    하이퍼파라미터만 inner CV에서 고른 nested 성능"이 된다. 선택이 여전히 inner
+    안에만 갇혀 있으므로 nested의 성질은 유지된다.
+    """
     paths = RunPaths(out_root, f"C_{label}")
     auditor = LeakageAuditor(mode="enforce", name=f"C_{label}")
 
@@ -167,10 +182,26 @@ def run_experiment_c(
         outer = [f for f in outer if f.index == only_fold]
     save_table(describe_folds(data, outer), paths("outer_fold_composition.csv"))
 
+    space = dict(search.get("space") or {})
+    if restrict_classifier is not None:
+        space["classifier"] = [restrict_classifier]
+    if restrict_augmentation is not None:
+        space["augmentation.method"] = [restrict_augmentation]
+        if restrict_augmentation != "vae":
+            # 증강을 vae가 아닌 것으로 고정하면 VAE 전용 축은 탐색할 이유가 없다.
+            space.pop("augmentation.vae.latent_dim", None)
+            space.pop("augmentation.vae.ratio_to_real", None)
     candidates = enumerate_candidates(
-        search.get("space") or {}, max_evals=int(search.get("max_evals", 20)), seed=seed
+        space,
+        max_evals=int(max_evals if max_evals is not None else search.get("max_evals", 20)),
+        seed=seed,
     )
-    log.info("nested CV: outer %d folds × %d candidates", len(outer), len(candidates))
+    log.info(
+        "nested CV[%s]: outer %d folds × %d candidates%s",
+        label, len(outer), len(candidates),
+        f" (classifier={restrict_classifier}, augmentation={restrict_augmentation})"
+        if restrict_classifier or restrict_augmentation else "",
+    )
 
     inner_log: list[dict] = []
     outer_rows: list[dict] = []

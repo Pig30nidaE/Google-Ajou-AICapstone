@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -148,3 +150,60 @@ def test_apply_candidate_sets_nested_keys():
     assert cfg["augmentation"]["vae"]["latent_dim"] == 50
     assert cfg["outlier"]["method"] == "isolation_forest"
     assert base["augmentation"]["vae"]["latent_dim"] == 500, "base config가 변형되었다"
+
+
+# ── base.ipynb 연동 회귀 테스트 ────────────────────────────────────────────────
+def test_kernel_argv_is_detected_and_ignored(monkeypatch):
+    """base.ipynb Cell 5 경로에서 Jupyter 커널 argv를 argparse에 넘기면 안 된다.
+
+    이걸 놓치면 노트북 실행이 'unrecognized arguments: -f ...'로 즉사한다.
+    """
+    import run as R
+
+    monkeypatch.setattr(
+        sys, "argv",
+        ["/usr/local/lib/python3/dist-packages/colab_kernel_launcher.py",
+         "-f", "/root/.local/share/jupyter/runtime/kernel-abcd.json"],
+    )
+    monkeypatch.delenv(R.ARGS_ENV_VAR, raising=False)
+    assert R._running_under_kernel() is True
+    # None = "전체 파이프라인을 한 번에 실행하라"
+    assert R._resolve_argv(None) is None
+
+
+def test_env_var_overrides_kernel_argv(monkeypatch):
+    import run as R
+
+    monkeypatch.setattr(
+        sys, "argv",
+        ["/usr/local/lib/python3/dist-packages/colab_kernel_launcher.py",
+         "-f", "/root/.local/share/jupyter/runtime/kernel-abcd.json"],
+    )
+    monkeypatch.setenv(R.ARGS_ENV_VAR, "--config configs/base.yaml --dry-run")
+    assert R._resolve_argv(None) == ["--config", "configs/base.yaml", "--dry-run"]
+
+
+def test_explicit_argv_always_wins(monkeypatch):
+    import run as R
+
+    monkeypatch.setenv(R.ARGS_ENV_VAR, "--inspect-data")
+    assert R._resolve_argv(["--dry-run"]) == ["--dry-run"]
+
+
+def test_run_all_configs_exist():
+    """run_all이 참조하는 config가 실제로 존재해야 한다."""
+    import run as R
+    from pathlib import Path
+
+    for kind, rel in R.RUN_ALL_CONFIGS.items():
+        assert (Path(R.REPO_ROOT) / rel).exists(), f"{kind}: {rel} 없음"
+    assert (Path(R.REPO_ROOT) / R.RUN_ALL_A_PRIMARY).exists()
+
+
+def test_shell_argv_still_parsed_normally(monkeypatch):
+    import run as R
+
+    monkeypatch.setattr(sys, "argv", ["run.py", "--dry-run", "--seed", "7"])
+    monkeypatch.delenv(R.ARGS_ENV_VAR, raising=False)
+    monkeypatch.setattr(R, "_running_under_kernel", lambda: False)
+    assert R._resolve_argv(None) == ["--dry-run", "--seed", "7"]

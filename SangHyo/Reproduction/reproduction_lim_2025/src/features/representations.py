@@ -48,24 +48,31 @@ class FoldPreprocessor:
         *,
         subjects: Sequence[str],
         feature_names: Sequence[str],
-        lengths: Sequence[int] | None = None,
+        mask: np.ndarray | None = None,
     ) -> "FoldPreprocessor":
         """Fit on the given rows.
 
-        For a padded (N, T, F) tensor, pass ``lengths`` so the padded timesteps are
-        excluded: they are not observations, and with 60% padding they would drag
-        every mean toward zero.  This also matches the paper's stated order --
-        normalise, *then* assemble the tensor.
+        For a padded (N, T, F) tensor, pass ``mask`` -- an (N, T) boolean array of
+        real observations -- so padded timesteps are excluded: they are not
+        observations, and with 60% padding they would drag every mean toward zero.
+        This also matches the paper's stated order: normalise, *then* assemble the
+        tensor.
+
+        A boolean mask rather than lengths is deliberate.  Lengths silently assume
+        the valid steps sit at the front, which is false for pre-padding and was
+        the source of a bug that blanked every real observation.
         """
         X = np.asarray(X, dtype=np.float64)
         if X.ndim == 3:
-            if lengths is None:
+            if mask is None:
                 flat = X.reshape(-1, X.shape[-1])
             else:
-                valid = (
-                    np.arange(X.shape[1])[None, :] < np.asarray(lengths, dtype=int)[:, None]
-                )
-                flat = X[valid]
+                mask = np.asarray(mask, dtype=bool)
+                if mask.shape != X.shape[:2]:
+                    raise PreprocessingScopeError(
+                        f"mask shape {mask.shape} does not match tensor {X.shape[:2]}"
+                    )
+                flat = X[mask]
         else:
             flat = X
         if flat.size == 0:
@@ -106,10 +113,10 @@ class FoldPreprocessor:
         *,
         subjects: Sequence[str],
         feature_names: Sequence[str],
-        lengths: Sequence[int] | None = None,
+        mask: np.ndarray | None = None,
     ) -> np.ndarray:
         return self.fit(
-            X, subjects=subjects, feature_names=feature_names, lengths=lengths
+            X, subjects=subjects, feature_names=feature_names, mask=mask
         ).transform(X)
 
     def audit_record(self) -> dict[str, Any]:
@@ -148,6 +155,48 @@ class Representation:
     @property
     def input_shape(self) -> tuple[int, ...]:
         return tuple(self.X.shape[1:])
+
+    @property
+    def padding_side(self) -> str:
+        return str(self.meta.get("padding", "pre"))
+
+    def valid_mask(self) -> np.ndarray | None:
+        """(N, T) boolean mask of real observations, or None if not a sequence.
+
+        This is the single source of truth for where the real data sits.  Nothing
+        downstream may re-derive it from ``lengths`` alone: with ``padding='pre'``
+        the valid steps are at the *end*, so ``arange(T) < lengths`` selects
+        exactly the padding.
+        """
+        if self.kind != "temporal_sequence" or self.lengths is None:
+            return None
+        timesteps = int(self.X.shape[1])
+        index = np.arange(timesteps)[None, :]
+        lengths = np.asarray(self.lengths, dtype=int)[:, None]
+        if self.padding_side == "pre":
+            return index >= (timesteps - lengths)
+        return index < lengths
+
+    def left_aligned(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return ``(X, lengths)`` with every sequence's valid steps at the front.
+
+        ``pack_padded_sequence`` and the Conv1d pooling mask both require this
+        layout.  Converting here keeps the stored representation faithful to the
+        configured ``padding`` while making the model path correct either way --
+        and, because the models mask, it makes results padding-invariant.
+        """
+        mask = self.valid_mask()
+        if mask is None:
+            return self.X, np.full(len(self.X), self.X.shape[1], dtype=np.int64)
+        if self.padding_side != "pre":
+            return self.X, np.asarray(self.lengths, dtype=np.int64)
+
+        aligned = np.zeros_like(self.X)
+        lengths = np.asarray(self.lengths, dtype=np.int64)
+        for i, valid in enumerate(lengths):
+            if valid:
+                aligned[i, :valid, :] = self.X[i, mask[i], :]
+        return aligned, lengths
 
     def mask_for_subjects(self, subjects: Sequence[str]) -> np.ndarray:
         wanted = set(map(str, subjects))
@@ -367,10 +416,10 @@ def zero_padding(rep: Representation) -> None:
     convolve across as if it were a real observation.  The recurrent models mask
     padding anyway; this makes the convolutional one safe too.
     """
-    if rep.kind != "temporal_sequence" or rep.lengths is None:
+    mask = rep.valid_mask()
+    if mask is None:
         return
-    valid = np.arange(rep.X.shape[1])[None, :] < np.asarray(rep.lengths, dtype=int)[:, None]
-    rep.X = rep.X * valid[:, :, None]
+    rep.X = rep.X * mask[:, :, None]
 
 
 def fit_transform_pair(
@@ -393,7 +442,7 @@ def fit_transform_pair(
         source.X,
         subjects=subjects,
         feature_names=source.feature_names,
-        lengths=source.lengths,
+        mask=source.valid_mask(),
     )
     for rep in (train_rep, test_rep):
         rep.X = preprocessor.transform(rep.X)
