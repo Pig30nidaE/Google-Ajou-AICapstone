@@ -188,23 +188,98 @@ python run.py --config configs/nested_subject_independent.yaml
 
 ---
 
-## Colab Pro+ 실행
+## Colab Pro+ 실행 (base.ipynb 기준)
+
+### ⚠️ base.ipynb의 기본 방식(Cell 2에 RUN_FILE만 지정 → Cell 5 실행)은 이 스크립트에서 크래시한다
+
+base.ipynb Cell 5는 `runpy.run_path(RUN_PATH, run_name="__main__")`로 파일을 실행하는데,
+이때 `sys.argv`는 노트북 인자가 아니라 **Jupyter 커널 자신의 인자**(`-f kernel-xxxx.json` 등)다.
+`run.py`의 `argparse`가 이 인자를 만나 `unrecognized arguments: -f ...`로 즉시 죽는 것을
+직접 실행해 확인했다. `--config` 없이 도는 `--inspect-data`도 마찬가지다.
+
+### 검증된 실행 방법
+
+**1) base.ipynb Cell 1만 그대로 실행한다** (환경 준비: git clone, `PROJECT_ROOT`/`DATA_ROOT` 생성).
+Cell 2·3·4·5는 이 프로젝트에 쓰지 않는다.
+
+**2) 새 코드 셀을 추가해 `run_pipeline`을 직접 호출한다**:
 
 ```python
-from google.colab import drive
-drive.mount('/content/drive')
+import sys
+sys.path.insert(0, str(PROJECT_ROOT / "SangHyo/Reproduction/reproduction_lee_lee_2025_vae"))
+from run import run_pipeline
+
+run_pipeline(
+    namespace=globals(),      # Cell 1이 만든 PROJECT_ROOT/DATA_ROOT를 자동으로 쓴다
+    argv=["--inspect-data"],
+)
 ```
+
+`argv`를 리스트로 명시하면 Jupyter 커널의 `sys.argv`를 완전히 무시하므로 안전하다.
+이후 셀마다 `argv`만 바꿔서 재사용한다:
+
+```python
+run_pipeline(namespace=globals(),
+             argv=["--config", "configs/paper_isoforest_latent500.yaml", "--dry-run"])
+```
+
+```python
+run_pipeline(namespace=globals(),
+             argv=["--config", "configs/leakage_controlled_non_nested.yaml"])
+```
+
+```python
+run_pipeline(namespace=globals(),
+             argv=["--config", "configs/nested_subject_independent.yaml"])
+```
+
+의존성은 `run_pipeline` 내부의 `_ensure_dependencies()`가 스스로 설치한다
+(`requirements_colab.txt`, torch는 Colab 사전 설치를 건드리지 않고 없을 때만 설치).
+base.ipynb Cell 4(개인 폴더 `requirements.txt` 자동 설치)는 `SangHyo/requirements.txt`만
+보고 이 폴더처럼 중첩된 경로는 찾지 못하므로 이 프로젝트에는 적용되지 않는다 — 그래서
+설치를 스크립트 스스로 책임지도록 만들었다.
+
+### 순수 셸에서 직접 실행 (base.ipynb를 아예 안 쓸 경우)
 
 ```bash
 cd /content/drive/MyDrive/Google-AJOU-AI-Capstone/SangHyo/Reproduction/reproduction_lee_lee_2025_vae
-pip install -r requirements.txt
+pip install -r requirements_colab.txt
 python run.py --config configs/leakage_controlled_non_nested.yaml --dry-run
 python run.py --config configs/leakage_controlled_non_nested.yaml
 ```
 
-데이터 경로가 다르면 `--data-root /content/drive/MyDrive/.../Data`를 붙인다.
+`!python run.py ...`는 서브프로세스로 실행되므로 `sys.argv` 문제가 없다.
+데이터 경로가 다르면 `--data-root /content/drive/.../Data` 또는
+`SANGHYO_DATA_ROOT` 환경변수로 지정한다.
 
-**권장 순서**
+### GPU / 런타임
+
+**런타임 유형 > T4 GPU (표준)면 충분하다. A100/L4는 이 프로젝트 규모에 낭비다.**
+
+| 근거 | 값 |
+| --- | --- |
+| 실험 A 최대 학습 행 수 | 9,746행 × 46 feature |
+| 실험 B·C fold당 학습 행 수 | ≤ 8,125행 |
+| 최대 은닉층 크기 | 512 (VAE encoder 첫 층) |
+
+- `XGBoost`는 `tree_method="hist"`로 **CPU에서 돈다** — GPU 이득이 없다.
+- 기본 실행 목록(`run.models`)의 `DNN`·`TabNet`·`Wide & Deep`과 `augmentation.method: vae`는
+  torch/pytorch-tabnet 기반이라 GPU가 있으면 유의미하게 빨라진다. 이 셋은 기본값에 포함되므로
+  GPU 없이도 동작은 하지만(코드가 `torch.cuda.is_available()`로 자동 폴백) 체감 속도 차이가 크다.
+- 고용량 RAM 옵션은 불필요하다. 전체 데이터가 12,183행 × 46 float64 ≈ 4MB다.
+
+런타임이 GPU로 잡혔는지 먼저 확인:
+
+```python
+import torch
+print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))
+```
+
+**계산량 주의**: 실험 C는 outer 3 × 후보 24 × inner 3 + outer 3 = **219회 모델 적합**이다.
+T4에서도 순차 실행 시 시간이 걸리므로 `search.max_evals`를 줄이거나 `--fold N`으로
+outer fold를 나눠 여러 세션(Pro+ 세션 한도 24시간)에 걸쳐 실행하는 것을 권장한다.
+
+### 권장 순서
 
 1. `--inspect-data` — 데이터가 논문 표 3과 일치하는지
 2. `--dry-run` 3종 — fold 구성과 예상 합성행 수
@@ -212,9 +287,6 @@ python run.py --config configs/leakage_controlled_non_nested.yaml
 4. `configs/paper_isoforest_latent500.yaml` (실험 A)
 5. `configs/leakage_controlled_non_nested.yaml` (실험 B)
 6. `configs/nested_subject_independent.yaml` (실험 C, 가장 오래 걸림)
-
-**계산량 주의**: 실험 C는 outer 3 × 후보 24 × inner 3 + outer 3 = **219회 모델 적합**이다.
-`search.max_evals`를 줄이거나 `--fold`로 나눠 실행하라.
 
 ---
 

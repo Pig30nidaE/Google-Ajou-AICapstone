@@ -1,28 +1,65 @@
 #!/usr/bin/env python
 """이민지·이석훈(2025) VAE 재현 — 단일 실행 진입점.
 
-    python run.py --config configs/paper_percentile_latent500.yaml
+로컬 / 순수 CLI::
+
+    python run.py --config configs/paper_isoforest_latent500.yaml
     python run.py --config configs/leakage_controlled_non_nested.yaml
     python run.py --config configs/nested_subject_independent.yaml
 
 먼저 ``--dry-run``으로 절차와 규모를 확인한 뒤 실제 학습을 시작하는 것을 권장한다.
+
+Colab / ``base.ipynb``
+-----------------------
+저장소 루트 ``base.ipynb``의 Cell 2에 ``RUN_FILE = "Reproduction/reproduction_lee_lee_2025_vae/run.py"``
+만 지정하고 Cell 5를 그대로 실행하는 방식은 **이 스크립트에서 동작하지 않는다.**
+Cell 5는 ``runpy.run_path(..., run_name="__main__")``로 파일을 실행하는데, 이때
+``sys.argv``는 노트북이 아니라 **Jupyter 커널 자신의 인자**(예: ``-f kernel-xxxx.json``)이고,
+이 파일의 ``argparse``가 그 인자를 만나 즉시 ``SystemExit(2)``를 던진다(실측 확인함).
+``--config`` 없이 실행하는 ``--inspect-data``도 마찬가지로 크래시한다.
+
+**검증된 안전한 방법**: base.ipynb의 Cell 1(환경 준비: clone, ``PROJECT_ROOT``/``DATA_ROOT``
+설정)까지만 실행한 뒤, Cell 2·4·5 대신 아래 셀을 새로 추가한다.
+
+.. code-block:: python
+
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / "SangHyo/Reproduction/reproduction_lee_lee_2025_vae"))
+    from run import run_pipeline
+
+    run_pipeline(
+        namespace=globals(),      # base.ipynb Cell 1이 만든 PROJECT_ROOT/DATA_ROOT를 사용
+        argv=["--config", "configs/leakage_controlled_non_nested.yaml", "--dry-run"],
+    )
+
+``argv``를 리스트로 명시하면 ``sys.argv``(=커널 인자)를 완전히 무시하므로 안전하다.
+``namespace=globals()``를 넘기면 base.ipynb Cell 1이 정한
+``DATA_ROOT``(Colab: ``/content/drive/Shareddrives/GoogleAI_contest/Data``)를
+``--data-root`` 없이도 자동으로 사용한다.
+
+GPU / 런타임
+------------
+데이터·모델 규모가 작다(최대 학습 행 9,746개, 46 feature, 은닉층 최대 512).
+``XGBoost``는 ``tree_method="hist"``로 CPU에서 돌며 GPU 이득이 없다.
+반면 기본 실행 목록(``run.models``)의 ``DNN``·``TabNet``·``Wide & Deep``과
+``augmentation.method: vae``는 torch/pytorch-tabnet 기반이라 GPU가 있으면 유의미하게 빨라진다.
+**Colab Pro+에서 T4(표준) GPU면 충분하다. A100/L4는 이 규모에 낭비다.**
+실험 C는 outer 3 × 후보 24 × inner 3 + outer 3 = 219회 모델 적합이므로
+``search.max_evals``를 줄이거나 ``--fold``로 나눠 실행하는 것을 권장한다.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import logging
+import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
-
-from src.data.inspect import format_inspection, inspect_data, percentile_retention_scan  # noqa: E402
-from src.data.loader import load_lifelog  # noqa: E402
-from src.utils.config import load_config  # noqa: E402
-from src.utils.io import save_json, save_table  # noqa: E402
-from src.utils.seeding import set_global_seed  # noqa: E402
 
 log = logging.getLogger("run")
 
@@ -31,6 +68,92 @@ EXPERIMENT_DISPATCH = {
     "leakage_controlled_non_nested": "B",
     "nested_subject_independent": "C",
 }
+
+#: base.ipynb Cell 1이 이 이름 그대로 만드는 Colab 공유 드라이브 경로.
+COLAB_SHARED_DATA_ROOT = Path("/content/drive/Shareddrives/GoogleAI_contest/Data")
+#: 저장소 어디서든 데이터 경로를 override할 때 쓰는 환경변수 (다른 SangHyo 실험과 동일 이름).
+DATA_ROOT_ENV_VAR = "SANGHYO_DATA_ROOT"
+
+#: --inspect-data / --dry-run 은 이 목록만 있으면 동작한다.
+_CORE_DEPS = {"numpy": "numpy", "pandas": "pandas", "scikit-learn": "sklearn",
+              "scipy": "scipy", "pyyaml": "yaml"}
+_TRAIN_DEPS = {"torch": "torch", "xgboost": "xgboost", "pytorch-tabnet": "pytorch_tabnet",
+               "imbalanced-learn": "imblearn"}
+
+
+def _resolve_data_root(namespace: dict[str, Any], explicit: str | None) -> Path:
+    """Data/ 경로를 찾는다. 우선순위: 명시 인자 > namespace(DATA_ROOT/PROJECT_ROOT) >
+    환경변수 > 저장소 로컬 Data/ > Colab 공유 드라이브.
+
+    ``namespace``는 base.ipynb Cell 1이 만든 ``globals()``를 그대로 받는 용도다
+    (``run_pipeline(namespace=globals(), ...)``로 호출될 때).
+    """
+    import os
+
+    candidates: list[str | Path] = []
+    if explicit:
+        candidates.append(explicit)
+    if namespace.get("DATA_ROOT"):
+        candidates.append(namespace["DATA_ROOT"])
+    if os.environ.get(DATA_ROOT_ENV_VAR):
+        candidates.append(os.environ[DATA_ROOT_ENV_VAR])
+    if namespace.get("PROJECT_ROOT"):
+        candidates.append(Path(namespace["PROJECT_ROOT"]) / "Data")
+    candidates += [
+        (REPO_ROOT / "../../../Data").resolve(),
+        COLAB_SHARED_DATA_ROOT,
+    ]
+    for c in candidates:
+        p = Path(c)
+        if (p / "1.Training").exists():
+            return p
+    raise FileNotFoundError(
+        "Data/ 를 찾지 못했다. 시도한 경로: " + ", ".join(str(Path(c)) for c in candidates) +
+        f". --data-root로 명시하거나 {DATA_ROOT_ENV_VAR} 환경변수를 설정하라."
+    )
+
+
+def _ensure_dependencies(*, need_training: bool, skip: bool = False) -> dict[str, bool]:
+    """필수 의존성을 확인하고, 없으면 설치한다.
+
+    base.ipynb Cell 4는 ``SangHyo/requirements.txt``만 보고 이 폴더처럼 중첩된
+    ``requirements.txt``는 찾지 못하므로, 이 스크립트가 스스로 설치를 책임진다.
+
+    학습이 필요할 때는 버전을 고정한 ``requirements_colab.txt``로 설치한다
+    (torch는 포함하지 않는다 — Colab이 CUDA와 맞물려 미리 설치해 둔 것을 건드리면
+    버전 불일치가 나므로, torch는 없을 때만 별도로 최신 버전을 설치한다).
+    """
+    missing_core = [pkg for pkg, mod in _CORE_DEPS.items() if importlib.util.find_spec(mod) is None]
+    if missing_core and not skip:
+        log.info("설치(core): %s", ", ".join(missing_core))
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", *missing_core],
+            check=True,
+        )
+    elif missing_core:
+        raise ModuleNotFoundError(f"누락된 의존성: {', '.join(missing_core)} (--skip-install 해제 필요)")
+
+    if need_training:
+        missing_train = [pkg for pkg, mod in _TRAIN_DEPS.items() if importlib.util.find_spec(mod) is None]
+        if missing_train and not skip:
+            req_file = REPO_ROOT / "requirements_colab.txt"
+            log.info("설치(training, 버전 고정): %s", req_file)
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
+                 "-r", str(req_file)],
+                check=True,
+            )
+            if importlib.util.find_spec("torch") is None:
+                log.info("torch 미설치 — 최신 버전 설치 (Colab이면 보통 이미 있어 이 분기를 타지 않는다)")
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", "torch"],
+                    check=True,
+                )
+        elif missing_train:
+            raise ModuleNotFoundError(f"누락된 의존성: {', '.join(missing_train)} (--skip-install 해제 필요)")
+        importlib.invalidate_caches()
+
+    return {mod: importlib.util.find_spec(mod) is not None for mod in (*_TRAIN_DEPS.values(), "torch")}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -57,17 +180,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="실행할 증강 조건 (여러 번 지정 가능)",
     )
     p.add_argument("--models", type=str, default=None, help="쉼표로 구분한 모델 목록")
+    p.add_argument("--skip-install", action="store_true", help="의존성 자동 설치를 건너뛴다")
     p.add_argument("-v", "--verbose", action="store_true")
     return p
 
 
-def main(argv=None) -> int:
+def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | None = None) -> int:
+    """실제 진입점. CLI에서는 ``argv=None``으로 ``sys.argv``를 읽고,
+    base.ipynb 노트북 셀에서는 ``run_pipeline(namespace=globals(), argv=[...])``로
+    명시 호출한다 (모듈 상단 docstring 참조 — bare ``python run.py`` 방식은
+    Jupyter 커널 자체 인자와 충돌해 크래시하므로 노트북에서는 반드시 이 형태로 부른다).
+    """
+    namespace = globals() if namespace is None else namespace
     args = build_parser().parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
         datefmt="%H:%M:%S",
     )
+
+    no_training = args.inspect_data or args.dry_run or args.audit_only
+    _ensure_dependencies(need_training=not no_training, skip=args.skip_install)
+
+    from src.data.inspect import format_inspection, inspect_data, percentile_retention_scan
+    from src.data.loader import load_lifelog
+    from src.utils.config import load_config
+    from src.utils.io import save_json, save_table
+    from src.utils.seeding import set_global_seed
 
     # ---------------- config
     if args.config:
@@ -78,9 +217,7 @@ def main(argv=None) -> int:
         log.error("--config가 필요하다 (또는 --inspect-data)")
         return 2
 
-    data_root = args.data_root or cfg.get_path("data.root", "../../../Data")
-    if not Path(data_root).is_absolute():
-        data_root = (REPO_ROOT / data_root).resolve()
+    data_root = _resolve_data_root(namespace, args.data_root)
     out_root = args.out_root or cfg.get_path("output.root", "outputs")
     if not Path(out_root).is_absolute():
         out_root = (REPO_ROOT / out_root).resolve()
@@ -88,7 +225,7 @@ def main(argv=None) -> int:
     set_global_seed(seed)
 
     label = cfg.get_path("label", Path(args.config).stem if args.config else "base")
-    log.info("config=%s label=%s seed=%d", cfg.get_path("_meta.config_path"), label, seed)
+    log.info("config=%s label=%s seed=%d data_root=%s", cfg.get_path("_meta.config_path"), label, seed, data_root)
 
     # ---------------- data
     data = load_lifelog(
@@ -170,6 +307,7 @@ def _dry_run(data, cfg, kind, out_root, label, seed, args) -> int:
     """학습 없이 검증만 수행한다 (사용자 지시 14절)."""
     from src.data.schema import PAPER_FEATURES
     from src.audit.checks import check_forbidden_features
+    from src.utils.io import save_json
 
     print("=" * 78)
     print(f"DRY-RUN — experiment {kind} / config {label} / seed {seed}")
@@ -264,6 +402,7 @@ def _audit_outlier(data, cfg, out_root, label) -> None:
 
     from src.data.paper_reference import SECTION51_AFTER_OUTLIER
     from src.preprocessing.outliers import make_outlier_handler
+    from src.utils.io import save_table
 
     target = SECTION51_AFTER_OUTLIER
     rows = []
@@ -296,5 +435,9 @@ def _audit_outlier(data, cfg, out_root, label) -> None:
     save_table(df, Path(out_root) / f"A_{label}" / "outlier_method_audit.csv")
 
 
+def main() -> None:
+    raise SystemExit(run_pipeline())
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

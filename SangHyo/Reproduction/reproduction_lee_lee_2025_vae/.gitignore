@@ -4,3 +4,14 @@ __pycache__/
 .pytest_cache/
 *.pt
 *.parquet
+
+# 저장소 루트 .gitignore의 `data/`·`models/`·`*.txt`는 데이터셋·체크포인트·로그를
+# 겨냥한 것이지만 슬래시 없는 무앵커 패턴이라 우리 패키지의 src/data/, src/models/와
+# requirements*.txt까지 잡아먹는다. 여기서 명시적으로 되살린다 (git은 더 깊은
+# .gitignore의 규칙을 나중 규칙으로 취급해 상위 규칙보다 우선한다).
+!src/data/
+!src/data/**
+!src/models/
+!src/models/**
+!requirements.txt
+!requirements_colab.txt

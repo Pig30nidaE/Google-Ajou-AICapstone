@@ -1,0 +1,18 @@
+# The repository-wide .gitignore ignores directories named data/, models/,
+# outputs/, results/ and *.txt.  Three of those collide with this package's
+# source layout, so re-include them explicitly -- without these three lines
+# `src/data/` and `src/models/` never reach origin/main, and the Colab run
+# (which clones a fresh checkout) fails at `from src.data.loader import ...`.
+!src/data/
+!src/models/
+!requirements_colab.txt
+
+# Generated artifacts stay ignored.  Formal results live on Drive at
+# /content/drive/MyDrive/reproduction_hong_2024_result/<UTC_RUN_ID>/.
+outputs/
+*_result/
+checkpoints/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.pt

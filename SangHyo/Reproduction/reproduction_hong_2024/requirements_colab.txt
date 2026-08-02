@@ -1,0 +1,14 @@
+# Colab Pro+ 실행용. 저장소 공통 라이브러리 범위(SangHyo/AGENTS.md §0)를 따른다.
+numpy>=1.26,<3
+pandas>=2.1,<3
+scipy>=1.11,<2
+scikit-learn>=1.4,<2
+matplotlib>=3.8,<4
+joblib>=1.3,<2
+pyyaml>=6.0,<7
+xgboost>=2.0,<4
+torch>=2.2
+
+# 선택 사항. 없으면 sklearn/XGBoost 경로로 자동 폴백한다.
+# shap>=0.44          # explainability.enabled: true 일 때만 필요
+# h2o==3.46.0.1       # models.baseline_backend: h2o 일 때만 필요 (논문이 쓴 버전)
