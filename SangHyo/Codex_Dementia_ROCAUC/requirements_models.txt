@@ -1,6 +1,0 @@
-torch>=2.3,<3
-pytorch-tabnet==4.1.0
-lightgbm>=4.3,<5
-xgboost>=2.0,<4
-catboost>=1.2,<2
-

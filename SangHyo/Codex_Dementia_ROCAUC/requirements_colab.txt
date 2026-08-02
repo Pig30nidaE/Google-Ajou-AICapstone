@@ -1,3 +1,0 @@
--r requirements_core.txt
--r requirements_models.txt
-
