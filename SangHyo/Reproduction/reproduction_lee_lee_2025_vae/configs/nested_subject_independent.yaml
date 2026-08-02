@@ -1,0 +1,80 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 C — nested_subject_independent
+#
+# Outer 3-fold × n_repeats / Inner 3-fold, group = 피험자 ID.
+# **VAE를 포함한 전체 파이프라인 선택이 inner CV 내부에서만** 이루어진다.
+#
+# outer test에 절대 사용 금지:
+#   이상치 임계값 선택 / scaler fit / VAE fit / synthetic ratio 선택 /
+#   모델 선택 / early stopping / threshold 선택
+#
+# Dem 피험자가 12명뿐이므로 outer 5-fold를 기본값으로 쓰지 않는다
+# (config 검증이 n_splits >= 5를 차단한다).
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: C_nested
+experiment:
+  name: nested_subject_independent
+  description: >
+    피험자 독립 반복 Nested Group CV. 전처리·증강·모델 선택이 inner CV 안에 갇혀 있다.
+
+split:
+  unit: subject
+  outer:
+    method: stratified_group_kfold
+    n_splits: 3                    # fold당 Dem 피험자 4명
+    n_repeats: 1                   # 10까지 설정 가능 (계산량 주의)
+    allow_large_k: false
+  inner:
+    method: stratified_group_kfold
+    n_splits: 3
+
+preprocessing:
+  fit_scope: train_fold_only
+  scaler_scope: train_real_only
+
+outlier:
+  method: percentile
+  percentile:
+    q: 0.10
+    scope: global
+    action: clip
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 500
+    ratio_to_real: 3.0
+    n_synthetic: null
+    fit_scope: train_dem_only
+    input_space: scaled
+    epochs: 200                    # 탐색 비용을 줄이기 위해 base(300)보다 짧게
+
+audit:
+  mode: enforce
+
+# ── inner CV 탐색 공간 ────────────────────────────────────────────────────────
+# 과도한 탐색을 금지한다 (사용자 지시 5절). 후보 수가 max_evals보다 많으면
+# random search로 표집하고, 적으면 전수 탐색한다. Optuna를 쓰지 않는다.
+search:
+  enabled: true
+  metric: macro_f1                 # 피험자 단위 지표로 선택한다
+  max_evals: 24
+  default_classifier: xgboost
+  space:
+    classifier: [xgboost, dnn, tabnet, wide_deep]
+    augmentation.method: [none, vae, class_weight, smote]
+    outlier.method: [none, percentile, isolation_forest]
+    outlier.percentile.q: [0.01, 0.10]
+    outlier.isolation_forest.contamination: [0.05, 0.1]
+    augmentation.vae.latent_dim: [50, 500]
+    augmentation.vae.ratio_to_real: [1.0, 3.0, 10.0]
+
+bootstrap:
+  enabled: true
+  n_boot: 2000
+
+diagnostics:
+  enabled: true

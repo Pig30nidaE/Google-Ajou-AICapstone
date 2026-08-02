@@ -1,0 +1,44 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 A2 — percentile 10% + latent 50 (그림 2 해석)
+#
+# ⚠️ 미보고 설정 조합이므로 "원 저자 설정"이라고 부르지 않는다 (사용자 지시 17·18).
+# #    latent는 그림 2의 값을 따른다. 이상치는 §5.1 본문을 따른다.
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: A2_percentile_latent50
+experiment:
+  name: paper_reported_reconstruction
+  variant: figure2_latent_variant
+  description: >
+    이상치는 §5.1 본문(상·하위 10%), latent는 그림 2(50)를 채택한 변형.
+
+split:
+  unit: row                    # [논문 유도] I-6
+  ratios: [0.8, 0.1, 0.1]      # [논문] §5.1
+
+preprocessing:
+  fit_scope: all_data          # [논문] §5.1 흐름 (I-7, 누수)
+  scaler_scope: all_data       # [가정] B-4
+
+outlier:
+  method: percentile           # [논문] §5.1 본문
+  percentile:
+    q: 0.10
+    scope: global
+    action: drop_row
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 50             # [그림 2] PDF 판독값 (본문은 500)
+    n_synthetic: 4000          # [유도] I-5
+    fit_scope: train_dem_only  # [가정] D-4
+    input_space: raw           # [논문] §4.2 순서 (D-5)
+
+audit:
+  mode: observe
+
+diagnostics:
+  enabled: true

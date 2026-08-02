@@ -1,0 +1,66 @@
+# 실험 B1: 누수를 통제한 동일 피험자 시간분할 (Estimand A)
+#
+# 연구질문은 실험 A와 같다 — "이미 학습된 피험자의 미래 기간". 바뀌는 것은
+# 누수 통제뿐이므로, 실험 A와 이 실험의 차이는 estimand 차이가 아니라 순수한
+# 누수 제거 효과로 읽어도 된다.
+#
+# 실험 A와의 차이:
+#   1. 길이 L 시퀀스에 대해 경계 직전 L-1일을 embargo 한다
+#      (split.embargo_matches_sequence_length: true → engine이 L-1로 설정한다).
+#   2. train 기간 끝에서 validation 기간을 떼어 early stopping에 쓴다.
+#      test는 early stopping에도 하이퍼파라미터 선택에도 쓰지 않는다.
+#   3. test 기간은 마지막에 한 번만 평가한다.
+
+experiment: strict_same_subject_temporal
+estimand: A
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end
+  duplicate_policy: longest_duration
+  rmssd_source: intraday_mean
+
+features:
+  include_cognitive_tests: false
+  include_subject_id: false
+
+sequence:
+  lengths: [3, 4, 5]
+  stride: 1
+  require_consecutive: true
+
+split:
+  mode: final_week_temporal
+  final_week_mode: calendar_days
+  final_week_length: 7
+  embargo_matches_sequence_length: true   # 필수. L-1일 embargo.
+  validation_days: 14                     # A-06. train 기간 끝 14일을 early stopping용으로.
+
+preprocessing:
+  scaler_scope: train_only
+
+sampling:
+  strategy: subject_balanced              # 피험자 균형을 고려한 undersampling
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: fixed
+  value: 0.5
+
+lstm:
+  max_epochs: 100
+  patience: 10
+  early_stopping: true
+  recurrent_dropout: 0.0
+
+tuning:
+  enabled: false                          # 논문 설정 고정. 재선택 금지.
+
+models:
+  enabled: [lstm, logistic_regression, svm, random_forest, xgboost]
+  representation: flatten
+  baseline_backend: sklearn
+
+explainability:
+  enabled: false

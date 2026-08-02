@@ -1,0 +1,67 @@
+# 실험 A': 논문 문언 그대로의 순서 — 누수 진단 전용 (성능 주장 금지)
+#
+# §4.2는 12,183개 자료를 "transformed them into time-series data with sequences of
+# three, four, and five days"한 다음, "test data were constructed by isolating the
+# final week of data from each subject"라고 적었다. 이 순서대로 읽으면 윈도우가
+# 분할보다 먼저 존재하므로 경계를 가로지르는 윈도우가 생긴다.
+#
+# 이 config가 만드는 수치는 누수 크기 측정값이며 일반화 성능이 아니다.
+# split.leakage_diagnostic_only: true 없이는 실행이 거부된다.
+#
+# 이 저장소의 실측 (dry-run 기준):
+#   3일: 경계 교차 345개(2.9%),  train과 공유되는 test 날짜 338/1036 (32.6%)
+#   4일: 경계 교차 514개(4.4%),  train과 공유되는 test 날짜 492/1021 (48.2%)
+#   5일: 경계 교차 678개(5.9%),  train과 공유되는 test 날짜 604/969  (62.3%)
+
+experiment: paper_literal_variant
+estimand: A
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end
+  duplicate_policy: longest_duration
+  rmssd_source: intraday_mean
+
+features:
+  include_cognitive_tests: false
+  include_subject_id: false
+
+sequence:
+  lengths: [3, 4, 5]
+  stride: 1
+  require_consecutive: false           # 논문 문언대로 달력 공백을 무시하고 이어붙인다
+
+split:
+  mode: final_week_temporal_literal
+  final_week_mode: calendar_days
+  final_week_length: 7
+  leakage_diagnostic_only: true        # 이 값이 없으면 config 검증이 거부한다
+
+preprocessing:
+  scaler_scope: train_only
+
+sampling:
+  strategy: random_sequence
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: fixed
+  value: 0.5
+
+lstm:
+  max_epochs: 100
+  patience: 10
+  early_stopping: true
+  recurrent_dropout: 0.0
+
+tuning:
+  enabled: false
+
+models:
+  enabled: [lstm]
+  representation: flatten
+  baseline_backend: sklearn
+
+explainability:
+  enabled: false

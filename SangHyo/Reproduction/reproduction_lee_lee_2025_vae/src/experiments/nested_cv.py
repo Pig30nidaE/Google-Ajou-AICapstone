@@ -1,0 +1,302 @@
+"""실험 C — ``nested_subject_independent``.
+
+Outer 3-fold × n_repeats / Inner 3-fold, group = 피험자 ID.
+
+**전체 파이프라인 선택이 inner CV 내부에서만 이루어진다.** 이상치 방식·임계값,
+VAE 사용 여부·latent·synthetic ratio, 분류기와 그 하이퍼파라미터가 모두 후보이며,
+outer test는 선택의 어느 단계에도 관여하지 않는다.
+
+탐색은 config의 ``search.space``로 제한하고 ``search.max_evals``로 상한을 둔다
+(random search. Optuna를 쓰지 않는다 — 사용자 지시 15절).
+"""
+
+from __future__ import annotations
+
+import itertools
+import logging
+
+import numpy as np
+import pandas as pd
+
+from ..audit.leakage import LeakageAuditor
+from ..data.loader import LifelogData
+from ..evaluation.aggregate import aggregate_to_subject
+from ..evaluation.bootstrap import bootstrap_ci
+from ..evaluation.metrics import compute_metrics
+from ..evaluation.tables import fold_variability
+from ..utils.io import RunPaths, save_json, save_table
+from .leakage_controlled import run_one_fold
+from ..splits.group_cv import describe_folds, make_group_folds
+
+log = logging.getLogger(__name__)
+
+__all__ = ["run_experiment_c", "plan_experiment_c", "enumerate_candidates"]
+
+
+def enumerate_candidates(space: dict, *, max_evals: int, seed: int) -> list[dict]:
+    """탐색 공간에서 후보 설정을 만든다.
+
+    후보 수가 ``max_evals`` 이하면 전수, 아니면 무작위 표집한다.
+    과도한 탐색을 막기 위해 ``max_evals``는 config에서 반드시 지정해야 한다.
+    """
+    if not space:
+        return [{}]
+    keys = sorted(space)
+    grids = [list(space[k]) for k in keys]
+    total = int(np.prod([len(g) for g in grids]))
+    if total <= max_evals:
+        return [dict(zip(keys, combo)) for combo in itertools.product(*grids)]
+    rng = np.random.default_rng(seed)
+    seen, out = set(), []
+    while len(out) < max_evals and len(seen) < total:
+        cand = tuple(g[rng.integers(0, len(g))] for g in grids)
+        if cand in seen:
+            continue
+        seen.add(cand)
+        out.append(dict(zip(keys, cand)))
+    return out
+
+
+def _apply_candidate(base_cfg: dict, cand: dict) -> tuple[dict, str, str]:
+    """후보의 점 표기 키를 config에 적용한다.
+
+    Returns:
+        (적용된 config, 선택된 model 이름, 선택된 augmentation 이름).
+    """
+    import copy
+
+    cfg = copy.deepcopy(base_cfg)
+    model = cand.get("classifier", (base_cfg.get("search") or {}).get("default_classifier", "xgboost"))
+    aug = cand.get("augmentation.method", (base_cfg.get("augmentation") or {}).get("method", "none"))
+    for key, val in cand.items():
+        if key in ("classifier",):
+            continue
+        node = cfg
+        parts = key.split(".")
+        for p in parts[:-1]:
+            node = node.setdefault(p, {})
+        node[parts[-1]] = val
+    cfg.setdefault("augmentation", {})["method"] = aug
+    return cfg, model, aug
+
+
+def plan_experiment_c(data: LifelogData, cfg: dict, *, seed: int) -> dict:
+    """--dry-run: outer/inner fold 구성과 탐색 규모를 확인한다."""
+    sp = cfg.get("split") or {}
+    outer_cfg = sp.get("outer") or {}
+    inner_cfg = sp.get("inner") or {}
+    outer = make_group_folds(
+        data,
+        method=outer_cfg.get("method", "stratified_group_kfold"),
+        n_splits=int(outer_cfg.get("n_splits", 3)),
+        n_repeats=int(outer_cfg.get("n_repeats", 1)),
+        seed=seed,
+        prefix="outer",
+    )
+    search = cfg.get("search") or {}
+    cands = enumerate_candidates(
+        search.get("space") or {}, max_evals=int(search.get("max_evals", 20)), seed=seed
+    )
+
+    inner_summary = []
+    for f in outer:
+        tr = data.take(f.train_idx)
+        inner = make_group_folds(
+            tr,
+            method=inner_cfg.get("method", "stratified_group_kfold"),
+            n_splits=int(inner_cfg.get("n_splits", 3)),
+            n_repeats=1,
+            seed=seed,
+            prefix=f"{f.fold_id}_inner",
+        )
+        inner_summary.append(
+            {
+                "outer_fold": f.fold_id,
+                "n_train_subjects": int(len(set(data.subject[f.train_idx]))),
+                "n_eval_subjects": int(len(set(data.subject[f.eval_idx]))),
+                "n_eval_dem_subjects": int(
+                    len(set(data.subject[f.eval_idx][data.y[f.eval_idx] == 2]))
+                ),
+                "n_inner_folds": len(inner),
+                "inner_composition": describe_folds(tr, inner).to_dict(orient="records"),
+            }
+        )
+    return {
+        "experiment": "C",
+        "n_outer_folds": len(outer),
+        "n_candidates": len(cands),
+        "max_evals": int(search.get("max_evals", 20)),
+        "total_model_fits": len(outer) * len(cands) * int(inner_cfg.get("n_splits", 3)) + len(outer),
+        "candidates_preview": cands[:10],
+        "outer_composition": describe_folds(data, outer).to_dict(orient="records"),
+        "inner_summary": inner_summary,
+        "note": (
+            "outer test는 이상치 임계값·scaler·VAE·synthetic ratio·모델·early stopping·"
+            "threshold 선택 어디에도 사용되지 않는다. 감사기가 record_selection()으로 강제한다."
+        ),
+    }
+
+
+def run_experiment_c(
+    data: LifelogData,
+    cfg: dict,
+    *,
+    out_root: str,
+    label: str,
+    seed: int = 42,
+    only_fold: int | None = None,
+) -> dict:
+    """피험자 독립 반복 Nested Group CV."""
+    paths = RunPaths(out_root, f"C_{label}")
+    auditor = LeakageAuditor(mode="enforce", name=f"C_{label}")
+
+    sp = cfg.get("split") or {}
+    outer_cfg, inner_cfg = sp.get("outer") or {}, sp.get("inner") or {}
+    search = cfg.get("search") or {}
+    selection_metric = search.get("metric", "macro_f1")
+
+    outer = make_group_folds(
+        data,
+        method=outer_cfg.get("method", "stratified_group_kfold"),
+        n_splits=int(outer_cfg.get("n_splits", 3)),
+        n_repeats=int(outer_cfg.get("n_repeats", 1)),
+        seed=seed,
+        prefix="outer",
+    )
+    if only_fold is not None:
+        outer = [f for f in outer if f.index == only_fold]
+    save_table(describe_folds(data, outer), paths("outer_fold_composition.csv"))
+
+    candidates = enumerate_candidates(
+        search.get("space") or {}, max_evals=int(search.get("max_evals", 20)), seed=seed
+    )
+    log.info("nested CV: outer %d folds × %d candidates", len(outer), len(candidates))
+
+    inner_log: list[dict] = []
+    outer_rows: list[dict] = []
+    sub_frames: list[pd.DataFrame] = []
+    chosen: list[dict] = []
+
+    for of in outer:
+        auditor.register_split(
+            of.fold_id,
+            train_subjects=data.subject[of.train_idx],
+            eval_subjects=data.subject[of.eval_idx],
+            train_row_ids=data.row_id[of.train_idx],
+            eval_row_ids=data.row_id[of.eval_idx],
+        )
+        outer_train = data.take(of.train_idx)
+
+        # ---------- inner CV: 여기서만 선택이 일어난다 ----------
+        inner = make_group_folds(
+            outer_train,
+            method=inner_cfg.get("method", "stratified_group_kfold"),
+            n_splits=int(inner_cfg.get("n_splits", 3)),
+            n_repeats=1,
+            seed=seed,
+            prefix=f"{of.fold_id}_inner",
+        )
+        inner_auditor = LeakageAuditor(mode="enforce", name=f"{of.fold_id}_inner")
+        for f in inner:
+            inner_auditor.register_split(
+                f.fold_id,
+                train_subjects=outer_train.subject[f.train_idx],
+                eval_subjects=outer_train.subject[f.eval_idx],
+                train_row_ids=outer_train.row_id[f.train_idx],
+                eval_row_ids=outer_train.row_id[f.eval_idx],
+            )
+
+        scores: list[tuple[float, dict]] = []
+        for ci, cand in enumerate(candidates):
+            ccfg, model_name, aug_name = _apply_candidate(cfg, cand)
+            vals = []
+            for f in inner:
+                r = run_one_fold(
+                    outer_train, f, ccfg, auditor=inner_auditor,
+                    model_name=model_name, augmentation=aug_name,
+                    seed=seed, run_diagnostics=False,
+                )
+                vals.append(r["subject_level"].get(selection_metric, float("nan")))
+            score = float(np.nanmean(vals)) if len(vals) else float("nan")
+            scores.append((score, cand))
+            inner_log.append(
+                {
+                    "outer_fold": of.fold_id,
+                    "candidate_index": ci,
+                    "classifier": model_name,
+                    "augmentation": aug_name,
+                    "candidate": cand,
+                    f"inner_mean_{selection_metric}": round(score, 4),
+                    "inner_scores": [round(float(v), 4) for v in vals],
+                }
+            )
+
+        # 선택은 inner 자료만 보았다는 것을 감사기에 신고한다.
+        auditor.record_selection(
+            "pipeline", of.fold_id, subjects=outer_train.subject
+        )
+        best_score, best_cand = max(scores, key=lambda t: (-np.inf if np.isnan(t[0]) else t[0]))
+        bcfg, best_model, best_aug = _apply_candidate(cfg, best_cand)
+        chosen.append(
+            {
+                "outer_fold": of.fold_id,
+                "selected": best_cand,
+                "classifier": best_model,
+                "augmentation": best_aug,
+                f"inner_{selection_metric}": round(best_score, 4),
+            }
+        )
+        log.info("[%s] 선택: %s (inner %s=%.4f)", of.fold_id, best_cand, selection_metric, best_score)
+
+        # ---------- outer 평가: 선택된 파이프라인을 outer train에 재적합 ----------
+        r = run_one_fold(
+            data, of, bcfg, auditor=auditor,
+            model_name=best_model, augmentation=best_aug,
+            seed=seed, run_diagnostics=bool((cfg.get("diagnostics") or {}).get("enabled", True)),
+        )
+        sub_frames.append(r["subject_predictions"])
+        outer_rows.append(
+            {
+                "experiment": "C",
+                "config_label": label,
+                "fold_id": of.fold_id,
+                "selected_classifier": best_model,
+                "selected_augmentation": best_aug,
+                "selected_candidate": str(best_cand),
+                "n_synthetic": r["n_synthetic"],
+                "n_dem_subjects_eval": r["n_dem_subjects_eval"],
+                "n_dem_subjects_correct": r["n_dem_subjects_correct"],
+                **{f"subject_{k}": v for k, v in r["subject_level"].items()
+                   if not isinstance(v, (list, dict))},
+                **{f"record_{k}": v for k, v in r["record_level"].items()
+                   if not isinstance(v, (list, dict))},
+            }
+        )
+
+    allp = pd.concat(sub_frames, ignore_index=True)
+    pcols = [c for c in allp.columns if c.startswith("proba_")]
+    pooled = compute_metrics(allp["y_true"].to_numpy(), allp[pcols].to_numpy(), unit="subject")
+    pooled["fold_variability"] = fold_variability(
+        [{k.replace("subject_", ""): v for k, v in row.items() if k.startswith("subject_")}
+         for row in outer_rows]
+    ).to_dict(orient="records")
+    if (cfg.get("bootstrap") or {}).get("enabled", True):
+        pooled["bootstrap_ci"] = bootstrap_ci(
+            allp["y_true"].to_numpy(), allp[pcols].to_numpy(),
+            n_boot=int((cfg.get("bootstrap") or {}).get("n_boot", 2000)), seed=seed,
+        )
+
+    save_table(pd.DataFrame(outer_rows), paths("outer_fold_metrics.csv"))
+    save_table(pd.DataFrame(inner_log), paths("inner_selection_log.csv"), also_markdown=False)
+    save_table(pd.DataFrame(chosen), paths("selected_pipelines.csv"))
+    save_table(allp, paths("subject_predictions.csv"), also_markdown=False)
+    save_json(pooled, paths("pooled_subject_metrics.json"))
+    auditor.assert_clean()
+    auditor.save(paths("leakage_audit.json"))
+    return {
+        "results": pooled,
+        "selected": chosen,
+        "metrics_frame": pd.DataFrame(outer_rows),
+        "audit": auditor.summary(),
+        "paths": paths,
+    }

@@ -1,0 +1,51 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 A1 — PRIMARY REPORTED-METHOD RECONSTRUCTION
+#
+# ⚠️ 이 설정은 "원 저자 코드의 확정 사양"이 아니다 (사용자 지시 17).
+#    논문 §5.1 본문의 구체적 실험 서술을 우선한 재구성일 뿐이다.
+#
+# ⚠️ 예상되는 결과: 이 설정은 논문이 보고한 이상치 제거 후 행 수
+#    (CN 7,075 / MCI 3,374 / Dem 515)를 재현하지 못한다.
+#    변수별 [p10, p90] 절단의 실측 잔존율은 3.05%다 (report_inconsistencies.md I-1 증거 B).
+#    이는 구현 오류가 아니라 논문 서술의 산술적 귀결이며, 보고 대상이다.
+#    A3(isolation_forest)가 행 수를 재현하는지가 핵심 검증 지점이다.
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: A1_percentile_latent500_primary
+experiment:
+  name: paper_reported_reconstruction
+  variant: primary_reported_method_reconstruction
+  description: >
+    논문 §5.1 본문(상·하위 10% 절단, latent 500)을 우선한 재구성.
+    행 단위 8:1:1 분할과 split 이전 전처리를 그대로 재현하므로 누수를 포함한다.
+
+split:
+  unit: row                    # [논문 유도] I-6. 표 5는 행 단위와만 정합
+  ratios: [0.8, 0.1, 0.1]      # [논문] §5.1
+
+preprocessing:
+  fit_scope: all_data          # [논문] §5.1 "전처리 된 데이터를 …분할" (I-7, 누수)
+  scaler_scope: all_data       # [가정] B-4. 미보고 (I-8)
+
+outlier:
+  method: percentile           # [논문] §5.1 본문
+  percentile:
+    q: 0.10
+    scope: global
+    action: drop_row
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 500            # [논문] §5.1 본문 (그림 2는 50 → A2 참조)
+    n_synthetic: 4000          # [유도] I-5. 표 5의 4,412 − 412
+    fit_scope: train_dem_only  # [가정] D-4. 미보고 (I-9), 관대한 해석
+    input_space: raw           # [논문] §4.2 순서상 스케일링이 증강 뒤에 온다 (D-5)
+
+audit:
+  mode: observe                # 논문 절차의 누수를 막지 않고 측정해서 보고한다
+
+diagnostics:
+  enabled: true

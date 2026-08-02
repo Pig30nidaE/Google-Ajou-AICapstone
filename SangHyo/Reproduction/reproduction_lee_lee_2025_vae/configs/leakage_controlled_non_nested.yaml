@@ -1,0 +1,68 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 B — leakage_controlled_non_nested
+#
+# 논문 하이퍼파라미터를 **고정**한 채 피험자 분리와 전처리·VAE 범위만 통제한다.
+# 하이퍼파라미터를 다시 선택하지 않는다 (search.enabled=false를 config 검증이 강제).
+#
+# 강제 순서:
+#   1. 피험자 ID 기준 fold 분리
+#   2. 이상치 처리기 fit ← train 피험자만
+#   3. imputer fit       ← train 피험자만
+#   4. scaler fit        ← train 피험자의 실제 행만
+#   5. VAE fit           ← train fold의 실제 Dem 기록만
+#   6. 합성행은 train에만
+#   7. 분류기 학습
+#   8. 평가 피험자에는 학습된 변환만 적용
+#   9. 평가 피험자에 합성행 절대 미추가
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: B_leakage_controlled
+experiment:
+  name: leakage_controlled_non_nested
+  description: >
+    피험자 독립 StratifiedGroupKFold. 논문 설정 고정, 누수만 통제.
+
+split:
+  unit: subject
+  method: stratified_group_kfold   # 사용자 지시 기본값. group = 피험자 ID
+  n_splits: 3                      # Dem 12명 → fold당 4명
+  n_repeats: 1                     # 1~10 설정 가능
+  # fold에 세 클래스 피험자가 모두 없으면 SplitError.
+  # 그 경우 subject_stratified로 전환하라 (assumptions.md C-2).
+
+preprocessing:
+  fit_scope: train_fold_only
+  scaler_scope: train_real_only    # 합성 4,000행이 통계량을 지배하지 않도록 (B-4)
+
+outlier:
+  method: percentile               # 논문 설정 고정 (A1과 같은 방식)
+  percentile:
+    q: 0.10
+    scope: global
+    action: clip                   # ⚠️ 평가 fold의 행을 지우지 않기 위해 clip을 쓴다.
+                                   #    drop_row면 train에서만 삭제되고 평가는 clip된다.
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 500                # 논문 §5.1 본문값 고정 (재선택하지 않는다)
+    ratio_to_real: 9.71            # [유도] I-5. fold마다 실제 Dem 행 수가 다르므로
+                                   #        절대 개수(4,000)가 아니라 배수로 환산한다
+    n_synthetic: null
+    fit_scope: train_dem_only      # 감사기가 강제
+    input_space: scaled            # 4자릿수 스케일 차이 때문 (D-5)
+
+audit:
+  mode: enforce                    # 위반 시 즉시 LeakageError
+
+bootstrap:
+  enabled: true
+  n_boot: 2000
+
+diagnostics:
+  enabled: true
+
+search:
+  enabled: false                   # 실험 B에서는 어떤 선택도 하지 않는다

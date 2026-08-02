@@ -1,0 +1,63 @@
+# 실험 B2: 논문 하이퍼파라미터 고정, 신규 피험자 평가 (Estimand B)
+#
+# 논문의 LSTM 128 / Dense 64 / lr 0.001을 그대로 고정하고, 학습에서 한 번도
+# 보지 못한 피험자에 대해 평가한다. 하이퍼파라미터를 다시 고르지 않으므로
+# 실험 C(nested)와의 차이가 곧 "모델 선택 비용"이 된다.
+#
+# 이 결과는 Estimand B다. 논문의 시간분할 값(Estimand A)과 같은 의미의
+# 일반화 성능으로 비교하면 안 된다.
+#
+# 3일·4일·5일을 각각 별도로 평가한다. 셋 중 최고를 골라 보고하지 않는다.
+
+experiment: fixed_subject_independent
+estimand: B
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end
+  duplicate_policy: longest_duration
+  rmssd_source: intraday_mean
+
+features:
+  include_cognitive_tests: false
+  include_subject_id: false
+
+sequence:
+  lengths: [3, 4, 5]
+  stride: 1
+  require_consecutive: true
+
+split:
+  mode: stratified_group_kfold
+  outer_k: 5
+  n_repeats: 1                  # 반복이 필요하면 늘린다 (seed가 repeat마다 바뀐다)
+  stratify_on: label            # 'diagnosis'로 두면 Dem 12명이 fold에 고루 퍼진다
+
+preprocessing:
+  scaler_scope: train_only
+
+sampling:
+  strategy: subject_balanced
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: fixed                 # B2는 논문의 0.5를 그대로 쓴다
+  value: 0.5
+
+lstm:
+  max_epochs: 100
+  patience: 10
+  early_stopping: false         # 감시할 독립 validation이 없으므로 끈다
+  recurrent_dropout: 0.0
+
+tuning:
+  enabled: false                # 재선택 금지
+
+models:
+  enabled: [lstm, logistic_regression, svm, random_forest, xgboost]
+  representation: flatten
+  baseline_backend: sklearn
+
+explainability:
+  enabled: false

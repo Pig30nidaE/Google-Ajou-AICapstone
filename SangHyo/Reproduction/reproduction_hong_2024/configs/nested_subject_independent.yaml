@@ -1,0 +1,77 @@
+# 실험 C: 피험자 독립 Nested Group CV (Estimand B)
+#
+# outer 5-fold StratifiedGroupKFold, inner 3-fold. group은 피험자 ID.
+# 시퀀스 길이(3/4/5), 하이퍼파라미터, threshold를 모두 inner CV에서만 고른다.
+# outer test는 각 fold에서 마지막에 한 번만 사용한다.
+#
+# 3·4·5일 중 최고 결과를 outer test에서 고르는 것은 금지된다. config 검증이
+# sequence.length_selection != inner_cv 인 경우 실행을 거부한다.
+#
+# 탐색 비용 경고: inner fit 횟수는
+#   outer(5) x model x inner_k(3) x candidates x lengths(3)
+# 이다. tuning.max_candidates로 반드시 제한한다. 이 저장소의 과거 실험에서
+# 10.6시간짜리 대규모 탐색이 오히려 성능을 떨어뜨린 기록이 있다
+# (SangHyo/AGENTS.md §3-3).
+
+experiment: nested_subject_independent
+estimand: B
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end
+  duplicate_policy: longest_duration
+  rmssd_source: intraday_mean
+
+features:
+  include_cognitive_tests: false
+  include_subject_id: false
+
+sequence:
+  lengths: [3, 4, 5]
+  stride: 1
+  require_consecutive: true
+  length_selection: inner_cv     # 필수. 다른 값이면 config 검증이 거부한다.
+
+split:
+  mode: nested_stratified_group_kfold
+  outer_k: 5
+  inner_k: 3
+  n_repeats: 1
+  stratify_on: label
+
+preprocessing:
+  scaler_scope: train_only
+
+sampling:
+  strategy: subject_balanced
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: youden                 # inner CV 점수에서만 고른다
+  value: 0.5                     # inner에서 못 고르면 이 값으로 되돌아간다
+
+lstm:
+  max_epochs: 60                 # nested는 fit 횟수가 많으므로 예산을 줄인다
+  patience: 8
+  early_stopping: true
+  recurrent_dropout: 0.0
+
+tuning:
+  enabled: true
+  metric: roc_auc                # 피험자 단위 inner 점수
+  max_candidates: 6              # 논문 grid(27개)에서 6개만 무작위 추출. 과도한 탐색 금지.
+
+models:
+  enabled: [lstm, random_forest, xgboost]   # baseline은 제한적으로만
+  representation: flatten
+  baseline_backend: sklearn
+
+explainability:
+  enabled: false                 # true로 켜면 outer fold의 held-out 자료에서만 SHAP을 계산한다
+  mode: out_of_fold
+  algorithm: deep
+  n_background: 100
+  background_source: train_fold_random
+  n_explain: 500
+  time_aggregation: mean_abs

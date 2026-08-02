@@ -1,0 +1,79 @@
+# 실험 B — leakage_controlled_non_nested
+#
+# 목적: 하이퍼파라미터를 논문 값으로 **고정**한 채, 피험자 독립성과 전처리 독립성만
+#       확보했을 때 성능이 어떻게 변하는지 본다.
+#
+# 이 단계에서는 CV 점수를 보고 모델이나 하이퍼파라미터를 다시 고르지 않는다.
+# (tuning.enabled: true로 바꾸면 config 검증이 실패한다.)
+
+experiment: leakage_controlled_non_nested
+analysis: main_lifelog_only
+seed: 42
+
+data:
+  join_mode: positional
+  sleep_date_source: bedtime_end
+
+features:
+  feature_set: paper_code_verbatim
+  include_cognitive_tests: false
+  # 실험 A와 달리 무분산(sleep_is_longest)·행정(sleep_period_id) 변수는 제외한다.
+  drop_zero_variance: true
+  drop_administrative: true
+
+split:
+  mode: stratified_group_kfold
+  outer_k: 5
+  # 서로 다른 seed로 5회 반복. 시간이 부족하면 1~2로 줄여도 된다.
+  repeats: 5
+
+models:
+  - random_forest
+  - xgboost
+  - lstm
+  - bilstm
+  - cnn1d
+
+representations:
+  random_forest: tabular_subject_aggregate
+  xgboost: tabular_subject_aggregate
+  lstm: temporal_sequence
+  bilstm: temporal_sequence
+  cnn1d: temporal_sequence
+
+representation_options:
+  sequence_length: max
+  padding: pre
+  truncation: last
+  gap_handling: compress
+  min_observations: 1
+
+preprocessing:
+  # 강제. fold의 학습부분에서만 fit한다.
+  scaler_scope: train_only
+  standardize_tree_models: false
+
+tuning:
+  enabled: false
+
+threshold:
+  # 사전 고정. CV 결과를 보고 조정하지 않는다.
+  policy: fixed
+  value: 0.5
+
+training:
+  loss: bce
+  optimizer: adam
+  learning_rate: 0.001
+  batch_size: 16
+  max_epochs: 100
+  early_stopping_patience: 10
+  validation_fraction: 0.2
+  pos_weight: null
+
+evaluation:
+  pooling: mean
+  sensitivity_pooling: true
+
+checkpointing:
+  save_models: false

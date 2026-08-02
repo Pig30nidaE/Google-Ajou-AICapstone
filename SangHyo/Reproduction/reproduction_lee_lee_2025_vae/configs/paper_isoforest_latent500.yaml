@@ -1,0 +1,45 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 A3 — Isolation Forest + latent 500 (§4.2 해석)
+#
+# ⚠️ 미보고 설정 조합이므로 "원 저자 설정"이라고 부르지 않는다 (사용자 지시 17·18).
+# #    ★ 핵심 검증 config: 이 설정이 논문의 이상치 제거 후 행 수
+#      (CN 7,075 / MCI 3,374 / Dem 515, 합계 = 전체의 정확히 90.0%)를
+#      재현하는지가 I-1의 결정적 검증이다.
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: A3_isoforest_latent500
+experiment:
+  name: paper_reported_reconstruction
+  variant: section42_outlier_variant
+  description: >
+    이상치는 §4.2·그림 1(Isolation Forest), latent는 §5.1 본문(500)을 채택한 변형.
+
+split:
+  unit: row                    # [논문 유도] I-6
+  ratios: [0.8, 0.1, 0.1]      # [논문] §5.1
+
+preprocessing:
+  fit_scope: all_data          # [논문] §5.1 흐름 (I-7, 누수)
+  scaler_scope: all_data       # [가정] B-4
+
+outlier:
+  method: isolation_forest      # [논문] §4.2 본문 + 그림 1
+  isolation_forest:
+    contamination: 0.1          # [가정] B-2. 전체 잔존율 90.0%와 정합 (I-1 증거 A)
+    n_estimators: 100
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 500            # [논문] §5.1 본문 (그림 2는 50)
+    n_synthetic: 4000          # [유도] I-5
+    fit_scope: train_dem_only  # [가정] D-4
+    input_space: raw           # [논문] §4.2 순서 (D-5)
+
+audit:
+  mode: observe
+
+diagnostics:
+  enabled: true

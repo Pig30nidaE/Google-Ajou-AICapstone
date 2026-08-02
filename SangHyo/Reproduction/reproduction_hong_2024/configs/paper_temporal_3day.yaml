@@ -1,0 +1,71 @@
+# 실험 A: 원 논문 동일 피험자 시간분할 재구현 (Estimand A) — 3일
+#
+# Hong et al. (2024) §4.2:
+#   "test data were constructed by isolating the final week of data from each
+#    subject within the entire dataset, whereas the remaining data were used for
+#    model training."
+#
+# 여기서는 원시 날짜를 먼저 train/test로 나눈 뒤 각 구간 안에서만 시퀀스를 만든다.
+# 논문 문언 그대로의 순서(시퀀스를 먼저 만들고 나중에 마지막 1주일을 분리)는
+# paper_literal_variant.yaml에서 누수 진단 전용으로 따로 측정한다.
+#
+# 이 실험의 결과는 "이미 과거 자료가 학습된 동일 피험자의 미래 기간" 성능이다.
+# 신규 피험자 일반화 성능이 아니다. estimand_definition.md 참조.
+
+experiment: paper_temporal_reconstruction
+estimand: A
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end       # A-01
+  duplicate_policy: longest_duration   # A-02
+  rmssd_source: intraday_mean          # A-04
+
+features:
+  include_cognitive_tests: false       # MMSE 등 진단에 쓰인 인지검사는 항상 제외
+  include_subject_id: false
+
+sequence:
+  lengths: [3]
+  stride: 1                            # A-08 (논문 미보고)
+  require_consecutive: true            # 실제 연속 calendar day만 하나의 시퀀스
+
+split:
+  mode: final_week_temporal
+  final_week_mode: calendar_days       # A-05 (마지막 7개 '날짜')
+  final_week_length: 7
+  embargo_days: 0                      # 실험 A는 논문 그대로. embargo는 B1에서.
+  validation_days: 0                   # A-06 (논문에 validation 기간 서술 없음)
+
+preprocessing:
+  scaler_scope: train_only             # 변경 불가. config 검증에서 강제된다.
+
+sampling:
+  strategy: random_sequence            # A-07
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: fixed
+  value: 0.5                           # 논문 §4.2 / Table 6에서 확인됨
+
+lstm:                                  # 논문 보고값 외에는 전부 미보고 항목
+  max_epochs: 100                      # A-11
+  patience: 10                         # A-12
+  early_stopping: true                 # 논문 한계 절에서 early stopping 언급됨
+  recurrent_dropout: 0.0               # A-13
+
+tuning:
+  enabled: false                       # 논문이 보고한 최종 설정 하나만 사용
+
+models:
+  enabled: [lstm, logistic_regression, svm, random_forest, xgboost]
+  representation: flatten              # A-09 (비교모델 입력변환, 논문 미보고)
+  baseline_backend: sklearn            # h2o로 바꾸면 논문의 AutoML 경로를 쓴다
+  h2o:
+    require_exact_version: false       # 논문은 3.46.0.1
+    max_models: 20
+    max_runtime_secs: 600
+
+explainability:
+  enabled: false                       # 이번 작업 범위에서는 SHAP을 실행하지 않는다

@@ -1,0 +1,95 @@
+# 실험 A — paper_reported_reconstruction
+#
+# 목적: 임형준(2025)이 보고한 방법을 가능한 범위에서 그대로 재구현한다.
+#
+# 주의: 이것은 exact reproduction이 **아니다**.
+#   - LSTM / Bi-LSTM / 1D-CNN 구조가 논문에 전혀 없다 (unresolved_questions.md Q1)
+#   - Random Forest 하이퍼파라미터가 전혀 없다 (Q2)
+#   - 시퀀스 길이·패딩 규칙이 없다 (Q3)
+# 따라서 산출물은 reported-method reconstruction으로 표시된다.
+
+experiment: paper_reported_reconstruction
+analysis: main_lifelog_only
+seed: 42
+
+data:
+  # 논문 표 1의 `date` 컬럼이 실제 데이터에 없어 타임스탬프에서 파생한다.
+  join_mode: positional          # positional | date
+  sleep_date_source: bedtime_end # bedtime_end | bedtime_start
+
+features:
+  # 논문은 58개라고 쓰지만, 논문 코드를 그대로 실행하면 49개가 나온다.
+  feature_set: paper_code_verbatim
+  include_cognitive_tests: false
+  # 실험 A는 논문 코드를 그대로 재현하므로 무분산·행정 변수도 남긴다.
+  drop_zero_variance: false
+  drop_administrative: false
+
+split:
+  # reproduction_spec.md §2: 논문의 "80:20"은 AI-Hub 공식 Training(141)/Validation(33)
+  # 분할이다. 보고된 Accuracy가 모두 k/33, Recall이 모두 k/7로 분해된다.
+  mode: official_partition
+  #
+  # 대안 (모두 assumption_variant):
+  #   mode: assumption_variant_random_subject_holdout
+  #   test_size: 0.2
+  #
+  #   mode: assumption_variant_random_row_holdout   # 행 단위 → 피험자 누수
+  #   test_size: 0.2
+  #   leakage_diagnostic_only: true                 # 이 플래그 없으면 config 검증 실패
+
+models:
+  - random_forest
+  - xgboost
+  - lstm
+  - bilstm
+  - cnn1d
+
+representations:
+  # 논문 3.2절: 트리 모델은 피험자별 평균 평탄화(2D), 딥러닝은 시계열 3D 텐서.
+  random_forest: tabular_subject_aggregate
+  xgboost: tabular_subject_aggregate
+  lstm: temporal_sequence
+  bilstm: temporal_sequence
+  cnn1d: temporal_sequence
+
+representation_options:
+  # 전부 논문 미보고 → assumption_variant_sequence_length
+  sequence_length: max        # max | median | min | <정수>
+  padding: pre                # pre | post
+  truncation: last            # last | first
+  gap_handling: compress      # compress | calendar
+  min_observations: 1
+
+preprocessing:
+  # 논문은 "정규화"라고만 쓰고 적합 범위를 밝히지 않았다 (Q6).
+  # all_data로 바꾸면 전체 174명에서 fit하며, 그 낙관 편향의 크기를 측정할 수 있다.
+  # 실험 B·C에서는 train_only만 허용된다.
+  scaler_scope: train_only    # train_only | all_data
+  standardize_tree_models: false
+
+tuning:
+  # 논문이 Random Search 최종값을 제시했으므로 다시 탐색하지 않는다.
+  enabled: false
+
+threshold:
+  policy: fixed
+  value: 0.5                  # 논문 미보고 → 가정
+
+training:
+  # LSTM / Bi-LSTM / 1D-CNN 공통. 전부 논문 미보고 (assumptions.md §C-3).
+  loss: bce
+  optimizer: adam
+  learning_rate: 0.001
+  batch_size: 16
+  max_epochs: 100
+  early_stopping_patience: 10
+  validation_fraction: 0.2
+  pos_weight: null            # 논문은 불균형 보정을 적용하지 않았다
+
+evaluation:
+  pooling: mean               # 피험자당 예측이 여러 개일 때만 의미가 있다
+  sensitivity_pooling: true
+
+checkpointing:
+  save_models: true

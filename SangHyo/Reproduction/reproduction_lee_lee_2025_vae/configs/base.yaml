@@ -1,0 +1,131 @@
+# 공통 기본값. 각 실험 config가 `defaults: base.yaml`로 상속한다.
+#
+# 표기 규약:
+#   [논문]  논문이 명시적으로 보고한 값
+#   [가정]  논문 미보고 → assumptions.md의 가정값
+#   [유도]  논문 표에서 산술적으로 유도한 값
+
+seed: 42
+
+data:
+  root: ../../../Data          # run.py 기준 상대 경로
+  use_official_split: false    # 논문은 Training+Validation 합본에서 자체 재분할했다
+
+features:
+  # sleep_temperature_delta == sleep_temperature_deviation (실측 완전 동일).
+  # 논문이 46개를 썼다고 명시했으므로 기본은 46개 유지 (paper_data_mapping.md §4).
+  drop_duplicate_columns: false
+  extra_sleep_features: []     # 예: [sleep_total] → unresolved_questions.md Q6 민감도
+
+output:
+  root: outputs
+
+run:
+  models: [xgboost, dnn, tabnet, wide_deep]   # [논문] §4.2의 비교 모델 4종
+  augmentations: [none, vae]
+
+preprocessing:
+  impute_strategy: median      # [가정] 실측 결측 0건이므로 사실상 no-op (B-3)
+  fit_scope: train_fold_only   # train_fold_only | all_data
+  scaler_scope: train_real_only  # train_real_only | train_with_synthetic | all_data
+
+outlier:
+  method: none                 # none | percentile | isolation_forest
+  percentile:
+    q: 0.10                    # [논문] §5.1 "상위 및 하위 10%"
+    scope: global              # global | per_class   [가정] B-1
+    action: drop_row           # drop_row | clip      [가정] B-1
+  isolation_forest:
+    contamination: 0.1         # [가정] B-2. 논문의 "10%"·전체 잔존율 90.0%와 정합
+    n_estimators: 100
+    max_samples: auto
+
+augmentation:
+  method: none
+  target_class: Dem
+  vae:
+    # latent_dim은 각 config에서 반드시 명시한다 (본문 500 / 그림 2 50 충돌, I-2).
+    encoder_hidden: [512, 256]   # [논문] §5.1
+    decoder_hidden: [256, 512]   # [논문] §5.1
+    dropout: 0.3                 # [논문] §5.1
+    batch_norm: true             # [논문] §5.1
+    learning_rate: 0.0001        # [논문] §5.1
+    beta: 1.0                    # [가정] D-2. 논문은 "가중합"이라고만 함
+    epochs: 300                  # [가정] D-3
+    batch_size: 64               # [가정] D-3
+    recon_reduction: mean_per_feature
+    kl_reduction: sum
+    output_activation: linear    # [가정] D-1
+    fit_scope: train_dem_only    # train_dem_only | all_dem   (I-9)
+    input_space: scaled          # raw | scaled               (I-9, D-5)
+    early_stopping:
+      enabled: true
+      patience: 30               # [가정] D-3
+      min_delta: 0.00001
+    val_fraction: 0.2
+    val_split_by: subject        # outer test를 절대 쓰지 않는다
+    postprocess:
+      enforce_nonnegative: true  # [가정] D-6. 43개 변수가 실측상 항상 >= 0
+      clip_to_train_range: true  # [가정] D-6
+      round_integer_valued: false  # [가정] D-6. 논문 미보고이므로 기본 off
+  smote:
+    k_neighbors: 5
+  random_oversampling: {}
+
+models:
+  xgboost:
+    max_depth: 6               # [논문] §5.1
+    learning_rate: 0.1         # [논문] §5.1
+    n_estimators: 100          # [가정] E-1
+  dnn:
+    hidden: [512, 256, 128, 64, 32]  # [논문] §5.1
+    dropout: 0.5                     # [논문] §5.1
+    batch_norm: true                 # [논문] §5.1
+    l2: 0.0001                       # [가정] E-2 (논문은 "L2 정규화" 사실만 보고)
+    lr: 0.001                        # [가정] E-2
+    epochs: 200                      # [가정] E-2
+    batch_size: 128                  # [가정] E-2
+    patience: 20                     # [가정] E-2
+  tabnet:
+    n_d: 64                    # [논문] §5.1
+    n_a: 64                    # [논문] §5.1
+    n_steps: 5                 # [논문] §5.1
+    gamma: 1.3                 # [가정] E-3
+    lambda_sparse: 0.001       # [가정] E-3
+    lr: 0.02                   # [가정] E-3
+    max_epochs: 200            # [가정] E-3
+    patience: 20               # [가정] E-3
+  wide_deep:
+    deep_hidden: [256, 128, 64]  # [논문] §5.1
+    dropout: 0.3                 # [논문] §5.1
+    # ⚠️ Wide 컴포넌트 입력은 논문에 전혀 기재가 없다 (Q12).
+    #    46개 원 특성의 선형 층으로 가정한다. 교차특성을 만들지 않는다 (E-4).
+    wide_features: all
+    wide_crosses: []
+    combine: sum
+    lr: 0.001                    # [가정] E-4
+    epochs: 200                  # [가정] E-4
+    batch_size: 128              # [가정] E-4
+    patience: 20                 # [가정] E-4
+
+internal_validation:
+  # early stopping 전용. outer test는 절대 쓰지 않는다 (사용자 지시 8절).
+  fraction: 0.2
+  split_by: subject
+
+aggregate:
+  method: mean                 # [가정] F-1. 피험자 1명 = 1표
+
+bootstrap:
+  enabled: true
+  n_boot: 2000                 # [가정] F-3
+  alpha: 0.05
+
+diagnostics:
+  enabled: true                # 합성자료 품질·암기·TSTR 진단
+
+audit:
+  mode: enforce                # enforce | observe (실험 A만 observe)
+
+search:
+  enabled: false

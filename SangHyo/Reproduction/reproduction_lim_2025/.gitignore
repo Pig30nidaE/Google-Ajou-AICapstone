@@ -1,0 +1,13 @@
+# The repository-wide .gitignore ignores directories named data/, models/,
+# outputs/, results/ and *.txt.  Two of those collide with this package's
+# source layout, so re-include them explicitly.
+!src/data/
+!src/models/
+!requirements_colab.txt
+
+outputs/
+*_result/
+checkpoints/
+__pycache__/
+*.pyc
+.pytest_cache/
