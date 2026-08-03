@@ -324,6 +324,49 @@ def _vae_generate(
             "위 값과 직접 비교할 수 없다."
         ),
         "validity": valid_diag,
+        "posterior": {
+            "mu_std_mean": vae.log.posterior_mu_std_mean,
+            "mu_std_max": vae.log.posterior_mu_std_max,
+            "n_active_latent_units": vae.log.n_active_latent_units,
+            "latent_dim": vcfg.latent_dim,
+            "prior_mismatch_suspected": vae.log.prior_mismatch_suspected,
+        },
+        "generation_fidelity": _generation_fidelity(gen_raw, reference_raw),
         "vae_source_subjects": vae.source_subjects,
     }
     return X_syn.reset_index(drop=True), gen_raw.reset_index(drop=True), diag
+
+
+def _generation_fidelity(synth_raw: pd.DataFrame, real_raw: pd.DataFrame) -> dict:
+    """생성 표본의 분산이 실제 소수 클래스 분산을 재현하는지 즉시 검사한다.
+
+    2026-08-03 실행에서 46개 변수 전부가 표준편차 비 0.30 이하로 붕괴했는데도
+    이 사실이 결과표에 드러나지 않아 "VAE 증강이 효과 없다"는 결론이
+    모델링 결함과 구분되지 않았다. 그래서 증강 시점에 바로 계산해 진단에 남긴다
+    (synthetic_data_risk.md §3.1의 "표준편차가 실제의 50% 미만 → 다양성 붕괴" 기준).
+    """
+    real_std = real_raw.std(ddof=1).replace(0.0, np.nan)
+    ratio = (synth_raw.std(ddof=1) / real_std).dropna()
+    if ratio.empty:
+        return {"n_features": 0, "note": "실제 표준편차가 0이라 비교 불가"}
+
+    median_ratio = float(ratio.median())
+    collapsed = sorted(ratio[ratio < 0.5].index.tolist())
+    out = {
+        "std_ratio_median": median_ratio,
+        "std_ratio_min": float(ratio.min()),
+        "std_ratio_max": float(ratio.max()),
+        "n_features_below_half": len(collapsed),
+        "n_features": int(len(ratio)),
+        "collapsed_features": collapsed[:10],
+        "variance_collapse_suspected": bool(median_ratio < 0.5),
+    }
+    if out["variance_collapse_suspected"]:
+        log.warning(
+            "합성자료 분산 붕괴: 변수별 표준편차 비 중앙값 %.3f (< 0.5), "
+            "%d/%d개 변수가 실제의 절반 미만이다. 증강이 소수 클래스의 '중심 한 점'만 "
+            "복제하고 있어 분류 성능 개선을 기대할 수 없다 "
+            "(synthetic_data_risk.md §3.1). VAE 손실 균형(recon/kl reduction·beta)을 점검하라.",
+            median_ratio, out["n_features_below_half"], out["n_features"],
+        )
+    return out

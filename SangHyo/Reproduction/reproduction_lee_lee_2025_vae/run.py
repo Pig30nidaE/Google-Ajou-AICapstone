@@ -39,7 +39,7 @@ Cell 1이 주입한 ``PROJECT_ROOT``/``DATA_ROOT``도 자동으로 사용한다.
 산출물 저장 위치
 ----------------
 ``/content``는 런타임이 끊기면 사라지므로, Drive가 마운트되어 있으면 산출물을
-``/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/``
+``/content/drive/MyDrive/reproduction_lee_lee_2025_vae/``
 아래 **타임스탬프 폴더**에 저장한다. 전체 실행은 모든 단계가 한 폴더를 공유하며,
 이전 실행 결과를 덮어쓰지 않는다. ``--out-root`` 또는 ``VAE2025_OUT_ROOT``로 변경 가능하다.
 자세한 우선순위는 :func:`_resolve_output_root` 참조.
@@ -92,7 +92,9 @@ OUTPUT_ROOT_ENV_VAR = "VAE2025_OUT_ROOT"
 #: Colab에서 Google Drive가 마운트되는 위치 (base.ipynb Cell 1이 drive.mount("/content/drive")).
 COLAB_MYDRIVE = Path("/content/drive/MyDrive")
 #: MyDrive 안에 만들 산출물 폴더. 런타임이 죽어도 여기 있는 결과는 남는다.
-DRIVE_OUTPUT_SUBDIR = "GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae"
+#: 사용자 지정 고정 경로. Colab 실제 마운트 지점이 ``/content/drive/MyDrive``이므로
+#: 최종 경로는 ``/content/drive/MyDrive/reproduction_lee_lee_2025_vae/``가 된다.
+DRIVE_OUTPUT_SUBDIR = "reproduction_lee_lee_2025_vae"
 
 
 def _is_writable_dir(path: Path) -> bool:

@@ -40,10 +40,12 @@ class VAEConfig:
     beta: float = 1.0                     # 미보고 → 가정 (D-2)
     epochs: int = 300                     # 미보고 → 가정 (D-3)
     batch_size: int = 64                  # 미보고 → 가정 (D-3)
-    recon_reduction: str = "mean_per_feature"  # mean_per_feature | sum
+    # 표준 ELBO. mean_per_feature+mean 조합은 실효 beta를 1/latent_dim로 떨어뜨려
+    # 생성 분산을 붕괴시킨다 (vae_loss docstring의 실측 근거 참조).
+    recon_reduction: str = "sum"               # sum | mean_per_feature
     # reconstruction과 KL을 각각 feature/latent 차원으로 정규화한다. ``sum``은
     # latent_dim=50/500에 따라 beta의 실효값을 10배 바꾸므로 민감도 분석용 opt-in이다.
-    kl_reduction: str = "mean"                 # mean | sum
+    kl_reduction: str = "sum"                  # sum | mean
     output_activation: str = "linear"          # linear | sigmoid
     layer_order: str = "linear_bn_relu_dropout"
     early_stopping: bool = True
@@ -105,6 +107,12 @@ class VAETrainingLog:
     #: 논문 §5.1의 "재구성 오차 0.0002"와 대조하기 위해 두 척도 모두 기록한다 (I-15).
     final_recon_mse_scaled_space: float = float("nan")
     final_recon_mse_raw_space: float = float("nan")
+    #: aggregate posterior 진단. z ~ N(0, I) 표집이 타당하려면 q(z)가 prior와 맞아야 한다.
+    #: posterior_mu_std가 1보다 크게 벗어나면 생성 표본이 붕괴하거나 발산한다.
+    posterior_mu_std_mean: float = float("nan")
+    posterior_mu_std_max: float = float("nan")
+    n_active_latent_units: int = -1
+    prior_mismatch_suspected: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -118,6 +126,10 @@ class VAETrainingLog:
             "stopped_early": self.stopped_early,
             "final_recon_mse_scaled_space": self.final_recon_mse_scaled_space,
             "final_recon_mse_raw_space": self.final_recon_mse_raw_space,
+            "posterior_mu_std_mean": self.posterior_mu_std_mean,
+            "posterior_mu_std_max": self.posterior_mu_std_max,
+            "n_active_latent_units": self.n_active_latent_units,
+            "prior_mismatch_suspected": self.prior_mismatch_suspected,
         }
 
 
@@ -174,15 +186,29 @@ def build_vae(cfg: VAEConfig):
 
 
 def vae_loss(recon, x, mu, logvar, cfg: VAEConfig):
-    """재구성 손실과 KL을 **분리해서** 반환한다."""
+    """재구성 손실과 KL을 **분리해서** 반환한다.
+
+    ⚠️ 두 reduction의 조합이 생성 품질을 지배한다. 실측 근거는 아래와 같다
+       (2026-08-03 실행 ``20260803_041244_full`` 감사).
+
+    ``recon=mean_per_feature`` + ``kl=mean`` 조합은 KL을 latent_dim(=500)으로 한 번 더
+    나누므로 실효 beta가 ``1/500 ≈ 0.002``가 된다. KL이 사후분포를 사실상 제약하지 못해
+    aggregate posterior ``q(z)``가 prior ``N(0, I)``보다 훨씬 넓게 퍼지고,
+    생성 시 ``z ~ N(0, I)``에서 뽑으면 그 넓은 분포의 **중심부만** 표집된다.
+    그 결과 재구성은 분산의 74%를 설명하는데(scaled MSE 0.261) 생성 표본의 분산은
+    실제의 **9%**(변수별 표준편차 비 0.30)로 붕괴했다.
+
+    따라서 기본값은 **표준 ELBO**(둘 다 ``sum``)로 둔다. 이때 recon은 변수 합,
+    KL은 latent 차원 합이 되어 ``p(x|z)``가 단위분산 가우시안일 때의 정확한 하한이며,
+    과잉 latent 차원은 KL이 자동으로 prior로 가지치기(pruning)해 준다.
+    """
     import torch
 
     if cfg.recon_reduction == "sum":
+        # 표본당 변수 합 (표준 ELBO의 로그우도 항)
         recon_loss = torch.nn.functional.mse_loss(recon, x, reduction="sum") / x.shape[0]
-    else:  # mean_per_feature
+    else:  # mean_per_feature — 변수 수로 한 번 더 나눠 KL 대비 recon을 약화시킨다
         recon_loss = torch.nn.functional.mse_loss(recon, x, reduction="mean")
-    # latent 차원에 대해 합한 뒤 배치 평균. 기본 ``mean``은 latent 차원으로도 나눠
-    # latent_dim=50/500 사이에서 beta의 의미가 바뀌지 않게 한다 (D-2).
     kl_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
     kl = kl_per_sample.mean()
     if cfg.kl_reduction == "mean":
@@ -287,6 +313,7 @@ class TabularVAE:
         if best_state is not None:
             self.model.load_state_dict(best_state)
         self.log.final_recon_mse_scaled_space = self._reconstruction_mse(X)
+        self._diagnose_posterior(X)
         if self.cfg.checkpoint_dir:
             self.save_checkpoint(Path(self.cfg.checkpoint_dir) / "vae_best.pt")
         return self
@@ -312,6 +339,44 @@ class TabularVAE:
         idx = rng.permutation(n)
         n_val = max(1, int(round(n * self.cfg.val_fraction)))
         return idx[n_val:], idx[:n_val]
+
+    def _diagnose_posterior(self, X: np.ndarray) -> None:
+        """aggregate posterior ``q(z)``가 prior ``N(0, I)``와 맞는지 측정한다.
+
+        ``sample()``이 ``z ~ N(0, I)``에서 뽑으므로(논문 §5.1), 이 둘이 어긋나면
+        생성 표본이 실제 분포를 대표하지 못한다.
+
+        * ``posterior_mu_std ≫ 1`` — 인코더가 prior 밖을 쓴다. ``N(0, I)`` 표집이
+          분포의 중심부만 훑어 **생성 분산이 붕괴**한다. (KL이 너무 약할 때)
+        * ``posterior_mu_std ≈ 0`` — posterior collapse. 디코더가 z를 무시해
+          거의 상수를 생성한다. (KL이 너무 강할 때)
+
+        둘 다 결과적으로 합성자료의 분산을 죽이므로, 어느 쪽인지 구분해 기록한다.
+        """
+        import torch
+
+        self.model.eval()
+        with torch.no_grad():
+            xt = torch.tensor(np.asarray(X, dtype=np.float32)).to(self._device)
+            mu, _ = self.model.encode(xt)
+            mu_std = mu.std(dim=0).cpu().numpy()
+
+        self.log.posterior_mu_std_mean = float(np.mean(mu_std))
+        self.log.posterior_mu_std_max = float(np.max(mu_std))
+        # 활성 latent 단위: prior 대비 의미 있는 변동을 가진 차원
+        self.log.n_active_latent_units = int((mu_std > 0.1).sum())
+
+        mean_std = self.log.posterior_mu_std_mean
+        if mean_std > 1.5 or mean_std < 0.3:
+            self.log.prior_mismatch_suspected = True
+            kind = "너무 넓다(KL 과소)" if mean_std > 1.5 else "붕괴했다(KL 과대)"
+            log.warning(
+                "VAE aggregate posterior가 prior와 어긋난다: q(z)의 평균 표준편차=%.3f — %s. "
+                "z ~ N(0, I) 표집이 실제 분포를 대표하지 못해 합성자료 분산이 왜곡된다. "
+                "활성 latent 차원 %d/%d. recon_reduction=%s, kl_reduction=%s, beta=%s를 조정하라.",
+                mean_std, kind, self.log.n_active_latent_units, self.cfg.latent_dim,
+                self.cfg.recon_reduction, self.cfg.kl_reduction, self.cfg.beta,
+            )
 
     def _reconstruction_mse(self, X: np.ndarray) -> float:
         import torch

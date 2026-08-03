@@ -1,9 +1,6 @@
 outputs/
-__pycache__/
-*.pyc
 .pytest_cache/
 *.pt
-*.parquet
 
 # 저장소 루트 .gitignore의 `data/`·`models/`·`*.txt`는 데이터셋·체크포인트·로그를
 # 겨냥한 것이지만 슬래시 없는 무앵커 패턴이라 우리 패키지의 src/data/, src/models/와
@@ -15,3 +12,14 @@ __pycache__/
 !src/models/**
 !requirements.txt
 !requirements_colab.txt
+
+# ⚠️ 위 `!src/**/**` 예외는 그 안의 __pycache__/*.pyc 까지 되살려 버린다.
+#    git은 "마지막에 일치하는 규칙"이 이기므로 재무시 규칙을 예외 **뒤**에 둔다.
+#    (이 순서를 바꾸면 컴파일된 바이트코드 9개가 다시 커밋된다.)
+__pycache__/
+*.pyc
+*.pyo
+
+# 합성행 provenance는 재생성 가능한 산출물이다. 단, outputs/ 밖으로 복사한
+# 결과 스냅샷 안의 parquet은 감사 증거이므로 무시하지 않는다.
+outputs/**/*.parquet

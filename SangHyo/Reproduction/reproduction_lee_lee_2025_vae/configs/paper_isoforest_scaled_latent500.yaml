@@ -40,8 +40,10 @@ augmentation:
     n_synthetic: 4000
     fit_scope: train_dem_only
     input_space: scaled
-    recon_reduction: mean_per_feature
-    kl_reduction: mean
+    # base.yaml의 표준 ELBO(sum/sum)를 상속한다. 2026-08-03 감사 전에는 여기서
+    # mean/mean으로 덮어써 생성 분산이 붕괴했다 (report_inconsistencies.md I-18).
+    recon_reduction: sum
+    kl_reduction: sum
 
 audit:
   mode: observe

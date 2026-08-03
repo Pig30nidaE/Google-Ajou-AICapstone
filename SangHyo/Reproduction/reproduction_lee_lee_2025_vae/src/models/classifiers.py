@@ -244,6 +244,12 @@ class TabNetClassifier(BaseClassifier):
         "patience": 20,
         "batch_size": 1024,
         "virtual_batch_size": 128,
+        # pytorch-tabnet의 다중분류 기본 eval_metric은 'accuracy'다. CN이 64%인 이 데이터에서
+        # accuracy는 "전부 CN"에서 이미 최대에 가까워 early stopping이 다수 클래스 해에서
+        # 멈춘다 — 2026-08-03 실행에서 TabNet만 balanced accuracy가 정확히 0.3333(단일 클래스
+        # 예측)이었던 원인이다. DNN·Wide&Deep이 validation cross-entropy로 멈추는 것과
+        # 맞추기 위해 logloss를 쓴다.
+        "eval_metric": ["logloss"],
     }
 
     def fit(self, X, y, *, sample_weight=None, eval_set=None):
@@ -261,6 +267,7 @@ class TabNetClassifier(BaseClassifier):
         if eval_set is not None and len(eval_set[0]):
             kwargs["eval_set"] = [(np.asarray(eval_set[0]), np.asarray(eval_set[1]))]
             kwargs["patience"] = p["patience"]
+            kwargs["eval_metric"] = list(p["eval_metric"])
         weights = self.params.get("class_weight", 0)
         if weights:
             weights = {int(label): float(weight) for label, weight in weights.items()}

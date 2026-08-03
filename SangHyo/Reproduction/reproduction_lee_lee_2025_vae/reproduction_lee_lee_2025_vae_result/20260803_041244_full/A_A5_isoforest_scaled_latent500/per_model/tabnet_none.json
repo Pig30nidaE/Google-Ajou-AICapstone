@@ -1,0 +1,202 @@
+{
+  "record_level": {
+    "unit": "record",
+    "n": 1096,
+    "macro_f1": 0.526402402793424,
+    "balanced_accuracy": 0.5152873030400279,
+    "macro_roc_auc_ovr": 0.7388052159440854,
+    "macro_pr_auc": 0.5687282374745367,
+    "accuracy": 0.6733576642335767,
+    "weighted_f1": 0.6301180804332605,
+    "brier": 0.4322483298749916,
+    "confusion_matrix": [
+      [
+        638,
+        54,
+        15
+      ],
+      [
+        257,
+        80,
+        3
+      ],
+      [
+        27,
+        2,
+        20
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.695004800926965,
+    "CN_precision": 0.6919739696312365,
+    "CN_recall": 0.9024045261669024,
+    "CN_f1": 0.7833026396562308,
+    "n_CN": 707,
+    "n_CN_correct": 638,
+    "MCI_precision": 0.5882352941176471,
+    "MCI_recall": 0.23529411764705882,
+    "MCI_f1": 0.33613445378151263,
+    "n_MCI": 340,
+    "n_MCI_correct": 80,
+    "Dem_precision": 0.5263157894736842,
+    "Dem_recall": 0.40816326530612246,
+    "Dem_f1": 0.45977011494252873,
+    "n_Dem": 49,
+    "n_Dem_correct": 20,
+    "dem_recall": 0.40816326530612246,
+    "dem_precision": 0.5263157894736842,
+    "dem_f1": 0.45977011494252873,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 20,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ],
+    "n_dem_subjects_eval": 8,
+    "n_dem_subjects_correct": 3
+  },
+  "validation_record_level": {
+    "unit": "record",
+    "n": 1097,
+    "macro_f1": 0.5379264732713008,
+    "balanced_accuracy": 0.5279620322705353,
+    "macro_roc_auc_ovr": 0.7596307700148505,
+    "macro_pr_auc": 0.602248376815174,
+    "accuracy": 0.6882406563354604,
+    "weighted_f1": 0.6487392345846437,
+    "brier": 0.421503651756853,
+    "confusion_matrix": [
+      [
+        645,
+        48,
+        15
+      ],
+      [
+        244,
+        90,
+        6
+      ],
+      [
+        27,
+        2,
+        20
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.6720300984686767,
+    "CN_precision": 0.7041484716157205,
+    "CN_recall": 0.9110169491525424,
+    "CN_f1": 0.7943349753694581,
+    "n_CN": 708,
+    "n_CN_correct": 645,
+    "MCI_precision": 0.6428571428571429,
+    "MCI_recall": 0.2647058823529412,
+    "MCI_f1": 0.375,
+    "n_MCI": 340,
+    "n_MCI_correct": 90,
+    "Dem_precision": 0.4878048780487805,
+    "Dem_recall": 0.40816326530612246,
+    "Dem_f1": 0.4444444444444444,
+    "n_Dem": 49,
+    "n_Dem_correct": 20,
+    "dem_recall": 0.40816326530612246,
+    "dem_precision": 0.4878048780487805,
+    "dem_f1": 0.4444444444444444,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 20,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "subject_level": {
+    "unit": "subject",
+    "n": 167,
+    "macro_f1": 0.5311162472179422,
+    "balanced_accuracy": 0.500998547567175,
+    "macro_roc_auc_ovr": 0.8102414574873418,
+    "macro_pr_auc": 0.6821011388482571,
+    "accuracy": 0.7005988023952096,
+    "weighted_f1": 0.6228190767924858,
+    "brier": 0.4026596118185108,
+    "confusion_matrix": [
+      [
+        107,
+        1,
+        0
+      ],
+      [
+        44,
+        7,
+        0
+      ],
+      [
+        5,
+        0,
+        3
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.6488659539761394,
+    "CN_precision": 0.6858974358974359,
+    "CN_recall": 0.9907407407407407,
+    "CN_f1": 0.8106060606060606,
+    "n_CN": 108,
+    "n_CN_correct": 107,
+    "MCI_precision": 0.875,
+    "MCI_recall": 0.13725490196078433,
+    "MCI_f1": 0.23728813559322035,
+    "n_MCI": 51,
+    "n_MCI_correct": 7,
+    "Dem_precision": 1.0,
+    "Dem_recall": 0.375,
+    "Dem_f1": 0.5454545454545454,
+    "n_Dem": 8,
+    "n_Dem_correct": 3,
+    "dem_recall": 0.375,
+    "dem_precision": 1.0,
+    "dem_f1": 0.5454545454545454,
+    "n_dem_units": 8,
+    "n_dem_units_correct": 3,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "model": {
+    "model": "TabNet",
+    "params": {
+      "n_d": 64,
+      "n_a": 64,
+      "n_steps": 5,
+      "gamma": 1.3,
+      "lambda_sparse": 0.001,
+      "lr": 0.02,
+      "max_epochs": 200,
+      "patience": 20
+    },
+    "paper_reported_keys": [
+      "n_d",
+      "n_a",
+      "n_steps"
+    ],
+    "assumed_keys": [
+      "gamma",
+      "lambda_sparse",
+      "lr",
+      "max_epochs",
+      "patience"
+    ]
+  },
+  "fit_log": {
+    "n_train": 8771,
+    "class_weight_applied": false,
+    "n_train_rows_used": 8771,
+    "n_early_stopping_validation_rows": 1097,
+    "validation_source": "explicit_valid_split",
+    "class_weight_requested": false
+  }
+}

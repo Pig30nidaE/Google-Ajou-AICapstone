@@ -1,0 +1,390 @@
+{
+  "experiment": "C",
+  "n_outer_folds": 3,
+  "n_candidates": 24,
+  "n_nominal_candidates_before_conditioning": 1152,
+  "n_effective_candidates_after_conditioning": 180,
+  "candidate_coverage": [
+    {
+      "classifier": "dnn",
+      "augmentation": "class_weight",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "dnn",
+      "augmentation": "none",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "dnn",
+      "augmentation": "smote",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "dnn",
+      "augmentation": "vae",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "tabnet",
+      "augmentation": "class_weight",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "tabnet",
+      "augmentation": "none",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "tabnet",
+      "augmentation": "smote",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "tabnet",
+      "augmentation": "vae",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "wide_deep",
+      "augmentation": "class_weight",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "wide_deep",
+      "augmentation": "none",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "wide_deep",
+      "augmentation": "smote",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "wide_deep",
+      "augmentation": "vae",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "xgboost",
+      "augmentation": "class_weight",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "xgboost",
+      "augmentation": "none",
+      "n_candidates": 2
+    },
+    {
+      "classifier": "xgboost",
+      "augmentation": "smote",
+      "n_candidates": 1
+    },
+    {
+      "classifier": "xgboost",
+      "augmentation": "vae",
+      "n_candidates": 2
+    }
+  ],
+  "max_evals": 24,
+  "total_model_fits": 219,
+  "candidates_preview": [
+    {
+      "augmentation.method": "none",
+      "classifier": "xgboost",
+      "outlier.isolation_forest.contamination": 0.1,
+      "outlier.method": "isolation_forest"
+    },
+    {
+      "augmentation.method": "vae",
+      "augmentation.vae.latent_dim": 50,
+      "augmentation.vae.ratio_to_real": 10.0,
+      "classifier": "dnn",
+      "outlier.method": "none"
+    },
+    {
+      "augmentation.method": "class_weight",
+      "classifier": "tabnet",
+      "outlier.method": "percentile",
+      "outlier.percentile.q": 0.1
+    },
+    {
+      "augmentation.method": "smote",
+      "classifier": "wide_deep",
+      "outlier.method": "percentile",
+      "outlier.percentile.q": 0.01
+    },
+    {
+      "augmentation.method": "vae",
+      "augmentation.vae.latent_dim": 50,
+      "augmentation.vae.ratio_to_real": 1.0,
+      "classifier": "xgboost",
+      "outlier.isolation_forest.contamination": 0.1,
+      "outlier.method": "isolation_forest"
+    },
+    {
+      "augmentation.method": "class_weight",
+      "classifier": "dnn",
+      "outlier.method": "percentile",
+      "outlier.percentile.q": 0.01
+    },
+    {
+      "augmentation.method": "smote",
+      "classifier": "tabnet",
+      "outlier.isolation_forest.contamination": 0.1,
+      "outlier.method": "isolation_forest"
+    },
+    {
+      "augmentation.method": "none",
+      "classifier": "wide_deep",
+      "outlier.method": "none"
+    },
+    {
+      "augmentation.method": "class_weight",
+      "classifier": "xgboost",
+      "outlier.method": "none"
+    },
+    {
+      "augmentation.method": "smote",
+      "classifier": "dnn",
+      "outlier.isolation_forest.contamination": 0.1,
+      "outlier.method": "isolation_forest"
+    }
+  ],
+  "outer_composition": [
+    {
+      "fold_id": "outer_r0_f0",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5198,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2385,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 518,
+      "train_n_rows": 8101,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2539,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1276,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 267,
+      "eval_n_rows": 4082
+    },
+    {
+      "fold_id": "outer_r0_f1",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5031,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2433,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 552,
+      "train_n_rows": 8016,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2706,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1228,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 233,
+      "eval_n_rows": 4167
+    },
+    {
+      "fold_id": "outer_r0_f2",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5245,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2504,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 500,
+      "train_n_rows": 8249,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2492,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1157,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 285,
+      "eval_n_rows": 3934
+    }
+  ],
+  "inner_summary": [
+    {
+      "outer_fold": "outer_r0_f0",
+      "n_train_subjects": 116,
+      "n_eval_subjects": 58,
+      "n_eval_dem_subjects": 4,
+      "n_inner_folds": 3,
+      "inner_composition": [
+        {
+          "fold_id": "outer_r0_f0_inner_r0_f0",
+          "train_CN_subjects": 50,
+          "train_CN_records": 3567,
+          "train_MCI_subjects": 22,
+          "train_MCI_records": 1566,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 318,
+          "train_n_rows": 5451,
+          "eval_CN_subjects": 24,
+          "eval_CN_records": 1631,
+          "eval_MCI_subjects": 12,
+          "eval_MCI_records": 819,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 200,
+          "eval_n_rows": 2650
+        },
+        {
+          "fold_id": "outer_r0_f0_inner_r0_f1",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3267,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1580,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 341,
+          "train_n_rows": 5188,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1931,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 805,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 177,
+          "eval_n_rows": 2913
+        },
+        {
+          "fold_id": "outer_r0_f0_inner_r0_f2",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3562,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1624,
+          "train_Dem_subjects": 6,
+          "train_Dem_records": 377,
+          "train_n_rows": 5563,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1636,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 761,
+          "eval_Dem_subjects": 2,
+          "eval_Dem_records": 141,
+          "eval_n_rows": 2538
+        }
+      ]
+    },
+    {
+      "outer_fold": "outer_r0_f1",
+      "n_train_subjects": 116,
+      "n_eval_subjects": 58,
+      "n_eval_dem_subjects": 4,
+      "n_inner_folds": 3,
+      "inner_composition": [
+        {
+          "fold_id": "outer_r0_f1_inner_r0_f0",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3302,
+          "train_MCI_subjects": 22,
+          "train_MCI_records": 1628,
+          "train_Dem_subjects": 6,
+          "train_Dem_records": 436,
+          "train_n_rows": 5366,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1729,
+          "eval_MCI_subjects": 12,
+          "eval_MCI_records": 805,
+          "eval_Dem_subjects": 2,
+          "eval_Dem_records": 116,
+          "eval_n_rows": 2650
+        },
+        {
+          "fold_id": "outer_r0_f1_inner_r0_f1",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3320,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1661,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 384,
+          "train_n_rows": 5365,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1711,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 772,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 168,
+          "eval_n_rows": 2651
+        },
+        {
+          "fold_id": "outer_r0_f1_inner_r0_f2",
+          "train_CN_subjects": 50,
+          "train_CN_records": 3440,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1577,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 284,
+          "train_n_rows": 5301,
+          "eval_CN_subjects": 24,
+          "eval_CN_records": 1591,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 856,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 268,
+          "eval_n_rows": 2715
+        }
+      ]
+    },
+    {
+      "outer_fold": "outer_r0_f2",
+      "n_train_subjects": 116,
+      "n_eval_subjects": 58,
+      "n_eval_dem_subjects": 4,
+      "n_inner_folds": 3,
+      "inner_composition": [
+        {
+          "fold_id": "outer_r0_f2_inner_r0_f0",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3487,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1719,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 338,
+          "train_n_rows": 5544,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1758,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 785,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 162,
+          "eval_n_rows": 2705
+        },
+        {
+          "fold_id": "outer_r0_f2_inner_r0_f1",
+          "train_CN_subjects": 49,
+          "train_CN_records": 3336,
+          "train_MCI_subjects": 23,
+          "train_MCI_records": 1685,
+          "train_Dem_subjects": 5,
+          "train_Dem_records": 267,
+          "train_n_rows": 5288,
+          "eval_CN_subjects": 25,
+          "eval_CN_records": 1909,
+          "eval_MCI_subjects": 11,
+          "eval_MCI_records": 819,
+          "eval_Dem_subjects": 3,
+          "eval_Dem_records": 233,
+          "eval_n_rows": 2961
+        },
+        {
+          "fold_id": "outer_r0_f2_inner_r0_f2",
+          "train_CN_subjects": 50,
+          "train_CN_records": 3667,
+          "train_MCI_subjects": 22,
+          "train_MCI_records": 1604,
+          "train_Dem_subjects": 6,
+          "train_Dem_records": 395,
+          "train_n_rows": 5666,
+          "eval_CN_subjects": 24,
+          "eval_CN_records": 1578,
+          "eval_MCI_subjects": 12,
+          "eval_MCI_records": 900,
+          "eval_Dem_subjects": 2,
+          "eval_Dem_records": 105,
+          "eval_n_rows": 2583
+        }
+      ]
+    }
+  ],
+  "note": "outer test는 이상치 임계값·scaler·VAE·synthetic ratio·모델·early stopping·threshold 선택 어디에도 사용되지 않는다. 감사기가 record_selection()으로 강제한다."
+}

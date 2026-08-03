@@ -1,0 +1,117 @@
+{
+  "experiment": "A",
+  "split_unit": "row (논문 절차 재현)",
+  "outlier_method": {
+    "method": "isolation_forest",
+    "contamination": 0.1,
+    "n_estimators": 100,
+    "random_state": 42
+  },
+  "rows_before_outlier": {
+    "CN": 7737,
+    "MCI": 3661,
+    "Dem": 785
+  },
+  "rows_after_outlier": {
+    "CN": 7075,
+    "MCI": 3401,
+    "Dem": 488
+  },
+  "n_rows_dropped_by_outlier": 1219,
+  "paper_after_outlier": {
+    "CN": 7075,
+    "MCI": 3374,
+    "Dem": 515
+  },
+  "outlier_matches_paper": false,
+  "n_train": 8771,
+  "n_valid": 1097,
+  "n_test": 1096,
+  "n_train_subjects": 174,
+  "n_test_subjects": 167,
+  "subject_overlap_train_test": 167,
+  "subject_overlap_train_valid": 171,
+  "preprocessing_fit_scope": "all_data",
+  "scaler_scope": "all_data",
+  "vae_fit_scope": "train_dem_only",
+  "dem_train_rows_real": 390,
+  "expected_synthetic_rows": 4000,
+  "dem_train_rows_after_augmentation": 4390,
+  "paper_table5_dem_train": 4412,
+  "paper_derived_synthetic": 4000,
+  "table5_comparison": [
+    {
+      "split": "Train",
+      "class": "CN",
+      "paper_table5": 5660,
+      "reproduction": 5660,
+      "diff": 0,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Train",
+      "class": "MCI",
+      "paper_table5": 2699,
+      "reproduction": 2721,
+      "diff": 22,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Train",
+      "class": "Dem",
+      "paper_table5": 4412,
+      "reproduction": 4390,
+      "diff": -22,
+      "includes_synthetic": true
+    },
+    {
+      "split": "Test",
+      "class": "CN",
+      "paper_table5": 707,
+      "reproduction": 707,
+      "diff": 0,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Test",
+      "class": "MCI",
+      "paper_table5": 337,
+      "reproduction": 340,
+      "diff": 3,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Test",
+      "class": "Dem",
+      "paper_table5": 51,
+      "reproduction": 49,
+      "diff": -2,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Vaild",
+      "class": "CN",
+      "paper_table5": 708,
+      "reproduction": 708,
+      "diff": 0,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Vaild",
+      "class": "MCI",
+      "paper_table5": 338,
+      "reproduction": 340,
+      "diff": 2,
+      "includes_synthetic": false
+    },
+    {
+      "split": "Vaild",
+      "class": "Dem",
+      "paper_table5": 52,
+      "reproduction": 49,
+      "diff": -3,
+      "includes_synthetic": false
+    }
+  ],
+  "note": "행 단위 분할이므로 피험자 중복이 발생한다. 이는 논문 절차의 재현이며 실험 B·C가 통제하려는 대상이다 (report_inconsistencies.md I-6)."
+}

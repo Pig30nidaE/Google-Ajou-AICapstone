@@ -138,19 +138,34 @@ def enumerate_candidates(space: dict, *, max_evals: int, seed: int) -> list[dict
         order = rng.permutation(len(grouped[arm]))
         grouped[arm] = [grouped[arm][int(i)] for i in order]
 
+    # VAE arm은 latent_dim × ratio_to_real 때문에 후보가 6배 많다. 단순 round-robin은
+    # 다른 arm이 소진된 뒤 남은 예산을 전부 VAE에 몰아줘(24 예산에서 vae 12 대 none 4)
+    # "여러 번 시도해서 이긴" 선택 편향을 만든다. 이 연구의 질문이 바로 "VAE 증강이
+    # 도움이 되는가"이므로, 예산을 다 쓰는 것보다 arm 간 시행 횟수를 맞추는 것이 우선이다.
+    # 따라서 두 축(classifier·augmentation)의 시행 수 편차가 1을 넘지 않는 선에서만
+    # 후보를 채우고, 그 이상은 예산이 남아도 뽑지 않는다.
     out: list[dict] = []
     cursor = {arm: 0 for arm in arms}
+    classifier_used = {classifier: 0 for classifier in active_classifiers}
+    augmentation_used = {augmentation: 0 for augmentation in active_augmentations}
     while len(out) < max_evals:
         progressed = False
-        for arm in arms:
+        for classifier, augmentation in arms:
+            if len(out) >= max_evals:
+                break
+            arm = (classifier, augmentation)
             i = cursor[arm]
             if i >= len(grouped[arm]):
                 continue
+            if classifier_used[classifier] + 1 - min(classifier_used.values()) > 1:
+                continue
+            if augmentation_used[augmentation] + 1 - min(augmentation_used.values()) > 1:
+                continue
             out.append(grouped[arm][i])
             cursor[arm] += 1
+            classifier_used[classifier] += 1
+            augmentation_used[augmentation] += 1
             progressed = True
-            if len(out) == max_evals:
-                break
         if not progressed:
             break
     return out

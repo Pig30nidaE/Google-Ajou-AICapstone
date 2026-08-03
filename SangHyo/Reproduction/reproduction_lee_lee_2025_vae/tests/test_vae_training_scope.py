@@ -147,5 +147,71 @@ def test_vae_config_carries_paper_reported_defaults():
     assert cfg.dropout == 0.3
     assert cfg.learning_rate == 1e-4
     assert cfg.batch_norm is True
-    assert cfg.recon_reduction == "mean_per_feature"
-    assert cfg.kl_reduction == "mean"
+    # 손실 축척은 논문 미보고 항목이다. 2026-08-03 감사에서 mean/mean 조합이 생성 분산을
+    # 붕괴시킨 것이 확인되어 표준 ELBO(sum/sum)로 교정했다 — 아래 전용 테스트가 이를 고정한다.
+    assert cfg.recon_reduction == "sum"
+    assert cfg.kl_reduction == "sum"
+
+
+# ── 2026-08-03 생성 붕괴 회귀 테스트 ──────────────────────────────────────────
+def test_default_loss_is_standard_elbo():
+    """recon=mean_per_feature + kl=mean 조합은 실효 beta를 1/latent_dim으로 떨어뜨려
+    생성 분산을 붕괴시켰다 (실행 20260803_041244_full: 표준편차 비 0.30).
+    기본값이 다시 그 조합으로 돌아가지 않도록 고정한다."""
+    from src.augmentation.vae import VAEConfig
+
+    cfg = VAEConfig.from_dict({"latent_dim": 500}, input_dim=46)
+    assert cfg.recon_reduction == "sum"
+    assert cfg.kl_reduction == "sum"
+    assert not (cfg.recon_reduction == "mean_per_feature" and cfg.kl_reduction == "mean")
+
+
+def test_shipped_configs_do_not_use_collapsing_loss_combo():
+    """실제로 실행되는 config가 붕괴 조합을 쓰지 않는지 검사한다."""
+    import yaml
+    from pathlib import Path
+
+    from src.utils.config import load_config
+
+    cfg_dir = Path(__file__).resolve().parents[1] / "configs"
+    for path in sorted(cfg_dir.glob("*.yaml")):
+        cfg = load_config(path)
+        if cfg.get_path("augmentation.method") != "vae":
+            continue
+        recon = cfg.get_path("augmentation.vae.recon_reduction")
+        kl = cfg.get_path("augmentation.vae.kl_reduction")
+        assert not (recon == "mean_per_feature" and kl == "mean"), (
+            f"{path.name}: recon=mean_per_feature + kl=mean 은 실효 beta=1/latent_dim이라 "
+            "생성 분산이 붕괴한다"
+        )
+
+
+def test_generation_fidelity_flags_variance_collapse():
+    """분산이 죽은 합성자료를 진단이 잡아내는지."""
+    import numpy as np
+    import pandas as pd
+
+    from src.augmentation.generators import _generation_fidelity
+    from src.data.schema import PAPER_FEATURES
+
+    rng = np.random.default_rng(0)
+    cols = list(PAPER_FEATURES)
+    real = pd.DataFrame(rng.normal(0, 1, size=(200, len(cols))), columns=cols)
+    collapsed = pd.DataFrame(rng.normal(0, 0.2, size=(500, len(cols))), columns=cols)
+    healthy = pd.DataFrame(rng.normal(0, 1.0, size=(500, len(cols))), columns=cols)
+
+    bad = _generation_fidelity(collapsed, real)
+    assert bad["variance_collapse_suspected"] is True
+    assert bad["std_ratio_median"] < 0.5
+    assert bad["n_features_below_half"] == len(cols)
+
+    good = _generation_fidelity(healthy, real)
+    assert good["variance_collapse_suspected"] is False
+
+
+def test_tabnet_early_stops_on_logloss_not_accuracy():
+    """accuracy로 early stopping하면 CN 64% 데이터에서 '전부 CN' 해에 멈춘다
+    (실행 20260803_041244_full: TabNet balanced accuracy 정확히 0.3333)."""
+    from src.models.classifiers import TabNetClassifier
+
+    assert TabNetClassifier.DEFAULTS["eval_metric"] == ["logloss"]

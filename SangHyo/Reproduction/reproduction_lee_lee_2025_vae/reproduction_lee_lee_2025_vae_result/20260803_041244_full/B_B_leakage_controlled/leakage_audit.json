@@ -1,0 +1,1021 @@
+{
+  "name": "B_B_leakage_controlled",
+  "mode": "enforce",
+  "n_folds": 3,
+  "n_violations": 0,
+  "violations_by_code": {},
+  "violations": [],
+  "observations": [],
+  "fold_events": {
+    "fold_r0_f0": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 284,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 2758,
+        "target": "train"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 284,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 2758,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 22,
+        "n_rows": 1361,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 284,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 2758,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 22,
+        "n_rows": 1361,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8101,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7291,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 284,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 2758,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 22,
+        "n_rows": 1361,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4082,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1449,
+        "row_scope_recorded": true
+      }
+    ],
+    "fold_r0_f1": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 378,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3670,
+        "target": "train"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 378,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3670,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 378,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3670,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8016,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7214,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 378,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3670,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1400,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4167,
+        "where": "outer_eval"
+      }
+    ],
+    "fold_r0_f2": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 316,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3068,
+        "target": "train"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 316,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3068,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 316,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3068,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8249,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 7424,
+        "row_scope_recorded": true,
+        "occurred_before_split": false
+      },
+      {
+        "kind": "vae_fit",
+        "n_subjects": 8,
+        "n_rows": 316,
+        "expected_label": 2,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3068,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23,
+        "n_rows": 1410,
+        "row_scope_recorded": true
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3934,
+        "where": "outer_eval"
+      }
+    ]
+  }
+}

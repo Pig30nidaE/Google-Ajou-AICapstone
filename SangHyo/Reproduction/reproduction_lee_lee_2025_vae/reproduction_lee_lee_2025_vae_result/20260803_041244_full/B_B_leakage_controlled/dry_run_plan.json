@@ -1,0 +1,100 @@
+{
+  "experiment": "B",
+  "split": {
+    "method": "subject_stratified",
+    "n_splits": 3,
+    "n_repeats": 1
+  },
+  "fold_composition": [
+    {
+      "fold_id": "fold_r0_f0",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5198,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2385,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 518,
+      "train_n_rows": 8101,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2539,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1276,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 267,
+      "eval_n_rows": 4082
+    },
+    {
+      "fold_id": "fold_r0_f1",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5031,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2433,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 552,
+      "train_n_rows": 8016,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2706,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1228,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 233,
+      "eval_n_rows": 4167
+    },
+    {
+      "fold_id": "fold_r0_f2",
+      "train_CN_subjects": 74,
+      "train_CN_records": 5245,
+      "train_MCI_subjects": 34,
+      "train_MCI_records": 2504,
+      "train_Dem_subjects": 8,
+      "train_Dem_records": 500,
+      "train_n_rows": 8249,
+      "eval_CN_subjects": 37,
+      "eval_CN_records": 2492,
+      "eval_MCI_subjects": 17,
+      "eval_MCI_records": 1157,
+      "eval_Dem_subjects": 4,
+      "eval_Dem_records": 285,
+      "eval_n_rows": 3934
+    }
+  ],
+  "per_fold_plan": [
+    {
+      "fold_id": "fold_r0_f0",
+      "n_train_rows": 8101,
+      "n_eval_rows": 4082,
+      "n_train_dem_rows": 518,
+      "n_train_dem_subjects": 8,
+      "n_eval_dem_subjects": 4,
+      "expected_synthetic_rows": 5030,
+      "vae_fit_rows": 518,
+      "preprocessing_fit_rows": 8101
+    },
+    {
+      "fold_id": "fold_r0_f1",
+      "n_train_rows": 8016,
+      "n_eval_rows": 4167,
+      "n_train_dem_rows": 552,
+      "n_train_dem_subjects": 8,
+      "n_eval_dem_subjects": 4,
+      "expected_synthetic_rows": 5360,
+      "vae_fit_rows": 552,
+      "preprocessing_fit_rows": 8016
+    },
+    {
+      "fold_id": "fold_r0_f2",
+      "n_train_rows": 8249,
+      "n_eval_rows": 3934,
+      "n_train_dem_rows": 500,
+      "n_train_dem_subjects": 8,
+      "n_eval_dem_subjects": 4,
+      "expected_synthetic_rows": 4855,
+      "vae_fit_rows": 500,
+      "preprocessing_fit_rows": 8249
+    }
+  ],
+  "audit_mode": "enforce",
+  "scaler_scope": "train_real_only",
+  "vae_fit_scope": "train_dem_only",
+  "note": "모든 fit(이상치·imputer·scaler·VAE)이 train fold 피험자로 제한된다. 합성행은 train에만 추가되고 평가에는 절대 포함되지 않는다."
+}
