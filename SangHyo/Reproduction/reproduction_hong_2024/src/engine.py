@@ -124,6 +124,17 @@ def _prepare(
     return scaled_train, scaled_eval, scaled_validation, scaler, sampling_report
 
 
+def _paper_operating_point(model_name: str, length: int | None) -> dict[str, float] | None:
+    """The (sensitivity, specificity) Hong et al. Table 5 reports for this arm."""
+    from .evaluation.compare import PAPER_RESULTS
+
+    key = f"lstm_{length}day" if model_name == "lstm" else model_name
+    row = PAPER_RESULTS.get(key)
+    if not row:
+        return None
+    return {"sensitivity": row["sensitivity"], "specificity": row["specificity"]}
+
+
 def _score_block(
     sequences: SequenceSet,
     scores: np.ndarray,
@@ -131,12 +142,37 @@ def _score_block(
     threshold: float,
     seed: int,
     include_subject: bool = True,
+    prevalence_diagnostic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Sequence-level and subject-level metrics for one evaluation set."""
     block: dict[str, Any] = {
         "sequence_level": metrics.binary_metrics(sequences.y, scores, threshold=threshold),
         "precision_at_k": metrics.precision_at_k(sequences.y, scores, k=100),
     }
+
+    # Every row of the paper's Table 5 solves to a ~0.50 positive rate, while the
+    # faithful split is ~0.32.  Re-scoring the same predictions on a
+    # prevalence-matched subsample separates "the model is worse" from "the
+    # evaluation set is composed differently"; it refits nothing.
+    options = prevalence_diagnostic or {}
+    if options.get("enabled", True) and len(sequences):
+        block["prevalence_matched_diagnostic"] = metrics.prevalence_matched_metrics(
+            sequences.y,
+            scores,
+            target_prevalence=float(options.get("target_prevalence", 0.5)),
+            threshold=threshold,
+            n_repeats=int(options.get("n_repeats", 200)),
+            seed=seed,
+        )
+        target = options.get("paper_operating_point")
+        if target:
+            block["operating_point_comparison"] = metrics.operating_point_comparison(
+                sequences.y,
+                scores,
+                target_sensitivity=float(target["sensitivity"]),
+                target_specificity=float(target["specificity"]),
+                threshold=threshold,
+            )
     if include_subject and len(sequences):
         subjects = sequences.subjects
         block["subject_level"] = metrics.subject_level_metrics(
@@ -449,7 +485,13 @@ def run_paper_temporal(
                 ),
                 "leakage_audit": audit.summary(),
                 "checkpoint_signature": run_signature,
-                **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
+                **_score_block(
+                    scaled_test, scores, threshold=threshold, seed=seed,
+                    prevalence_diagnostic={
+                        **(config.get("evaluation.prevalence_diagnostic", {}) or {}),
+                        "paper_operating_point": _paper_operating_point(model_name, length),
+                    },
+                ),
             }
             results[key] = block
             frame = _predictions_frame(scaled_test, scores, model=model_name)
@@ -563,7 +605,10 @@ def run_paper_literal(
                 "fit": fit_meta,
                 "method_fidelity": _method_fidelity(model_name, fit_meta, config),
                 "leakage_audit": audit.summary(),
-                **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
+                **_score_block(
+                    scaled_test, scores, threshold=threshold, seed=seed,
+                    prevalence_diagnostic=config.get("evaluation.prevalence_diagnostic", {}) or {},
+                ),
             }
             predictions.append(_predictions_frame(scaled_test, scores, model=model_name))
 
@@ -815,7 +860,12 @@ def _run_group_cv(
                     "leakage_audit": audit.summary(),
                     "inner_isolation_audit": isolation_summary,
                     "checkpoint_signature": run_signature,
-                    **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
+                    **_score_block(
+                        scaled_test, scores, threshold=threshold, seed=seed,
+                        prevalence_diagnostic=(
+                            config.get("evaluation.prevalence_diagnostic", {}) or {}
+                        ),
+                    ),
                 }
                 per_model_folds[model_name].append(fold_block)
                 frame = _predictions_frame(scaled_test, scores, model=model_name)

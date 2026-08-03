@@ -63,3 +63,13 @@ models:
 
 explainability:
   enabled: false
+
+evaluation:
+  # 논문 Table 5의 sens/spec/precision은 평가군 양성률 약 0.50을 과결정한다.
+  # 실제 "마지막 1주일" 평가군은 약 0.32다. 아래 진단은 모델을 다시 학습하지 않고
+  # 같은 예측을 prevalence 0.5로 부분표집해, 지표 차이 중 평가군 구성으로 설명되는
+  # 몫과 모델 자체의 몫을 분리한다. 성능 주장이 아니라 진단값이다.
+  prevalence_diagnostic:
+    enabled: true
+    target_prevalence: 0.5
+    n_repeats: 200

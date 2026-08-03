@@ -385,12 +385,122 @@ def _paper_metric_diagnostics(report: dict[str, Any]) -> list[dict[str, Any]]:
                     if model == "lstm" and length == 5
                     else None
                 ),
+                "prevalence_matched": block.get("prevalence_matched_diagnostic") or {},
+                "operating_point": block.get("operating_point_comparison") or {},
             }
         )
 
     order = {"lstm": 0, "xgboost": 1, "random_forest": 2,
              "logistic_regression": 3, "svm": 4}
     return sorted(rows, key=lambda row: (row["sequence_length"], order.get(row["model"], 99)))
+
+
+def _central_claim(report: dict[str, Any]) -> dict[str, Any]:
+    """Did "the LSTM beats the non-temporal models" reproduce?
+
+    This is the paper's actual conclusion -- "the LSTM models demonstrated
+    superior performance compared with other machine learning models" (§4.2) --
+    and until now no table tested it.  The AUC *level* can miss by a little and
+    the paper still stands; the *gap* going to zero is what would overturn it.
+    """
+    by_length: dict[int, dict[str, float]] = {}
+    for block in (report.get("results") or {}).values():
+        if block.get("is_partial_subset") or block.get("result_kind") == "leakage_diagnostic":
+            continue
+        length_value = block.get("sequence_length")
+        if isinstance(length_value, list):
+            if len(length_value) != 1:
+                continue
+            length_value = length_value[0]
+        auc = _value(block, "sequence_level", "roc_auc")
+        if length_value is None or auc is None:
+            continue
+        by_length.setdefault(int(length_value), {})[str(block.get("model"))] = float(auc)
+
+    rows: list[dict[str, Any]] = []
+    for length in sorted(by_length):
+        models = by_length[length]
+        lstm = models.get("lstm")
+        if lstm is None:
+            continue
+        paper_lstm = PAPER_RESULTS[f"lstm_{length}day"]["roc_auc"]
+        for baseline in ("xgboost", "random_forest", "svm", "logistic_regression"):
+            value = models.get(baseline)
+            if value is None:
+                continue
+            paper_gap = paper_lstm - PAPER_RESULTS[baseline]["roc_auc"]
+            our_gap = lstm - value
+            rows.append(
+                {
+                    "sequence_length": length,
+                    "baseline": baseline,
+                    "paper_lstm_auc": paper_lstm,
+                    "paper_baseline_auc": PAPER_RESULTS[baseline]["roc_auc"],
+                    "paper_gap": round(paper_gap, 4),
+                    "reproduction_lstm_auc": round(lstm, 4),
+                    "reproduction_baseline_auc": round(value, 4),
+                    "reproduction_gap": round(our_gap, 4),
+                    "gap_shrinkage": round(our_gap - paper_gap, 4),
+                    "lstm_still_ahead": bool(our_gap > 0),
+                }
+            )
+
+    reproduced = [r for r in rows if r["reproduction_gap"] >= 0.05]
+    return {
+        "rows": rows,
+        "n_comparisons": len(rows),
+        "n_lstm_ahead": sum(1 for r in rows if r["lstm_still_ahead"]),
+        "n_gap_at_least_0_05": len(reproduced),
+        "claim_reproduced": bool(rows) and len(reproduced) == len(rows),
+        "claim": (
+            "논문 §4.2: LSTM이 비시계열 비교모델보다 우월하다."
+        ),
+        "note": (
+            "AUC 절대값이 조금 낮은 것과, 비교모델과의 격차가 사라지는 것은 다른 "
+            "문제다. 후자가 사라지면 논문의 결론 자체가 재현되지 않은 것이다. "
+            "비교모델 입력 변환(A-09/Q-10)이 미보고이므로, 격차 축소의 원인이 "
+            "구조 차이인지 입력 정보량 차이인지 이 표만으로는 가릴 수 없다."
+        ),
+    }
+
+
+def _length_trend(report: dict[str, Any]) -> dict[str, Any]:
+    """The paper's other claim: longer windows do better (0.88 -> 0.91 -> 0.92)."""
+    observed: dict[int, float] = {}
+    for block in (report.get("results") or {}).values():
+        if block.get("is_partial_subset") or block.get("result_kind") == "leakage_diagnostic":
+            continue
+        if str(block.get("model")) != "lstm":
+            continue
+        length_value = block.get("sequence_length")
+        if isinstance(length_value, list):
+            if len(length_value) != 1:
+                continue
+            length_value = length_value[0]
+        auc = _value(block, "sequence_level", "roc_auc")
+        if length_value is not None and auc is not None:
+            observed[int(length_value)] = float(auc)
+
+    lengths = sorted(observed)
+    values = [observed[length] for length in lengths]
+    paper_values = [PAPER_RESULTS[f"lstm_{length}day"]["roc_auc"] for length in lengths]
+    monotone = all(b > a for a, b in zip(values, values[1:])) if len(values) > 1 else None
+    return {
+        "lengths": lengths,
+        "paper_auc": paper_values,
+        "reproduction_auc": [round(v, 4) for v in values],
+        "paper_monotone_increasing": (
+            all(b > a for a, b in zip(paper_values, paper_values[1:]))
+            if len(paper_values) > 1 else None
+        ),
+        "reproduction_monotone_increasing": monotone,
+        "trend_reproduced": bool(monotone) if monotone is not None else None,
+        "complete": len(lengths) == 3,
+        "note": (
+            "길이별 평가군이 다르다는 점을 함께 봐야 한다(Q-05). 3/4/5일의 평가 가능 "
+            "피험자는 156/132/111명으로 줄어들므로, 길이 효과와 평가군 효과가 섞여 있다."
+        ),
+    }
 
 
 def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -438,6 +548,12 @@ def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "table4_nested_selected": nested_estimates,
         "table5_nested_partial_subsets": _partial_diagnostics(nested_report),
         "table6_paper_metric_reproduction": _paper_metric_diagnostics(
+            reports.get("paper_temporal_reconstruction") or {}
+        ),
+        "table7_central_claim": _central_claim(
+            reports.get("paper_temporal_reconstruction") or {}
+        ),
+        "table8_sequence_length_trend": _length_trend(
             reports.get("paper_temporal_reconstruction") or {}
         ),
         "paper_results": PAPER_RESULTS,
@@ -696,8 +812,93 @@ def render_comparison_markdown(comparison: dict[str, Any]) -> str:
                 f"- early stopping 실제 적용: {'예' if row.get('early_stopping_applied') else '아니오'}.",
                 "- method fidelity: " + str(row.get("method_fidelity") or {}) + ".",
             ]
+            matched = row.get("prevalence_matched") or {}
+            if matched.get("available"):
+                got = matched.get("metrics") or {}
+                lines += [
+                    f"- **평가군을 논문이 암시하는 prevalence "
+                    f"{cell(matched.get('achieved_prevalence'))}로 맞추면** "
+                    f"(모델 재학습 없음, 같은 예측을 부분표집): "
+                    + ", ".join(
+                        f"{name} {got[key]['mean']:.3f}"
+                        for name, key in (("Sens", "sensitivity"), ("Spec", "specificity"),
+                                          ("Prec", "precision"), ("F1", "f1"),
+                                          ("Acc", "accuracy"), ("AUC", "roc_auc"))
+                        if key in got
+                    )
+                    + ".",
+                    "  AUC는 prevalence에 불변이고 precision·F1·accuracy는 아니다. "
+                    "이 줄이 논문값에 가까워지면 Table 5와의 차이는 모델이 아니라 "
+                    "평가군 구성 차이에서 온 것이다.",
+                ]
+            point = row.get("operating_point") or {}
+            if point.get("available"):
+                at = point["at_paper_sensitivity"]
+                configured = point["at_configured_threshold"]
+                lines += [
+                    f"- **작동점 진단**: 논문 sens {point['paper_sensitivity']:.2f} / "
+                    f"spec {point['paper_specificity']:.2f}. 우리 ROC 곡선에서 sens "
+                    f"{at['sensitivity']:.3f}를 맞추면 spec은 {at['specificity']:.3f}"
+                    f"({at['specificity_minus_paper']:+.3f}). "
+                    + (
+                        "논문 작동점이 곡선 **위쪽**이므로 threshold를 바꿔도 재현할 수 "
+                        "없다 — 차이는 판별력 자체다."
+                        if point["paper_point_above_our_curve"]
+                        else "논문 작동점이 곡선 위에 있으므로 차이는 threshold 선택 문제다."
+                    ),
+                    f"  threshold {configured['threshold']:.2f}에서 양성 예측률 "
+                    f"{configured['predicted_positive_rate']:.3f} (실제 양성률 "
+                    f"{configured['actual_positive_rate']:.3f}).",
+                ]
     else:
         lines.append("비교 가능한 paper-temporal 결과가 없다.")
+
+    claim = comparison.get("table7_central_claim") or {}
+    if claim.get("rows"):
+        verdict = "재현됨" if claim["claim_reproduced"] else "**재현되지 않음**"
+        lines += [
+            "",
+            "## 표 7. 논문의 중심 주장 재현 여부 (LSTM vs 비교모델)",
+            "",
+            f"{claim['claim']} — 판정: {verdict} "
+            f"(LSTM이 앞선 비교 {claim['n_lstm_ahead']}/{claim['n_comparisons']}, "
+            f"격차 0.05 이상 {claim['n_gap_at_least_0_05']}/{claim['n_comparisons']}).",
+            "",
+            "| 길이 | 비교모델 | 논문 격차 | 재현 격차 | 격차 변화 | LSTM 우위 |",
+            "| ---: | --- | ---: | ---: | ---: | :---: |",
+        ]
+        for row in claim["rows"]:
+            lines.append(
+                f"| {row['sequence_length']}일 | {row['baseline']} | "
+                f"{row['paper_gap']:+.3f} | {row['reproduction_gap']:+.3f} | "
+                f"{row['gap_shrinkage']:+.3f} | "
+                f"{'O' if row['lstm_still_ahead'] else 'X'} |"
+            )
+        lines += ["", claim["note"]]
+
+    trend = comparison.get("table8_sequence_length_trend") or {}
+    if trend.get("lengths"):
+        lines += [
+            "",
+            "## 표 8. 시퀀스 길이 추세 재현 여부",
+            "",
+            "| 길이 | 논문 AUC | 재현 AUC |",
+            "| ---: | ---: | ---: |",
+        ]
+        for length, paper_auc, our_auc in zip(
+            trend["lengths"], trend["paper_auc"], trend["reproduction_auc"]
+        ):
+            lines.append(f"| {length}일 | {paper_auc:.3f} | {our_auc:.3f} |")
+        if not trend.get("complete"):
+            lines += ["", "3·4·5일이 모두 있어야 추세를 판정할 수 있다."]
+        else:
+            lines += [
+                "",
+                f"- 논문 단조증가: {'예' if trend['paper_monotone_increasing'] else '아니오'}",
+                f"- 재현 단조증가: {'예' if trend['reproduction_monotone_increasing'] else '**아니오**'}",
+                "",
+                trend["note"],
+            ]
 
     lines += ["", "## 차이값과 그 해석", ""]
     for row in comparison["deltas"]["per_sequence_length"]:

@@ -190,6 +190,154 @@ def all_aggregation_metrics(
     }
 
 
+def implied_prevalence(sensitivity: float, specificity: float, precision: float) -> float | None:
+    """Recover the evaluation-set positive rate that a Table-5 row requires.
+
+    ``precision = sens*p / (sens*p + (1-spec)*(1-p))`` has one unknown once
+    sensitivity, specificity and precision are fixed, so a published row of all
+    three over-determines the prevalence it was computed on.  Every row of Hong
+    et al. Table 5 solves to ~0.50, while the faithful "final week of every
+    subject" split is ~0.32 -- which is why the AUC gap (prevalence-invariant) is
+    small while the precision/F1/accuracy gaps (prevalence-dependent) are large.
+    """
+    false_positive_rate = 1.0 - specificity
+    if false_positive_rate <= 0.0 or sensitivity <= 0.0:
+        # With no false positives precision is 1 at every prevalence, so the
+        # equation carries no information about p.  Same when nothing is
+        # predicted positive.  Undetermined, not zero.
+        return None
+    denominator = precision * sensitivity - precision * false_positive_rate - sensitivity
+    if abs(denominator) < 1e-12:
+        return None
+    value = (-precision * false_positive_rate) / denominator
+    return float(value) if 0.0 < value <= 1.0 else None
+
+
+def prevalence_matched_metrics(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    *,
+    target_prevalence: float = 0.5,
+    threshold: float = 0.5,
+    n_repeats: int = 200,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Re-score the *same predictions* on a subsample at *target_prevalence*.
+
+    No model is refitted; only the composition of the evaluation set changes.
+    This isolates how much of a Table-5 gap is explained by the evaluation set
+    having a different positive rate than the paper's, rather than by the model.
+
+    Averaged over ``n_repeats`` draws because a single subsample is noisy.
+    """
+    y_true = np.asarray(y_true).astype(int)
+    y_score = np.asarray(y_score, dtype=float)
+    positives = np.flatnonzero(y_true == 1)
+    negatives = np.flatnonzero(y_true == 0)
+    if len(positives) == 0 or len(negatives) == 0:
+        return {"available": False, "reason": "evaluation set has a single class"}
+
+    # Keep every minority-class observation and take as many of the other class
+    # as the target prevalence allows, so the subsample is as large as possible.
+    target = float(target_prevalence)
+    n_by_positive = (len(positives), int(round(len(positives) * (1 - target) / target)))
+    n_by_negative = (int(round(len(negatives) * target / (1 - target))), len(negatives))
+    n_pos, n_neg = (
+        n_by_positive
+        if n_by_positive[1] <= len(negatives)
+        else n_by_negative
+    )
+    n_pos, n_neg = min(n_pos, len(positives)), min(n_neg, len(negatives))
+    if n_pos < 2 or n_neg < 2:
+        return {"available": False, "reason": "too few observations after matching"}
+
+    rng = np.random.default_rng(seed)
+    collected: dict[str, list[float]] = {}
+    for _ in range(int(n_repeats)):
+        idx = np.concatenate([
+            rng.choice(positives, size=n_pos, replace=False),
+            rng.choice(negatives, size=n_neg, replace=False),
+        ])
+        result = binary_metrics(y_true[idx], y_score[idx], threshold=threshold)
+        for metric in ("roc_auc", "pr_auc", "sensitivity", "specificity",
+                       "precision", "f1", "accuracy", "balanced_accuracy"):
+            value = result.get(metric)
+            if value is not None and np.isfinite(value):
+                collected.setdefault(metric, []).append(float(value))
+
+    summary = {
+        metric: {"mean": float(np.mean(values)), "std": float(np.std(values, ddof=1))
+                 if len(values) > 1 else 0.0}
+        for metric, values in collected.items()
+    }
+    return {
+        "available": True,
+        "target_prevalence": target,
+        "achieved_prevalence": float(n_pos / (n_pos + n_neg)),
+        "n_positive": int(n_pos),
+        "n_negative": int(n_neg),
+        "n_repeats": int(n_repeats),
+        "metrics": summary,
+        "note": (
+            "모델을 다시 학습하지 않고 평가군 구성만 바꾼 진단값이다. 성능 주장이 "
+            "아니라, 논문과의 지표 차이 중 평가군 양성 비율로 설명되는 몫을 재는 값이다."
+        ),
+    }
+
+
+def operating_point_comparison(
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    *,
+    target_sensitivity: float,
+    target_specificity: float,
+    threshold: float = 0.5,
+) -> dict[str, Any]:
+    """Is the paper's (sensitivity, specificity) point reachable on our ROC curve?
+
+    A model can miss a published sensitivity for two very different reasons: it
+    discriminates worse, or it simply sits at a different threshold.  Sliding to
+    the paper's sensitivity and reading off our specificity separates them.  If
+    the specificity we get there is far below the paper's, the published point is
+    *above* our curve and no threshold would have reproduced it.
+    """
+    from sklearn.metrics import roc_curve
+
+    y_true = np.asarray(y_true).astype(int)
+    y_score = np.asarray(y_score, dtype=float)
+    if len(np.unique(y_true)) < 2:
+        return {"available": False, "reason": "single class"}
+
+    false_positive, true_positive, thresholds = roc_curve(y_true, y_score)
+    index = int(np.argmin(np.abs(true_positive - target_sensitivity)))
+    matched_specificity = float(1.0 - false_positive[index])
+
+    current = binary_metrics(y_true, y_score, threshold=threshold)
+    return {
+        "available": True,
+        "paper_sensitivity": float(target_sensitivity),
+        "paper_specificity": float(target_specificity),
+        "at_paper_sensitivity": {
+            "sensitivity": float(true_positive[index]),
+            "specificity": matched_specificity,
+            "threshold": float(thresholds[index]),
+            "specificity_minus_paper": float(matched_specificity - target_specificity),
+        },
+        "at_configured_threshold": {
+            "threshold": float(threshold),
+            "sensitivity": current["sensitivity"],
+            "specificity": current["specificity"],
+            "predicted_positive_rate": float((y_score >= threshold).mean()),
+            "actual_positive_rate": float(y_true.mean()),
+        },
+        "paper_point_above_our_curve": bool(matched_specificity < target_specificity - 0.02),
+        "note": (
+            "논문 작동점이 우리 곡선 위쪽이면 threshold를 바꿔도 재현할 수 없다. "
+            "그 경우 차이는 작동점 선택이 아니라 판별력 자체의 차이다."
+        ),
+    }
+
+
 def bootstrap_ci(
     subjects: Sequence[str],
     y_true: np.ndarray,
