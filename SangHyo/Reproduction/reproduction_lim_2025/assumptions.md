@@ -215,8 +215,36 @@ learning_rate: 0.001        # 논문 미보고
 batch_size: 16              # 논문 미보고. 141명 기준 보수적
 max_epochs: 100             # 논문 미보고
 early_stopping_patience: 10 # 논문 미보고
+early_stopping_metric: auc  # 논문 미보고 (아래 C-3-1 참조)
+validation_fraction: 0.2    # 논문 미보고. 층화 분할
 pos_weight: null            # 논문이 불균형 보정 미적용
 ```
+
+### C-3-1. early stopping 모니터 지표를 AUC로 정한 이유
+
+**논문**: early stopping 자체를 언급하지 않는다. 전부 본 재현의 가정이다.
+
+**처음 선택(loss)의 실패**: 141명 중 20%인 28명을 모니터 분할로 떼고 BCE loss를
+감시했더니, loss가 epoch 0에서 최소였고 이후 계속 올라 early stopping이
+**초기화 직후 가중치를 복원**했다. train loss는 0.713 → 0.481로 내려가고 있었는데도
+보고된 것은 사실상 학습되지 않은 모델이었다. 게다가 모니터 분할이 **층화되지 않아**
+양성 비율이 seed마다 요동쳤다.
+
+**수정**:
+
+1. 모니터 분할을 **층화**한다. 실제 데이터에서 양성 수가 11로 고정된다.
+2. 모니터 지표를 **ROC-AUC**로 바꾼다. 주 보고 지표가 AUC이고, 28명 BCE loss는
+   신경망이 확신을 갖기 시작하면 순위가 좋아지는 중에도 올라간다.
+3. **AUC 동점 시 loss로 tie-break**한다. 작은 모니터 분할에서 AUC는 1.0에 포화될 수
+   있고, 그러면 다시 epoch 0이 복원된다.
+
+**선택 근거의 독립성**: 이 결정은 **학습 동역학**(best epoch, 모니터 분할 내부 점수)만
+보고 내렸다. 33명 test AUC를 보고 고르지 않았다. test로 골랐다면 그것이야말로 이
+프로젝트가 막으려는 누수다.
+
+**남은 안전장치**: 그럼에도 epoch 0이 복원되면 `degenerate_training: true`가 기록되고
+`FINAL_REPORT.json`의 `degenerate_training_models`와 실행 로그에 경고가 뜬다.
+해당 모델 수치는 성능으로 인용하지 않는다.
 
 **중요**: 이 구조로 논문의 1D-CNN AUC 0.810이 재현되지 않아도, 그것은 재현 실패가 아니라
 **논문이 구조를 보고하지 않았기 때문**이다. 결과 보고 시 반드시 함께 기재한다.

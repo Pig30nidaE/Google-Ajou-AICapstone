@@ -214,7 +214,7 @@ inner CV는 outer training 피험자만 받는다. `inner_stratified_group_kfold
 
 ## 5. 정적 테스트
 
-`tests/`의 86개 테스트가 위 계약을 고정한다. 실제 데이터 없이도 동작한다
+`tests/`의 110개 테스트가 위 계약을 고정한다. 실제 데이터 없이도 동작한다
 (합성 코호트 사용). 실행:
 
 ```bash
@@ -231,6 +231,7 @@ python -m pytest tests/ -q
 | `test_outer_test_isolation.py` | inner CV가 outer test를 보지 않음, 임계값 출처 |
 | `test_paper_arithmetic.py` | 33명·양성 7명 복원이 실제 데이터와 일치 |
 | `test_sequence_padding.py` | 패딩이 실제 관측을 덮지 않음, pre/post 결과 동일 |
+| `test_sequence_training.py` | early stopping이 학습 안 된 모델을 복원하지 않음 |
 
 주목할 만한 테스트 두 개:
 
