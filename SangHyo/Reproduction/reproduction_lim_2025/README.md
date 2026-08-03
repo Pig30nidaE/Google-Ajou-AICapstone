@@ -9,29 +9,31 @@
 
 **현재 상태: `reported-method reconstruction`** (exact reproduction 아님 — §6 참조)
 
-> ## ⚠️ 실행 이력: 앞선 두 실행의 딥러닝 수치는 무효다
+> ## ⚠️ 최신 실행 판정: 핵심 결론 미재현
 >
-> 실험 A를 두 번 실행하는 동안 딥러닝 3종에서 **서로 다른 버그 두 개**가 나왔다.
-> RF·XGBoost는 두 버그 모두와 무관해 처음부터 유효했다(0.673 / 0.615, 세 실행 모두 동일).
+> `20260803_014223_utc`는 완료 플래그·피험자 분리·예측 파일 내부 정합성은 통과했다.
+> 그러나 논문의 핵심 결과인 1D-CNN 우위는 재현되지 않았다.
 >
-> | 실행 | 딥러닝 AUC (LSTM / Bi-LSTM / 1D-CNN) | 상태 |
+> | 모델 | 논문 AUC / F1 / Recall | 최신 실행 AUC / F1 / Recall |
 > | --- | --- | --- |
-> | `20260802_151456_utc` | 0.429 / 0.407 / 0.451 | **무효** — 패딩 버그 |
-> | `20260803_012418_utc` | 0.396 / 0.363 / 0.599 | **무효** — early stopping 버그 |
-> | 수정 후 로컬 검증 | 0.582 / 0.544 / 0.604 | 배선 정상, Colab 재실행 필요 |
+> | RF | .7225 / .50 / .7143 | .6731 / .3529 / .4286 |
+> | XGBoost | .6374 / .50 / .7143 | .6154 / .3810 / .5714 |
+> | LSTM | .5275 / .25 / .1428 | .5824 / .4000 / .4286 |
+> | Bi-LSTM | .3901 / .25 / .1428 | .5440 / .2353 / .2857 |
+> | **1D-CNN** | **.8104 / .63 / .8571** | **.6044 / 0 / 0** |
 >
-> **버그 1 — 패딩 방향** (`leakage_audit.md` §1-2-1): 빌더는 실제 관측을 뒤쪽에 두는데
-> 하위 4곳이 앞쪽을 유효로 계산했다. 실제 관측 9,705개 중 **6,239개(64.3%) 소실**,
-> 141명 중 **44명은 100% 소실**. 남은 신호의 상당 부분이 관측일수였고 그 단독 AUC가
-> 0.4615라 세 모델이 거기 몰렸다.
+> 1D-CNN의 Accuracy .787879만 같지만 최신 모델은 `TN=26, FP=0, FN=7, TP=0`, 즉
+> **33명 전부를 CN으로 예측**했다. 이는 Validation의 CN 비율 26/33과 같은 all-CN
+> baseline이며 재현 성공이 아니다. 논문 혼동행렬은 `TN=20, FP=6, FN=1, TP=6`이다.
 >
-> **버그 2 — early stopping** (`assumptions.md` §C-3-1): 모니터 분할이 층화되지 않았고
-> 28명 BCE loss를 감시해, loss가 epoch 0에서 최소가 되면서 **초기화 직후 가중치를 복원**
-> 했다. train loss는 0.713→0.481로 내려가는 중이었다. 즉 학습되지 않은 모델의 수치를
-> 보고하고 있었다.
+> 정적 감사에서 최신 코드/설정의 직접 불일치를 확인했다. CNN은 논문에 유일하게 드러난
+> `Conv→Pool→Flatten→FC` 대신 GlobalAvgPool을 썼고, `padding: pre`를 내부에서
+> post-align했으며, 논문에 없는 monitor 28명을 떼어 optimizer에는 113명만 넣었다.
+> 또한 Validation 양성 1명의 122일 중 2일을 잘랐고, RF는 information-gain 서술과 달리
+> Gini를 사용했으며, undefined precision을 JSON `NaN`으로 기록했다.
 >
-> 둘 다 수정하고 회귀 테스트 24개를 추가했다(총 110개).
-> **실험 A를 다시 실행해야 딥러닝 수치를 쓸 수 있다.**
+> 위 항목은 코드와 계약 테스트에서 수정했다. 사용자의 실행 원칙에 따라 **학습과 테스트는
+> 실행하지 않았으므로**, 수정 후 성능은 아직 없다. 새 결과만 재현 판정에 사용한다.
 
 ---
 
@@ -181,6 +183,10 @@ python run.py --compare
 - 분할: `official_partition` (141 / 33) — §1-1에서 복원한 것
 - RF/XGBoost: `groupby('EMAIL').mean(numeric_only=True)` 피험자 평균 (논문 코드 그대로)
 - LSTM/Bi-LSTM/1D-CNN: 피험자당 1시퀀스 (N, T, F)
+- 딥러닝의 F=49는 논문이 보고한 값이 아니라, RF/XGB 코드 결과를 확장한 가정
+- 실험 A 신경망: 내부 holdout/early stopping 없이 공식 Training 141명 전체를 100 epoch 학습
+- 1D-CNN 가정: Conv1d×2 → MaxPool → Flatten → FC, 설정된 pre-padding 유지
+- RF 가정: 본문의 information-gain 서술에 맞춰 `criterion: entropy`
 - XGBoost 하이퍼파라미터: 논문 명시값 그대로
 - 임계값 0.5, 다섯 모델 **모두 보고** (논문과 달리 최고를 사후 채택하지 않는다)
 
@@ -240,7 +246,7 @@ reproduction_lim_2025/
 │   ├── evaluation/ metrics.py compare.py
 │   ├── audit/      leakage.py
 │   └── utils/      config.py seeding.py io.py
-└── tests/                        # 110개 계약 테스트
+└── tests/                        # 누수·산술·시퀀스·산출물 계약 테스트
 ```
 
 ---
@@ -267,16 +273,19 @@ reproduction_lim_2025/
 
 두 논문 어디에도 다음이 **없다**.
 
-- **LSTM / Bi-LSTM / 1D-CNN의 구조 전부**. 층 수, hidden units, filter 수, kernel size,
-  dropout, optimizer, learning rate, epoch, batch size 중 **단 하나도** 없다.
-  3.3.2절은 LSTM이 *무엇인지*만 설명하고 끝난다.
+- **LSTM / Bi-LSTM / 1D-CNN의 실제 구현 구조**. 일반 설명에 양방향 상태 연결과
+  Conv→Pool→Flatten→FC 단서는 있지만, 층 수, hidden units, filter 수, kernel size,
+  dropout, optimizer, learning rate, epoch, batch size는 없다.
 - **Random Forest 하이퍼파라미터 전부**.
 - **시퀀스 길이·패딩 규칙**.
 - **random seed**.
 - XGBoost `max_depth` (탐색했다고 쓰면서 결과값 누락).
 
 따라서 모든 산출물에 `reproduction_class: "reported-method reconstruction"`이 붙는다.
-**본 재현의 딥러닝 성능이 논문과 다르더라도 그것은 재현 실패가 아니라 미보고의 결과다.**
+따라서 수치가 다를 때 원 저자 구현과 어떤 가정이 다른지는 확정할 수 없다. 그러나
+**1D-CNN이 전부 음성을 예측하고 AUC/F1/Recall 및 모델 순위가 크게 다른 경우에는 논문의
+핵심 결론이 재현되지 않은 것**으로 판정한다. 코드 실행 성공·누수 감사 통과와 과학적 재현
+성공은 별도 상태다.
 
 저자에게 아래 4개만 확보하면 재현 정확도가 실질적으로 올라간다.
 (1) 딥러닝 구조 코드, (2) RF 하이퍼파라미터, (3) 시퀀스·패딩 코드,
@@ -290,8 +299,9 @@ reproduction_lim_2025/
    `date_column_exists`, `paper_feature_names`, `n_features` 3개인지.
    달라졌다면 **데이터 판본이 바뀐 것**이므로 문서부터 갱신한다.
 2. `python run.py --config <config> --dry-run` — 모델 입력 shape과 누수 검사 통과 여부.
-   실험 A는 train `[141, 49]` / test `[33, 49]`, 시퀀스는 `[141, 120, 49]` / `[33, 120, 49]`.
-3. `python -m pytest tests/ -q` — 110개 통과.
+   실험 A는 train `[141, 49]` / test `[33, 49]`, 시퀀스는 `[141, 122, 49]` / `[33, 122, 49]`.
+3. `python -m pytest tests/ -q` — strict JSON, fixed-epoch 141명 fit, Flatten head,
+   calendar-gap mask, fold별 threshold 집계를 포함한 계약 테스트 확인.
 4. 실험 C의 fit 예산(570회)이 시간 내에 들어오는지. 안 되면 `repeats`나 `models`를 줄인다.
 5. Colab이면 Drive 마운트 확인. 결과는
    `/content/drive/MyDrive/reproduction_lim_2025_result/<UTC_RUN_ID>/`에 저장된다.
@@ -322,5 +332,5 @@ reproduction_lim_2025/
 | `paper_data_mapping.md` | 변수 58 vs 49의 해부, 금지 변수 목록 |
 | `assumptions.md` | 가정 A–G, 변경 시 갱신 절차 |
 | `unresolved_questions.md` | 미해결 15개 질문, 저자 문의 최소 목록 |
-| `leakage_audit.md` | 13개 자동 검사와 구현 위치, 남은 편향 |
+| `leakage_audit.md` | 자동 누수·체크포인트 검사와 구현 위치, 남은 편향 |
 | `../../AGENTS.md` | SangHyo 실험 전체 가이드와 기존 결론 |

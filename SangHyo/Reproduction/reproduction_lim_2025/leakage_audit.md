@@ -46,13 +46,15 @@
                                       → train 부분에서만 전처리 fit
 ```
 
-`src/engine.py`의 `materialise_pair()`가 이 순서를 강제한다. train 표현을 먼저 만들고,
-거기서 결정된 shape(특히 `sequence_length`)을 test 표현에 **전달**한다.
+`src/engine.py`의 `materialise_pair()`가 이 순서를 강제한다. B·C의
+`sequence_length: max`는 train 표현에서 결정해 test 표현에 **전달**한다.
 
 > **이 순서가 잡아낸 실제 문제**: `sequence_length: max`를 양쪽에서 독립적으로 계산하면
 > train T=120, test T=**122**가 나왔다. 관측일수가 가장 많은 피험자가 test에 있었기
 > 때문이다. 이는 텐서 shape 불일치일 뿐 아니라 **평가집단이 전처리 파라미터를 결정**하는
-> 누수다. 지금은 train에서 결정한 120을 test에 적용한다.
+> 누수다. 실험 B·C는 train에서 결정한 길이를 test에 적용한다. 실험 A는 논문 재구성
+> 전용 `full-cohort-shape` 가정으로 T=122를 config에 명시한다. 이는 일반화 성능을 위한
+> 선택이 아니며, 산출물에 가정으로 남긴다.
 
 ### 1-2. 전처리는 fold 지역적이며 스스로를 감사한다
 
@@ -62,7 +64,8 @@
 
 패딩 처리도 여기에 포함된다.
 
-- **fit**: 패딩 시점을 통계에서 제외한다(`mask` 인자). 시퀀스의 60% 이상이 패딩일 수
+- **fit**: 실제 관측이 아닌 외부 패딩과 내부 달력 gap을 통계에서 제외한다(`mask` 인자).
+  시퀀스의 60% 이상이 패딩일 수
   있으므로, 포함하면 모든 평균이 0 쪽으로 끌려간다. 논문의 서술 순서
   ("정규화 후 3차원 텐서")와도 이쪽이 일치한다.
 - **transform 후**: 패딩 시점을 다시 0으로 되돌린다. 표준화하면 패딩 0이
@@ -94,11 +97,15 @@
 실행 결과의 LSTM 0.429 / Bi-LSTM 0.407 / 1D-CNN 0.451이 정확히 그 노이즈 수준에
 몰려 있던 이유다.
 
-**수정**: 마스크의 단일 소스를 `Representation.valid_mask()`로 통일하고,
-모델에는 `Representation.left_aligned()`가 좌측 정렬한 텐서를 넘긴다. 그 결과
-`padding: pre`와 `post`가 **동일한 결과**를 낸다 — 마스킹이 제대로 되면 패딩
-방향은 결과에 영향을 주지 않아야 하고, 이제 그 성질이 테스트로 고정돼 있다
-(`tests/test_sequence_padding.py`, 13개).
+**1차 수정**: 관측 마스크의 단일 소스를 `Representation.valid_mask()`로 통일했다.
+LSTM/Bi-LSTM에만 `Representation.left_aligned()`가 외부 padding을 뒤로 옮긴 텐서를
+넘긴다. `calendar` 모드의 내부 결측일은 별도 `observation_mask`로 0을 유지하면서도
+시간 위치가 보존된다.
+
+**2차 수정 (`20260803_014223_utc` 감사 후)**: 위치에 민감한 Flatten-CNN까지 좌측
+정렬하면 config의 `padding: pre`가 사실상 post-padding으로 바뀐다. CNN은 이제 설정된
+pre/post tensor를 그대로 받고, recurrent 모델만 packed-sequence용 post 정렬을 사용한다.
+따라서 pre/post 동일성은 **recurrent 입력 정렬에만** 기대하며 CNN에는 요구하지 않는다.
 
 **교훈**: `lengths`만으로 마스크를 재유도하지 말 것. 길이는 유효 구간이 앞에
 있다고 암묵적으로 가정한다. 마스크는 boolean 배열로 명시적으로 넘긴다.
@@ -212,10 +219,10 @@ inner CV는 outer training 피험자만 받는다. `inner_stratified_group_kfold
 
 ---
 
-## 5. 정적 테스트
+## 5. 계약 테스트
 
-`tests/`의 110개 테스트가 위 계약을 고정한다. 실제 데이터 없이도 동작한다
-(합성 코호트 사용). 실행:
+`tests/`가 위 계약을 고정한다. 대부분 실제 데이터 없이 합성 코호트로 동작한다. 다음은
+사용자가 새 실행 전에 수행할 명령이며, 이번 코드 감사에서는 요청에 따라 실행하지 않았다.
 
 ```bash
 python -m pytest tests/ -q
@@ -230,8 +237,10 @@ python -m pytest tests/ -q
 | `test_forbidden_features.py` | 타깃·식별자·인지검사 컬럼 차단 |
 | `test_outer_test_isolation.py` | inner CV가 outer test를 보지 않음, 임계값 출처 |
 | `test_paper_arithmetic.py` | 33명·양성 7명 복원이 실제 데이터와 일치 |
-| `test_sequence_padding.py` | 패딩이 실제 관측을 덮지 않음, pre/post 결과 동일 |
-| `test_sequence_training.py` | early stopping이 학습 안 된 모델을 복원하지 않음 |
+| `test_sequence_padding.py` | 패딩이 실제 관측을 덮지 않음, calendar gap 위치 보존 |
+| `test_sequence_training.py` | 고정 epoch가 Training 전원을 쓰고 CNN이 Flatten head를 사용 |
+| `test_strict_json.py` | undefined metric과 비유한 수치가 strict JSON을 깨지 않음 |
+| `test_aggregation.py` | nested CV의 fold별 임계값을 첫 fold 값으로 덮어쓰지 않음 |
 
 주목할 만한 테스트 두 개:
 
@@ -251,7 +260,8 @@ python -m pytest tests/ -q
 2. **33명 Validation의 이력**: 실험 A의 평가집단은 이 저장소가 이미 수십 번 관찰한
    historical benchmark다(`SangHyo/AGENTS.md` §2-5). 실험 A는 **논문 재현 대상**일 뿐
    새로운 독립 검증이 아니다.
-3. **논문 미보고로 인한 자유도**: 딥러닝 구조와 RF 하이퍼파라미터가 미보고이므로,
-   본 재현이 고른 값이 논문보다 좋거나 나쁠 수 있다. 이 차이를 "재현 실패"로 읽으면 안 된다.
+3. **논문 미보고로 인한 자유도**: 딥러닝 실제 구조와 RF 하이퍼파라미터가 미보고이므로,
+   수치의 exact reproduction 가능 여부는 판단할 수 없다. 다만 같은 33명에서 all-negative
+   CNN과 큰 AUC/F1/Recall·순위 차이는 논문의 핵심 결론 미재현으로 판정할 수 있다.
 4. **새 코호트 부재**: 진짜 일반화 검증은 174명 안의 어떤 재분할도 아니라
    **새로운 피험자**다.

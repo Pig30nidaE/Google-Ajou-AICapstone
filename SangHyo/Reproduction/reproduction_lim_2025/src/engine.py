@@ -21,13 +21,15 @@ from .features.representations import (
     FoldPreprocessor,
     build_representation,
     fit_transform_pair,
+    zero_padding,
 )
 from .models import registry
 from .splits import splitters
-from .utils.io import CheckpointStore, write_json
+from .utils.io import CheckpointStore, sha256_file, write_json
 from .utils.seeding import fold_seed, seed_everything
 
 PRIMARY_METRIC = "roc_auc"
+ARTIFACT_SCHEMA_VERSION = 2
 
 
 @dataclass
@@ -46,6 +48,9 @@ class FoldResult:
     model_summary: dict[str, Any] = field(default_factory=dict)
     audit: dict[str, Any] = field(default_factory=dict)
     input_shape: tuple[int, ...] = ()
+    preprocessor_state: dict[str, Any] = field(default_factory=dict)
+    representation_meta: dict[str, Any] = field(default_factory=dict)
+    checkpoint_meta: dict[str, Any] = field(default_factory=dict)
 
 
 def _representation_kwargs(config, model: str) -> dict[str, Any]:
@@ -101,21 +106,53 @@ def _fit_predict(
     training: dict[str, Any] | None,
 ) -> tuple[np.ndarray, Any]:
     """Fit on the training representation and score the test representation."""
+    # Seed before construction, not only inside ``fit``.  Torch initialises the
+    # module during fit/build, so otherwise paired inner-CV candidates receive
+    # different ambient RNG states despite being passed the same seed.
+    seed_everything(seed)
     model = registry.build_model(
         model_name, seed=seed, device=device, overrides=overrides, training=training
     )
     if registry.is_sequence_model(model_name):
-        # pack_padded_sequence and the Conv1d pooling mask both require the valid
-        # steps at the front, so hand them a left-aligned view regardless of the
-        # configured padding side.
-        train_X, train_lengths = train_rep.left_aligned()
-        test_X, test_lengths = test_rep.left_aligned()
-        model.fit(train_X, train_rep.y, lengths=train_lengths, seed=seed)
-        probabilities = model.predict_proba(test_X, lengths=test_lengths)
+        if model_name in ("lstm", "bilstm"):
+            # pack_padded_sequence requires valid steps at the front.
+            train_X, train_lengths = train_rep.left_aligned()
+            model.fit(
+                train_X, train_rep.y, lengths=train_lengths,
+                padding_side="post", seed=seed,
+            )
+        else:
+            # A flattened CNN is position-sensitive.  Preserve the configured
+            # pre/post padding instead of silently converting it to post-padding.
+            model.fit(
+                train_rep.X, train_rep.y, lengths=train_rep.lengths,
+                padding_side=train_rep.padding_side, seed=seed,
+            )
+        probabilities = _predict_fitted(model_name, model, test_rep)
     else:
         model.fit(train_rep.X, train_rep.y)
         probabilities = model.predict_proba(test_rep.X)
     return np.asarray(probabilities, dtype=np.float64), model
+
+
+def _predict_fitted(model_name: str, model, representation) -> np.ndarray:
+    """Score a fitted model using the same representation contract as training."""
+    if model_name in ("lstm", "bilstm"):
+        X, lengths = representation.left_aligned()
+        return np.asarray(
+            model.predict_proba(X, lengths=lengths, padding_side="post"),
+            dtype=np.float64,
+        )
+    if model_name == "cnn1d":
+        return np.asarray(
+            model.predict_proba(
+                representation.X,
+                lengths=representation.lengths,
+                padding_side=representation.padding_side,
+            ),
+            dtype=np.float64,
+        )
+    return np.asarray(model.predict_proba(representation.X), dtype=np.float64)
 
 
 def _score_fold(
@@ -179,7 +216,7 @@ def _inner_select(
     training_cfg = dict(config.get("training", {}) or {})
 
     scored: list[dict[str, Any]] = []
-    for index, overrides in enumerate(candidates):
+    for overrides in candidates:
         oof_prob: list[np.ndarray] = []
         oof_true: list[np.ndarray] = []
         for inner in inner_splits:
@@ -192,9 +229,13 @@ def _inner_select(
                 pre, inner.train_subjects, inner.test_subjects, audit_log, tag="_inner"
             )
 
+            # Pair candidates on the same stochastic seed within an inner fold.
+            # Adding the candidate index here would confound hyperparameters with
+            # a different neural initialisation / bootstrap draw.
+            inner_seed = fold_seed(seed, 0, inner.fold)
             probabilities, _ = _fit_predict(
                 model_name, train_rep, test_rep,
-                seed=seed + index, device=device,
+                seed=inner_seed, device=device,
                 overrides=overrides, training=training_cfg,
             )
             pooled = M.pool_to_subjects(
@@ -247,7 +288,13 @@ def _inner_select(
 
 
 def run_fold(
-    data, config, model_name: str, split, *, device: str, checkpoints: CheckpointStore | None = None
+    data,
+    config,
+    model_name: str,
+    split,
+    *,
+    device: str,
+    checkpoints: CheckpointStore | None = None,
 ) -> FoldResult:
     """Train and evaluate one model on one split, with audits before fitting."""
     seed = fold_seed(config.seed, split.repeat, split.fold)
@@ -274,6 +321,7 @@ def run_fold(
     train_rep, test_rep = materialise_pair(
         data, config, model_name, split.train_subjects, split.test_subjects
     )
+    raw_test_X = test_rep.X.copy()
 
     # --- preprocessing fitted on the training part only ----------------------
     preprocessor = FoldPreprocessor(standardize=_needs_scaling(model_name, config))
@@ -326,12 +374,60 @@ def run_fold(
         test_rep, probabilities, config=config, threshold=threshold
     )
 
+    checkpoint_meta: dict[str, Any] = {}
     if checkpoints is not None and config.get("checkpointing.save_models", False):
         suffix = ".pt" if registry.is_sequence_model(model_name) else ".joblib"
+        model_path = checkpoints.model_path(
+            model_name, split.repeat, split.fold, suffix
+        )
+        roundtrip_error: Exception | None = None
+        same = False
+        max_abs: float | None = None
         try:
-            model.save(checkpoints.model_path(model_name, split.repeat, split.fold, suffix))
-        except Exception as error:  # checkpointing must never sink a completed fold
-            audit_log.record("checkpoint_save", False, {"error": str(error)})
+            model.save(model_path)
+            reloaded = registry.load_model(model_name, model_path, device="cpu")
+            restored_preprocessor = FoldPreprocessor.from_state_record(
+                preprocessor.state_record(),
+                expected_feature_names=test_rep.feature_names,
+            )
+            roundtrip_rep = test_rep.subset(
+                np.ones(test_rep.n_units, dtype=bool)
+            )
+            roundtrip_rep.X = restored_preprocessor.transform(raw_test_X)
+            zero_padding(roundtrip_rep)
+            roundtrip = _predict_fitted(model_name, reloaded, roundtrip_rep)
+            same = bool(
+                roundtrip.shape == probabilities.shape
+                and np.isfinite(roundtrip).all()
+                and np.allclose(roundtrip, probabilities, rtol=1e-5, atol=1e-7)
+            )
+            max_abs = (
+                float(np.max(np.abs(roundtrip - probabilities)))
+                if roundtrip.shape == probabilities.shape and len(roundtrip) else None
+            )
+        except Exception as error:
+            # Do not put ``enforce`` inside the try block: its own LeakageError
+            # would otherwise be caught and mislabeled as a save/load exception.
+            roundtrip_error = error
+        audit_log.enforce(
+            "checkpoint_roundtrip",
+            same and roundtrip_error is None,
+            (
+                "model checkpoint could not be saved and reloaded"
+                if roundtrip_error is not None
+                else "a freshly reloaded CPU checkpoint changed the evaluation scores"
+            ),
+            {
+                "path": str(model_path),
+                "max_abs_probability_difference": max_abs,
+                "n_predictions": int(len(probabilities)),
+                "error": None if roundtrip_error is None else str(roundtrip_error),
+            },
+        )
+        checkpoint_meta = {
+            "filename": model_path.name,
+            "sha256": sha256_file(model_path),
+        }
 
     return FoldResult(
         model=model_name,
@@ -348,6 +444,14 @@ def run_fold(
         model_summary=model.summary(),
         audit=audit_log.summary(),
         input_shape=train_rep.input_shape,
+        preprocessor_state=preprocessor.state_record(),
+        representation_meta={
+            "kind": train_rep.kind,
+            "train": dict(train_rep.meta),
+            "test": dict(test_rep.meta),
+            "feature_names": list(train_rep.feature_names),
+        },
+        checkpoint_meta=checkpoint_meta,
     )
 
 
@@ -361,34 +465,69 @@ def aggregate_model(model_name: str, folds: Sequence[FoldResult], *, seed: int =
         frame = fold.subject_predictions.copy()
         frame["repeat"] = fold.repeat
         frame["fold"] = fold.fold
+        frame["decision_threshold"] = float(fold.threshold)
+        frame["prediction"] = (
+            frame["probability"].to_numpy(dtype=float) >= float(fold.threshold)
+        ).astype(int)
         frames.append(frame)
     oof = pd.concat(frames, ignore_index=True)
+    duplicate_assignments = oof.duplicated(["repeat", "subject_id"], keep=False)
+    if duplicate_assignments.any():
+        examples = (
+            oof.loc[duplicate_assignments, ["repeat", "subject_id"]]
+            .drop_duplicates()
+            .head(5)
+            .to_dict("records")
+        )
+        raise ValueError(
+            "a subject was assigned to multiple test folds in one repeat; "
+            f"examples={examples}"
+        )
 
     # Average duplicate predictions when repeats put a subject in several test folds.
     pooled = (
         oof.groupby(["repeat", "subject_id"], as_index=False)
-        .agg(probability=("probability", "mean"), label=("label", "first"))
+        .agg(
+            probability=("probability", "mean"),
+            label=("label", "first"),
+            prediction=("prediction", "first"),
+            decision_threshold=("decision_threshold", "first"),
+        )
     )
     per_repeat: list[dict[str, Any]] = []
     for repeat, group in pooled.groupby("repeat"):
-        try:
-            per_repeat.append(
-                {
-                    "repeat": int(repeat),
-                    **M.compute_metrics(group["label"], group["probability"],
-                                        threshold=float(folds[0].threshold)),
-                }
-            )
-        except ValueError:
-            continue
+        repeat_thresholds = group["decision_threshold"].unique()
+        score_kwargs = (
+            {"threshold": float(repeat_thresholds[0])}
+            if len(repeat_thresholds) == 1
+            else {"predictions": group["prediction"]}
+        )
+        per_repeat.append(
+            {
+                "repeat": int(repeat),
+                **M.compute_metrics(group["label"], group["probability"],
+                                    **score_kwargs),
+            }
+        )
 
     overall = (
         pooled.groupby("subject_id", as_index=False)
-        .agg(probability=("probability", "mean"), label=("label", "first"))
+        .agg(
+            probability=("probability", "mean"),
+            label=("label", "first"),
+            decision_vote=("prediction", "mean"),
+        )
     )
-    subject_level = M.compute_metrics(
-        overall["label"], overall["probability"], threshold=float(folds[0].threshold)
-    )
+    thresholds = sorted({float(fold.threshold) for fold in folds})
+    if len(thresholds) == 1:
+        subject_level = M.compute_metrics(
+            overall["label"], overall["probability"], threshold=thresholds[0]
+        )
+    else:
+        subject_level = M.compute_metrics(
+            overall["label"], overall["probability"],
+            predictions=(overall["decision_vote"] >= 0.5).astype(int),
+        )
     subject_level["evaluation_unit"] = "subject"
 
     fold_scores = [
@@ -396,6 +535,13 @@ def aggregate_model(model_name: str, folds: Sequence[FoldResult], *, seed: int =
         if f.subject_metrics.get(PRIMARY_METRIC) is not None
     ]
     fold_scores = [s for s in fold_scores if np.isfinite(s)]
+
+    repeat_scores = [
+        float(record[PRIMARY_METRIC])
+        for record in per_repeat
+        if record.get(PRIMARY_METRIC) is not None
+        and np.isfinite(float(record[PRIMARY_METRIC]))
+    ]
 
     return {
         "model": model_name,
@@ -412,12 +558,20 @@ def aggregate_model(model_name: str, folds: Sequence[FoldResult], *, seed: int =
         "fold_score_mean": float(np.mean(fold_scores)) if fold_scores else None,
         "per_repeat": per_repeat,
         "repeat_score_std": (
-            float(np.std([r[PRIMARY_METRIC] for r in per_repeat
-                          if np.isfinite(r.get(PRIMARY_METRIC, np.nan))]))
-            if len(per_repeat) > 1 else None
+            float(np.std(repeat_scores)) if len(repeat_scores) > 1 else None
         ),
-        "threshold": float(folds[0].threshold),
-        "threshold_source": folds[0].threshold_source,
+        "threshold": thresholds[0] if len(thresholds) == 1 else None,
+        "thresholds_by_fold": [
+            {
+                "repeat": int(fold.repeat), "fold": int(fold.fold),
+                "threshold": float(fold.threshold),
+            }
+            for fold in folds
+        ],
+        "threshold_source": (
+            folds[0].threshold_source if len(thresholds) == 1
+            else "fold_specific_inner_cv"
+        ),
         "model_summary": folds[0].model_summary,
         "input_shape": list(folds[0].input_shape),
         "selections": [f.selection for f in folds if f.selection],
@@ -426,9 +580,14 @@ def aggregate_model(model_name: str, folds: Sequence[FoldResult], *, seed: int =
 
 def run_experiment(
     data, config, *, output_dir: Path, device: str = "cpu", only_fold: int | None = None,
-    resume: bool = False,
+    resume: bool = False, run_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Run every configured model over every split and write the artifacts."""
+    if resume and not run_fingerprint:
+        raise ValueError(
+            "--resume requires a non-empty run_fingerprint; stale checkpoints "
+            "must never be reused without code/config/data/device identity"
+        )
     output_dir = Path(output_dir)
     (output_dir / "folds").mkdir(parents=True, exist_ok=True)
     checkpoints = CheckpointStore(output_dir / "checkpoints")
@@ -446,7 +605,14 @@ def run_experiment(
 
     for split in splits:
         for model_name in config.models:
-            if resume and checkpoints.is_complete(model_name, split.repeat, split.fold):
+            if resume and checkpoints.is_complete(
+                model_name,
+                split.repeat,
+                split.fold,
+                expected_schema_version=ARTIFACT_SCHEMA_VERSION,
+                expected_run_fingerprint=run_fingerprint,
+                require_model=bool(config.get("checkpointing.save_models", False)),
+            ):
                 cached = checkpoints.load(model_name, split.repeat, split.fold)
                 frame = pd.DataFrame(cached["subject_predictions"])
                 results[model_name].append(
@@ -463,6 +629,9 @@ def run_experiment(
                         model_summary=cached.get("model_summary", {}),
                         audit=cached.get("audit", {}),
                         input_shape=tuple(cached.get("input_shape", ())),
+                        preprocessor_state=cached.get("preprocessor_state", {}),
+                        representation_meta=cached.get("representation_meta", {}),
+                        checkpoint_meta=cached.get("model_checkpoint", {}),
                     )
                 )
                 fold_records.append(cached["fold_record"])
@@ -491,6 +660,11 @@ def run_experiment(
                 "audit_passed": result.audit.get("all_passed"),
                 "audit_failures": result.audit.get("failures"),
                 "training_diagnostics": result.model_summary.get("training_diagnostics"),
+                "preprocessor_state": result.preprocessor_state,
+                "representation_meta": result.representation_meta,
+                "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+                "run_fingerprint": run_fingerprint,
+                "model_checkpoint": result.checkpoint_meta or None,
             }
             fold_records.append(record)
 
@@ -518,6 +692,11 @@ def run_experiment(
                     "model_summary": result.model_summary,
                     "audit": result.audit,
                     "input_shape": list(result.input_shape),
+                    "preprocessor_state": result.preprocessor_state,
+                    "representation_meta": result.representation_meta,
+                    "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+                    "run_fingerprint": run_fingerprint,
+                    "model_checkpoint": result.checkpoint_meta or None,
                 },
             )
 
@@ -539,24 +718,36 @@ def run_experiment(
             output_dir / "subject_predictions_hashed.csv", index=False
         )
 
-    # A model whose early stopping restored the epoch-0 weights is untrained; its
+    # A model with no finite optimiser-driven parameter change is untrained; its
     # metrics must never be read as a performance result.
     degenerate = sorted({
         record["model"] for record in fold_records
         if (record.get("training_diagnostics") or {}).get("degenerate_training")
     })
+    collapsed = sorted({
+        model for model, block in models_block.items()
+        if block.get("subject_level")
+        and block["subject_level"].get("positive_rate_predicted") in (0.0, 1.0)
+    })
 
     return {
         "experiment": config.experiment,
+        "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
+        "run_fingerprint": run_fingerprint,
         "reproduction_class": (
             "reported-method reconstruction"
             if config.experiment == "paper_reported_reconstruction" else "extension"
         ),
         "degenerate_training_models": degenerate,
         "degenerate_training_note": (
-            "이 모델들은 early stopping이 epoch 0 가중치를 복원했다. 사실상 학습되지 "
-            "않은 상태이므로 성능 결과로 인용하지 않는다."
+            "이 모델들은 유한한 optimizer update/parameter change를 남기지 못했다. "
+            "사실상 학습되지 않은 상태이므로 성능 결과로 인용하지 않는다."
         ) if degenerate else None,
+        "collapsed_classification_models": collapsed,
+        "collapsed_classification_note": (
+            "평가에 적용된 임계값에서 모든 피험자를 한 클래스로 예측했다. Accuracy가 "
+            "다수 클래스 비율과 같아도 분류 성능 재현으로 보지 않는다."
+        ) if collapsed else None,
         "config": config.raw,
         "config_path": str(config.path) if config.path else None,
         "seed": config.seed,
@@ -568,7 +759,7 @@ def run_experiment(
         "models": models_block,
         "folds": fold_records,
         "all_audits_passed": all(
-            r.get("audit_passed", True) for r in fold_records
+            r.get("audit_passed") is True for r in fold_records
         ) and dataset_audit.passed,
     }
 

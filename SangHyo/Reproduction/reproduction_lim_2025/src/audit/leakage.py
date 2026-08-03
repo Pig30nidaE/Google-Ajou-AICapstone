@@ -281,6 +281,27 @@ def audit_split(
     if train_rep.row_ids is not None and test_rep.row_ids is not None:
         if train_rep.kind == "temporal_sequence":
             check_sequence_source_overlap(train_rep, test_rep, log, tag=tag)
+            log.record(
+                f"sequence_truncation_disclosed{tag}",
+                True,
+                {
+                    "train_truncated_observations": int(
+                        train_rep.meta.get("truncated_observations", 0)
+                    ),
+                    "test_truncated_observations": int(
+                        test_rep.meta.get("truncated_observations", 0)
+                    ),
+                    "train_truncated_span_steps": int(
+                        train_rep.meta.get("truncated_span_steps", 0)
+                    ),
+                    "test_truncated_span_steps": int(
+                        test_rep.meta.get("truncated_span_steps", 0)
+                    ),
+                    "test_truncated_subjects": list(
+                        test_rep.meta.get("truncated_subjects", [])
+                    ),
+                },
+            )
         else:
             check_row_overlap(train_rep.row_ids, test_rep.row_ids, log, tag=tag)
 

@@ -148,3 +148,86 @@ def test_full_pipeline_leaves_real_signal_in_the_tensor(side: str) -> None:
         aligned, lengths = rep.left_aligned()
         for i, length in enumerate(lengths):
             assert np.abs(aligned[i, :length]).sum() > 0
+
+
+def test_calendar_gap_is_zeroed_but_keeps_its_time_position() -> None:
+    daily = pd.DataFrame(
+        [
+            {
+                "subject_id": "s0", "date": pd.Timestamp("2020-01-01"),
+                "label": 0, FEATURE: 10.0, "row_id": 0,
+            },
+            {
+                "subject_id": "s0", "date": pd.Timestamp("2020-01-03"),
+                "label": 0, FEATURE: 30.0, "row_id": 1,
+            },
+        ]
+    )
+    rep = build_temporal_sequence(
+        daily,
+        [FEATURE],
+        sequence_length=5,
+        padding="pre",
+        gap_handling="calendar",
+    )
+
+    assert rep.lengths.tolist() == [3], "calendar span is Jan 1 through Jan 3"
+    assert rep.valid_mask()[0].tolist() == [False, False, True, False, True]
+    assert rep.span_mask()[0].tolist() == [False, False, True, True, True]
+
+    pre = FoldPreprocessor(standardize=True)
+    rep.X = pre.fit_transform(
+        rep.X,
+        subjects=rep.subjects,
+        feature_names=rep.feature_names,
+        mask=rep.valid_mask(),
+    )
+    zero_padding(rep)
+    aligned, lengths = rep.left_aligned()
+    assert lengths.tolist() == [3]
+    assert aligned[0, 1, 0] == 0.0, "the missing Jan 2 slot must remain a gap"
+    assert np.allclose(aligned[0, 3:, 0], 0.0), "external padding must trail"
+
+
+def test_calendar_observation_mask_does_not_depend_on_row_id() -> None:
+    daily = pd.DataFrame(
+        [
+            {"subject_id": "s0", "date": "2020-01-01", "label": 0, FEATURE: 10.0},
+            {"subject_id": "s0", "date": "2020-01-03", "label": 0, FEATURE: 30.0},
+        ]
+    )
+    rep = build_temporal_sequence(
+        daily, [FEATURE], sequence_length=3, padding="post", gap_handling="calendar"
+    )
+    assert rep.valid_mask()[0].tolist() == [True, False, True]
+
+
+def test_calendar_truncation_counts_observations_separately_from_gaps() -> None:
+    daily = pd.DataFrame(
+        [
+            {
+                "subject_id": "s0", "date": f"2020-01-0{day}",
+                "label": 0, FEATURE: float(day), "row_id": index,
+            }
+            for index, day in enumerate((1, 3, 5))
+        ]
+    )
+    rep = build_temporal_sequence(
+        daily, [FEATURE], sequence_length=3, truncation="last",
+        padding="post", gap_handling="calendar",
+    )
+    assert rep.meta["truncated_span_steps"] == 2
+    assert rep.meta["truncated_observations"] == 1
+    assert rep.meta["source_observed_days_max"] == 3
+    assert rep.meta["observed_days_max"] == 2
+
+
+def test_calendar_mode_rejects_duplicate_subject_dates() -> None:
+    daily = pd.DataFrame(
+        [
+            {"subject_id": "s0", "date": "2020-01-01", "label": 0, FEATURE: 1.0},
+            {"subject_id": "s0", "date": "2020-01-01", "label": 0, FEATURE: 2.0},
+        ]
+    )
+    with pytest.raises(ValueError, match="one row per subject-date"):
+        build_temporal_sequence(daily, [FEATURE], gap_handling="calendar")

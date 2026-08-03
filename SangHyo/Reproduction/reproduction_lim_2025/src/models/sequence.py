@@ -1,14 +1,17 @@
 """LSTM, Bi-LSTM and 1D-CNN.
 
-**Neither paper reports any architecture detail for these three models**
+**Neither paper reports the implemented architecture for these three models**
 (``unresolved_questions.md`` Q1): no layer count, hidden size, kernel size, filter
 count, dropout, optimizer, learning rate, epoch budget or batch size.  Section
-3.3.2 explains what an LSTM *is* and stops there.
+3.3.2 provides only generic structural descriptions.
 
 Everything below is therefore ``assumption_variant_minimal_architecture``, sized
-conservatively for 141 training subjects.  If these numbers do not reproduce the
-paper's 1D-CNN AUC of 0.810, that is a consequence of the missing report, not a
-failed reproduction -- ``summary()`` carries that flag into every result file.
+conservatively for 141 training subjects.  The only structural clues that the
+papers do provide are followed: the Bi-LSTM concatenates the final forward and
+backward states, and the 1D-CNN sends pooled feature maps through Flatten and a
+fully-connected classifier.  Filter counts, kernel sizes and all training
+settings remain assumptions, and ``summary()`` carries that flag into every
+result file.
 
 torch is imported lazily so that ``--dry-run``, ``--audit-only`` and the static
 tests all work in an environment without it.
@@ -25,9 +28,18 @@ import numpy as np
 ARCHITECTURE_SOURCE = "assumption_variant_minimal_architecture"
 
 DEFAULTS: dict[str, dict[str, Any]] = {
-    "lstm": {"hidden_size": 64, "num_layers": 1, "dropout": 0.2, "bidirectional": False},
-    "bilstm": {"hidden_size": 64, "num_layers": 1, "dropout": 0.2, "bidirectional": True},
-    "cnn1d": {"filters": (64, 64), "kernel_size": 3, "pool_size": 2, "dropout": 0.2},
+    "lstm": {
+        "hidden_size": 64, "num_layers": 1, "dropout": 0.2,
+        "bidirectional": False, "readout": "last_hidden",
+    },
+    "bilstm": {
+        "hidden_size": 64, "num_layers": 1, "dropout": 0.2,
+        "bidirectional": True, "readout": "last_hidden_concat",
+    },
+    "cnn1d": {
+        "filters": (64, 64), "kernel_size": 3, "pool_size": 2,
+        "dropout": 0.2, "readout": "flatten",
+    },
 }
 
 TRAINING_DEFAULTS = {
@@ -36,6 +48,7 @@ TRAINING_DEFAULTS = {
     "learning_rate": 1e-3,
     "batch_size": 16,
     "max_epochs": 100,
+    "early_stopping": True,
     "early_stopping_patience": 10,
     "early_stopping_metric": "auc",   # matches the reported primary metric
     "validation_fraction": 0.2,
@@ -107,7 +120,9 @@ def _require_torch():
     return torch
 
 
-def _build_module(name: str, n_features: int, params: dict[str, Any]):
+def _build_module(
+    name: str, n_features: int, n_timesteps: int, params: dict[str, Any]
+):
     """Construct the nn.Module.  Defined inside so torch stays a lazy import."""
     torch = _require_torch()
     nn = torch.nn
@@ -130,64 +145,74 @@ def _build_module(name: str, n_features: int, params: dict[str, Any]):
             self.dropout = nn.Dropout(float(params["dropout"]))
             self.head = nn.Linear(out_dim, 1)
 
-        def forward(self, x, lengths=None):
+        def forward(self, x, lengths=None, padding_side="post"):
             if lengths is None:
-                output, _ = self.rnn(x)
-                pooled = output[:, -1, :]
+                _, (hidden, _) = self.rnn(x)
             else:
                 lengths_cpu = lengths.detach().cpu().clamp(min=1)
                 packed = nn.utils.rnn.pack_padded_sequence(
                     x, lengths_cpu, batch_first=True, enforce_sorted=False
                 )
-                packed_out, _ = self.rnn(packed)
-                output, _ = nn.utils.rnn.pad_packed_sequence(
-                    packed_out, batch_first=True, total_length=x.shape[1]
-                )
-                # Mean over valid timesteps only -- padding must not enter the pool.
-                mask = (
-                    torch.arange(x.shape[1], device=x.device)[None, :]
-                    < lengths.to(x.device)[:, None]
-                ).unsqueeze(-1).float()
-                pooled = (output * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1.0)
+                _, (hidden, _) = self.rnn(packed)
+            if self.bidirectional:
+                # Last layer's forward/backward states.  This is the closest
+                # executable interpretation of the papers' "concatenate" clue.
+                pooled = torch.cat((hidden[-2], hidden[-1]), dim=1)
+            else:
+                pooled = hidden[-1]
             return self.head(self.dropout(pooled)).squeeze(-1)
 
     class Conv1dClassifier(nn.Module):
-        """Two Conv1d blocks then masked global average pooling."""
+        """Two Conv1d blocks, Flatten, then a fully-connected classifier."""
 
         def __init__(self) -> None:
             super().__init__()
             filters = tuple(int(f) for f in params["filters"])
             kernel = int(params["kernel_size"])
+            pool_size = int(params["pool_size"])
+            if not filters or any(value <= 0 for value in filters):
+                raise ValueError("cnn1d filters must be a non-empty sequence of positives")
+            if kernel < 1 or kernel % 2 == 0:
+                raise ValueError(
+                    "cnn1d kernel_size must be a positive odd integer so same-padding "
+                    "preserves the configured sequence length"
+                )
+            if pool_size < 1:
+                raise ValueError("cnn1d pool_size must be a positive integer")
             layers: list[Any] = []
             in_channels = n_features
             for out_channels in filters:
                 layers += [
                     nn.Conv1d(in_channels, out_channels, kernel_size=kernel, padding=kernel // 2),
                     nn.ReLU(),
-                    nn.MaxPool1d(int(params["pool_size"])),
+                    nn.MaxPool1d(pool_size),
                 ]
                 in_channels = out_channels
             self.features = nn.Sequential(*layers)
             self.dropout = nn.Dropout(float(params["dropout"]))
-            self.head = nn.Linear(in_channels, 1)
             self.n_pools = len(filters)
-            self.pool_size = int(params["pool_size"])
+            self.pool_size = pool_size
+            output_timesteps = int(n_timesteps)
+            for _ in range(self.n_pools):
+                output_timesteps //= self.pool_size
+            if output_timesteps < 1:
+                raise ValueError(
+                    f"cnn1d sequence length {n_timesteps} is too short for "
+                    f"{self.n_pools} pool layers of size {self.pool_size}"
+                )
+            self.output_timesteps = output_timesteps
+            self.head = nn.Linear(in_channels * output_timesteps, 1)
 
-        def forward(self, x, lengths=None):
+        def forward(self, x, lengths=None, padding_side="post"):
             # (B, T, F) -> (B, F, T) for Conv1d.
+            # The input builder has already restored padding to exact zeros.
+            # The papers do not report a Conv mask, and approximating post-conv
+            # support from lengths is wrong after repeated convolution/pooling
+            # for odd lengths.  Preserve the padded tensor verbatim and let the
+            # reported Flatten readout see the fixed-length feature map.
             z = self.features(x.transpose(1, 2))
-            if lengths is None:
-                pooled = z.mean(dim=2)
-            else:
-                scaled = lengths.to(z.device).float()
-                for _ in range(self.n_pools):
-                    scaled = torch.floor(scaled / self.pool_size)
-                scaled = scaled.clamp(min=1.0)
-                mask = (
-                    torch.arange(z.shape[2], device=z.device)[None, :] < scaled[:, None]
-                ).unsqueeze(1).float()
-                pooled = (z * mask).sum(dim=2) / mask.sum(dim=2).clamp(min=1.0)
-            return self.head(self.dropout(pooled)).squeeze(-1)
+            flattened = z.flatten(start_dim=1)
+            return self.head(self.dropout(flattened)).squeeze(-1)
 
     if name in ("lstm", "bilstm"):
         return RecurrentClassifier()
@@ -206,13 +231,18 @@ class SequenceModel:
     device: str = "cpu"
     module: Any = None
     n_features: int | None = None
+    n_timesteps: int | None = None
+    padding_side: str = "post"
     history: dict[str, Any] = field(default_factory=dict)
 
     # -- construction ---------------------------------------------------------
-    def build(self, n_features: int) -> "SequenceModel":
+    def build(self, n_features: int, n_timesteps: int) -> "SequenceModel":
         torch = _require_torch()
         self.n_features = int(n_features)
-        self.module = _build_module(self.name, self.n_features, self.params)
+        self.n_timesteps = int(n_timesteps)
+        self.module = _build_module(
+            self.name, self.n_features, self.n_timesteps, self.params
+        )
         self.module.to(torch.device(self.device))
         return self
 
@@ -223,36 +253,70 @@ class SequenceModel:
         y: np.ndarray,
         *,
         lengths: np.ndarray | None = None,
+        padding_side: str = "post",
         seed: int = 42,
     ) -> "SequenceModel":
         torch = _require_torch()
+        torch.manual_seed(int(seed))
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(int(seed))
         X = np.asarray(X, dtype=np.float32)
         if X.ndim != 3:
             raise ValueError(f"{self.name} expects (N, T, F); got shape {X.shape}")
         y = np.asarray(y, dtype=np.float32)
+        if y.shape != (len(X),):
+            raise ValueError(
+                f"labels must have shape ({len(X)},), got {y.shape}"
+            )
+        if padding_side not in ("pre", "post"):
+            raise ValueError(f"padding_side must be pre/post, got {padding_side!r}")
+        self.padding_side = padding_side
         if self.module is None:
-            self.build(X.shape[2])
+            self.build(X.shape[2], X.shape[1])
         if X.shape[2] != self.n_features:
             raise ValueError(
                 f"feature count changed after build: expected {self.n_features}, got {X.shape[2]}"
+            )
+        if X.shape[1] != self.n_timesteps:
+            raise ValueError(
+                f"sequence length changed after build: expected {self.n_timesteps}, "
+                f"got {X.shape[1]}"
             )
 
         cfg = {**TRAINING_DEFAULTS, **self.training}
         device = torch.device(self.device)
         generator = torch.Generator().manual_seed(int(seed))
+        max_epochs = int(cfg["max_epochs"])
+        batch_size = int(cfg["batch_size"])
+        if max_epochs < 1:
+            raise ValueError("max_epochs must be at least 1")
+        if batch_size < 1:
+            raise ValueError("batch_size must be at least 1")
 
         lengths_arr = (
             np.full(len(X), X.shape[1], dtype=np.int64)
             if lengths is None
             else np.asarray(lengths, dtype=np.int64)
         )
+        if lengths_arr.shape != (len(X),):
+            raise ValueError(
+                f"lengths must have shape ({len(X)},), got {lengths_arr.shape}"
+            )
+        if (lengths_arr < 1).any() or (lengths_arr > X.shape[1]).any():
+            raise ValueError("every sequence length must be in [1, T]")
 
-        # Early stopping needs a held-out slice, carved from the training rows only.
-        # It is stratified: an unstratified draw of ~28 subjects from a 40%-positive
-        # pool swings the monitored class balance enough to make the signal noise.
-        val_idx, tr_idx = _stratified_monitor_split(
-            y, fraction=float(cfg["validation_fraction"]), seed=seed
-        )
+        early_stopping_enabled = bool(cfg.get("early_stopping", True))
+        if early_stopping_enabled:
+            # This is a reconstruction assumption, not a reported paper step.
+            # It is stratified so the tiny monitor slice retains both classes.
+            val_idx, tr_idx = _stratified_monitor_split(
+                y, fraction=float(cfg["validation_fraction"]), seed=seed
+            )
+        else:
+            # Experiment A uses all 141 official Training subjects.  The papers
+            # report no internal holdout or neural-network early stopping.
+            val_idx = np.array([], dtype=int)
+            tr_idx = np.arange(len(y), dtype=int)
 
         tensors = {
             "X": torch.from_numpy(X).to(device),
@@ -267,42 +331,50 @@ class SequenceModel:
         )
         optimizer = torch.optim.Adam(self.module.parameters(), lr=float(cfg["learning_rate"]))
 
-        # The project's primary metric is ROC-AUC, and BCE loss on ~28 monitored
-        # subjects rises as soon as the net grows confident even while its ranking
-        # keeps improving -- which stopped training at epoch 0 and restored an
-        # essentially untrained model.  Monitor what we actually report.
+        # Extension arms monitor the reported ranking metric.  BCE on ~28 subjects
+        # can rise while ranking improves; experiment A disables this unreported
+        # monitor entirely and retains the final fixed epoch.
         metric = str(cfg.get("early_stopping_metric", "auc")).lower()
         if metric not in ("auc", "loss"):
             raise ValueError(f"early_stopping_metric must be auc/loss, got {metric!r}")
         higher_is_better = metric == "auc"
 
-        best_state = {k: v.detach().clone() for k, v in self.module.state_dict().items()}
+        initial_state = {
+            k: v.detach().clone() for k, v in self.module.state_dict().items()
+        }
+        best_state = {k: v.detach().clone() for k, v in initial_state.items()}
         best_score = -np.inf if higher_is_better else np.inf
         best_tiebreak = np.inf   # monitor loss, used only when the metric ties
-        best_epoch = 0
+        best_epoch = -1
         patience_left = int(cfg["early_stopping_patience"])
         losses: list[float] = []
         monitored: list[float] = []
-        batch_size = int(cfg["batch_size"])
+        optimizer_steps = 0
 
-        for epoch in range(int(cfg["max_epochs"])):
+        for epoch in range(max_epochs):
             self.module.train()
             perm = torch.randperm(len(tr_idx), generator=generator).numpy()
             shuffled = tr_idx[perm]
             epoch_loss, seen = 0.0, 0
             for start in range(0, len(shuffled), batch_size):
                 batch = shuffled[start:start + batch_size]
-                if len(batch) < 2:
-                    continue
+                batch_device = torch.as_tensor(
+                    batch, dtype=torch.long, device=device
+                )
+                batch_cpu = torch.as_tensor(batch, dtype=torch.long)
                 optimizer.zero_grad()
-                logits = self.module(tensors["X"][batch], tensors["len"][batch])
-                loss = criterion(logits, tensors["y"][batch])
+                logits = self.module(
+                    tensors["X"][batch_device], tensors["len"][batch_cpu],
+                    padding_side=self.padding_side,
+                )
+                loss = criterion(logits, tensors["y"][batch_device])
                 loss.backward()
                 if cfg.get("grad_clip"):
                     torch.nn.utils.clip_grad_norm_(
                         self.module.parameters(), float(cfg["grad_clip"])
                     )
                 optimizer.step()
+                optimizer_steps += 1
                 epoch_loss += float(loss.item()) * len(batch)
                 seen += len(batch)
             losses.append(epoch_loss / max(seen, 1))
@@ -310,27 +382,37 @@ class SequenceModel:
             if len(val_idx):
                 self.module.eval()
                 with torch.no_grad():
-                    logits = self.module(tensors["X"][val_idx], tensors["len"][val_idx])
-                    current_loss = float(criterion(logits, tensors["y"][val_idx]).item())
+                    val_device = torch.as_tensor(
+                        val_idx, dtype=torch.long, device=device
+                    )
+                    val_cpu = torch.as_tensor(val_idx, dtype=torch.long)
+                    logits = self.module(
+                        tensors["X"][val_device], tensors["len"][val_cpu],
+                        padding_side=self.padding_side,
+                    )
+                    current_loss = float(
+                        criterion(logits, tensors["y"][val_device]).item()
+                    )
                     current = (
                         _safe_auc(y[val_idx], torch.sigmoid(logits).cpu().numpy())
                         if higher_is_better else current_loss
                     )
             else:
-                # No usable monitor split: fall back to training loss, which always
-                # improves, so this degenerates to "train for max_epochs".
+                # With early stopping disabled, the full official Training split is
+                # fitted for exactly max_epochs and the final epoch is retained.
                 current_loss = losses[-1]
                 current = -losses[-1] if higher_is_better else losses[-1]
             monitored.append(current)
 
-            if higher_is_better:
-                # AUC saturates: on a small monitor split it can hit 1.0 at epoch 0
-                # and never "improve" again, which would restore untrained weights.
-                # Break ties on the monitor loss so training keeps progressing.
+            if not early_stopping_enabled:
+                improved = True
+            elif higher_is_better:
+                # AUC can saturate on a small monitor split after the first trained
+                # epoch. Break ties on loss so later trained states remain eligible.
                 improved = current > best_score + 1e-5 or (
                     abs(current - best_score) <= 1e-5 and current_loss < best_tiebreak - 1e-5
                 )
-            else:
+            elif not higher_is_better:
                 improved = current < best_score - 1e-5
 
             if improved:
@@ -339,15 +421,27 @@ class SequenceModel:
                 best_epoch = epoch
                 best_state = {k: v.detach().clone() for k, v in self.module.state_dict().items()}
                 patience_left = int(cfg["early_stopping_patience"])
-            else:
+            elif early_stopping_enabled:
                 patience_left -= 1
                 if patience_left <= 0:
                     break
 
         self.module.load_state_dict(best_state)
-        # Restoring epoch 0 means we report a barely-trained network. That is a
-        # training failure, not a finding, so make it impossible to miss.
-        train_loss_improved = bool(losses and (losses[0] - min(losses)) > 0.05)
+        parameter_delta_sq = 0.0
+        for name, value in best_state.items():
+            delta = value.detach().float().cpu() - initial_state[name].detach().float().cpu()
+            parameter_delta_sq += float((delta * delta).sum().item())
+        parameter_delta_l2 = float(np.sqrt(parameter_delta_sq))
+        finite_training = bool(losses and np.isfinite(np.asarray(losses)).all())
+        # epoch 0 is the first *trained* epoch, not the random initialisation.
+        # Degeneracy therefore means no optimiser update / no parameter change /
+        # non-finite optimisation, not merely best_epoch == 0.
+        degenerate_training = bool(
+            optimizer_steps == 0
+            or not np.isfinite(parameter_delta_l2)
+            or parameter_delta_l2 <= 1e-12
+            or not finite_training
+        )
         self.history = {
             "epochs_run": len(losses),
             "train_loss": losses,
@@ -355,25 +449,59 @@ class SequenceModel:
             "monitor_score": monitored,
             "best_monitor_score": float(best_score),
             "best_epoch": int(best_epoch),
-            "early_stopped": len(losses) < int(cfg["max_epochs"]),
+            "early_stopping_enabled": early_stopping_enabled,
+            "early_stopped": bool(
+                early_stopping_enabled and len(losses) < max_epochs
+            ),
+            "optimizer_fit_size": int(len(tr_idx)),
+            "optimizer_fit_positives": int(y[tr_idx].sum()),
+            "optimizer_steps": int(optimizer_steps),
+            "parameter_delta_l2": parameter_delta_l2,
             "monitor_split_size": int(len(val_idx)),
             "monitor_split_positives": int(y[val_idx].sum()) if len(val_idx) else 0,
-            "degenerate_training": bool(best_epoch == 0 and train_loss_improved),
+            "degenerate_training": degenerate_training,
         }
         return self
 
     # -- inference ------------------------------------------------------------
-    def predict_proba(self, X: np.ndarray, *, lengths: np.ndarray | None = None) -> np.ndarray:
+    def predict_proba(
+        self,
+        X: np.ndarray,
+        *,
+        lengths: np.ndarray | None = None,
+        padding_side: str | None = None,
+    ) -> np.ndarray:
         torch = _require_torch()
         if self.module is None:
             raise RuntimeError(f"{self.name} has not been built/fitted")
         X = np.asarray(X, dtype=np.float32)
+        if X.ndim != 3:
+            raise ValueError(f"{self.name} expects (N, T, F); got shape {X.shape}")
+        if X.shape[2] != self.n_features:
+            raise ValueError(
+                f"feature count changed after build: expected {self.n_features}, "
+                f"got {X.shape[2]}"
+            )
+        if X.shape[1] != self.n_timesteps:
+            raise ValueError(
+                f"sequence length changed after build: expected {self.n_timesteps}, "
+                f"got {X.shape[1]}"
+            )
         device = torch.device(self.device)
+        side = self.padding_side if padding_side is None else padding_side
+        if side not in ("pre", "post"):
+            raise ValueError(f"padding_side must be pre/post, got {side!r}")
         lengths_arr = (
             np.full(len(X), X.shape[1], dtype=np.int64)
             if lengths is None
             else np.asarray(lengths, dtype=np.int64)
         )
+        if lengths_arr.shape != (len(X),):
+            raise ValueError(
+                f"lengths must have shape ({len(X)},), got {lengths_arr.shape}"
+            )
+        if (lengths_arr < 1).any() or (lengths_arr > X.shape[1]).any():
+            raise ValueError("every sequence length must be in [1, T]")
         self.module.eval()
         outputs: list[np.ndarray] = []
         with torch.no_grad():
@@ -382,6 +510,7 @@ class SequenceModel:
                 logits = self.module(
                     torch.from_numpy(X[chunk]).to(device),
                     torch.from_numpy(lengths_arr[chunk]),
+                    padding_side=side,
                 )
                 outputs.append(torch.sigmoid(logits).cpu().numpy())
         return np.concatenate(outputs).astype(np.float64) if outputs else np.array([])
@@ -397,6 +526,9 @@ class SequenceModel:
                 "params": self.params,
                 "training": self.training,
                 "n_features": self.n_features,
+                "n_timesteps": self.n_timesteps,
+                "padding_side": self.padding_side,
+                "architecture_version": 2,
                 "state_dict": self.module.state_dict(),
                 "history": self.history,
             },
@@ -408,11 +540,17 @@ class SequenceModel:
     def load(cls, path: str | Path, *, device: str = "cpu") -> "SequenceModel":
         torch = _require_torch()
         blob = torch.load(Path(path), map_location=device, weights_only=False)
+        if int(blob.get("architecture_version", 1)) != 2:
+            raise ValueError(
+                "legacy sequence checkpoint uses the pre-fix pooling architecture; "
+                "rerun the experiment to create a version-2 checkpoint"
+            )
         model = cls(
             name=blob["name"], params=blob["params"], training=blob["training"],
             device=device, history=blob.get("history", {}),
+            padding_side=blob.get("padding_side", "post"),
         )
-        model.build(int(blob["n_features"]))
+        model.build(int(blob["n_features"]), int(blob["n_timesteps"]))
         model.module.load_state_dict(blob["state_dict"])
         model.module.eval()
         return model
@@ -430,6 +568,9 @@ class SequenceModel:
             "params": dict(self.params),
             "training": {**TRAINING_DEFAULTS, **self.training},
             "n_features": self.n_features,
+            "n_timesteps": self.n_timesteps,
+            "padding_side": self.padding_side,
+            "architecture_version": 2,
         }
         if self.module is not None:
             summary["n_parameters"] = int(
@@ -441,16 +582,18 @@ class SequenceModel:
                 key: self.history[key]
                 for key in (
                     "epochs_run", "best_epoch", "monitor_metric", "best_monitor_score",
-                    "early_stopped", "monitor_split_size", "monitor_split_positives",
-                    "degenerate_training",
+                    "early_stopping_enabled", "early_stopped", "optimizer_fit_size",
+                    "optimizer_fit_positives", "optimizer_steps", "parameter_delta_l2",
+                    "monitor_split_size",
+                    "monitor_split_positives", "degenerate_training",
                 )
                 if key in self.history
             }
             if self.history.get("degenerate_training"):
                 summary["training_diagnostics"]["warning"] = (
-                    "Early stopping restored the epoch-0 weights while the training "
-                    "loss was still improving: this model is essentially untrained "
-                    "and its metrics are not a performance result."
+                    "No finite optimiser-driven parameter change was retained. This "
+                    "model is effectively untrained and its metrics are not a "
+                    "performance result."
                 )
         return summary
 

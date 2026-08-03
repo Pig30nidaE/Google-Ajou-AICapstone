@@ -238,11 +238,12 @@ def inspect_data(data_root: str | Path) -> dict[str, Any]:
 
     n_effective = len(schema.PAPER_CODE_FEATURES)
     checks.append(Check(
-        "n_features", "실제 학습에 들어가는 특징 수",
+        "n_features", "RF/XGBoost 제시 코드에서 남는 특징 수",
         PAPER_CLAIMS["n_features"], n_effective,
         n_effective == PAPER_CLAIMS["n_features"], "high",
-        "논문 코드를 그대로 실행하면 49개가 생성된다 "
-        "(activity 22 + sleep 27). 58은 email과 DIAG_NIM을 포함한 표 행 수",
+        "논문의 피험자 평균 numeric_only 코드를 실행하면 49개가 생성된다 "
+        "(activity 22 + sleep 27). 58은 email과 DIAG_NIM을 포함한 표 행 수. "
+        "딥러닝 F=49는 별도 재구성 가정이다",
     ))
 
     # --- 12. zero-variance / administrative ----------------------------------

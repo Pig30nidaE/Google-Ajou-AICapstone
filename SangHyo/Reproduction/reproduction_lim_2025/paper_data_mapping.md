@@ -135,9 +135,11 @@ sleep_date    = to_datetime(sleep_bedtime_end,  utc=True).tz_convert("Asia/Seoul
 
 ---
 
-## 3. 최종 특징 49개 (paper_code_verbatim)
+## 3. RF/XGBoost 코드에서 복원된 특징 49개 (paper_code_verbatim)
 
-논문 코드를 그대로 실행했을 때 생성되는 컬럼 목록이다. 본 재현의 기본 특징집합이다.
+논문에 제시된 피험자 평균·`numeric_only=True` 코드를 실행했을 때 생성되는 컬럼 목록이다.
+RF/XGBoost에는 직접 근거가 있지만, 딥러닝 입력 코드와 shape는 보고되지 않았다. 본 재현이
+LSTM/Bi-LSTM/1D-CNN에도 이 49개를 쓰는 것은 `assumption_variant_shared_49_features`다.
 
 ### 3-1. Activity (22개)
 ```
@@ -309,7 +311,7 @@ label = 1  if DIAG_NM in {"MCI", "Dem"}
 | 4 | `active_low` | 기재 | 실제는 `activity_low` | 낮음 — 표기 오류 |
 | 5 | `sleep_temperature_trend_deviation` | 기재 | **부재** | 중 — 특징 수 감소 |
 | 6 | `DIAG_NIM` | 기재 | 실제는 `DIAG_NM` | 낮음 — 표기 오류 |
-| 7 | 사용 변수 58개 | 주장 | 논문 코드 실행 결과 **49개** | **높음** — 입력 차원 불일치 |
+| 7 | 사용 변수 58개 | 주장 | RF/XGB 제시 코드 실행 결과 **49개**; 딥러닝 F 미확인 | **높음** — 입력 차원 불일치 |
 | 8 | 5분 단위 BLOB 사용 | 표에 포함 | `numeric_only`가 전부 탈락 | **높음** — 서술과 코드 모순 |
 | 9 | 5분 계열 위치 | 미언급 | `CONVERT(...)` 컬럼에 실재 | 중 — 논문이 놓친 자료 |
 | 10 | `Q003` | 기재 | 실제는 `Q03` | 낮음 |

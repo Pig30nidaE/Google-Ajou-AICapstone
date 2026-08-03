@@ -60,14 +60,14 @@
 | 포함 기준 | 55세 이상, 전문의 병리진단, 60–80대 | 별도 인구통계 컬럼 없음 | ✅(서술) | 전수 사용 |
 | 제외 기준 | 미착용 관련 변수 **컬럼** 제외만 언급. **행/피험자 제외 기준 없음** | 결측 행 0 | ✅ | 행 제외 없음 |
 | 타깃 정의 | `DIAG_NIM` → 이진: CN=0, MCI·Dem=1 | 실제 컬럼명 `DIAG_NM` | ✅(오타) | CN=0, MCI+Dem=1 |
-| 사용 변수 | **58개** | 논문 표 9–11의 58행 = 실제 특징 56개 + `email` + `DIAG_NIM`. 그중 2개는 데이터에 **없고**, 6개는 문자열이라 `numeric_only=True`가 **조용히 탈락**시킴 → **실제 49개** | ⚠️ **불일치** | 49개 (paper_code_verbatim) |
+| 사용 변수 | **58개** | 논문 표 9–11의 58행 = 실제 특징 56개 + `email` + `DIAG_NIM`. 그중 2개는 데이터에 **없고**, 6개는 문자열이라 RF/XGB의 `numeric_only=True`에서 **조용히 탈락** → 트리 입력 **49개** | ⚠️ **불일치** | RF/XGB 49개; 딥러닝도 49개를 쓰는 것은 가정 |
 | 제거 변수 목록 | `activity_non_wear`, `nonwear`, `activity_inactivity_alerts`, `check`, `timezone` | 이 중 실제 존재는 `activity_non_wear`, `activity_inactivity_alerts` 2개뿐 (나머지 3개는 no-op) | ⚠️ | 목록 그대로 적용 |
 | 분석단위 (RF/XGB) | 피험자별 평균 평탄화 → 1인 1행 | 141행 / 33행 | ✅ | 동일 |
 | 분석단위 (딥러닝) | "시간 순서 유지, 정규화 후 3차원 텐서" | (N, T, F) | ✅(개념) | 동일 |
 | 피험자별 집계 방식 | `groupby('EMAIL').mean(numeric_only=True)` | 코드 스니펫 그대로 실행 가능 | ✅ | 동일 |
 | 시계열 구성방법 | "정규화 후 3차원 텐서", 패딩 언급 | 날짜 컬럼 없음 → 파생 필요 | ❌ 상세 미보고 | `assumption_variant` |
-| **시퀀스 길이 T** | **미보고** | 관측일수 35–122일 | ❌ | 기본 `max`(=122) + 민감도 |
-| **패딩 방식** | "패딩 구조" 언급만 | — | ❌ | pre-pad + mask (가정) |
+| **시퀀스 길이 T** | **미보고** | 관측일수 35–122일 | ❌ | 실험 A 122(full-cohort-shape 가정), B·C fold-train `max` |
+| **패딩 방식** | "패딩 구조" 언급만 | — | ❌ | pre-pad + 관측/gap mask (가정) |
 | train/test 분할 | "동일한 전처리 데이터셋을 **80:20** 비율로 학습/검증용 분할" | — | ✅(문구) | — |
 | **분할단위** | **미보고** | — | ⚠️ **피험자 단위로 복원됨** (§2) | 피험자 |
 | **분할 실체** | "80:20" | **141 : 33 = 81 : 19** = AI-Hub 공식 Training/Validation 분할 | ⚠️ **강한 추론** (§2) | `official_partition` |
@@ -75,11 +75,11 @@
 | 평가지표 | Accuracy, AUC, F1-score, Recall | — | ✅ | 동일 + 확장 |
 | 결정 임계값 | 미보고 | — | ❌ | 0.5 (가정) |
 | 불균형 처리 | **없음** (결론에서 "향후 class weight·focal loss 적용 필요"라고 서술 → 본 연구에서는 **미적용**) | 양성 36% | ✅(간접) | 미적용 |
-| RF 하이퍼파라미터 | **전혀 미보고** | — | ❌ | sklearn 기본값 |
+| RF 하이퍼파라미터 | **전혀 미보고**; 본문은 information gain으로 분할한다고 설명 | — | ❌ | `criterion=entropy` + 나머지 sklearn 기본값(가정) |
 | XGB 하이퍼파라미터 | `n_estimators=100, learning_rate=0.1, subsample=1.0, colsample_bytree=1.0, reg_alpha=0, reg_lambda=1, use_label_encoder=False, eval_metric='logloss'` | — | ✅ (부분) | 그대로 |
 | XGB `max_depth` / `objective` / `random_state` | **미보고** (본문에서 "최대 깊이"를 탐색했다고 하면서 결과값은 누락) | — | ❌ | XGBoost 기본값 |
 | 하이퍼파라미터 탐색 | Random Search + 5-Fold CV (5개 검증값 평균) | — | ✅(방법) | 재탐색 안 함 |
-| LSTM / Bi-LSTM / 1D-CNN 구조 | **전혀 미보고** (층 수, hidden units, kernel, filter, dropout, optimizer, lr, epoch, batch 전부 없음) | — | ❌ | 보수적 기본값 |
+| LSTM / Bi-LSTM / 1D-CNN 구조 | 실제 구현은 미보고. 일반 설명에 Bi-LSTM 양방향 상태 연결, CNN Conv→Pool→Flatten→FC 단서만 있음 | — | ❌ | 단서를 따르는 최소 구조, 나머지는 가정 |
 | 손실함수 | 미보고 | — | ❌ | BCE (가정) |
 | 정규화 방식 | "정규화" 언급만 | — | ❌ | StandardScaler (가정) |
 | 정규화 적합 범위 | **미보고** | — | ❌ | 실험 A는 두 변형 모두 제공 |
@@ -182,15 +182,16 @@
 
 ## 4. 모델별 입력 shape
 
-`N` = 피험자 수, `F` = 특징 수(paper_code_verbatim 기준 49), `T` = 시퀀스 길이.
+`N` = 피험자 수, `T` = 시퀀스 길이. RF/XGB의 `F=49`는 제시 코드를 따라 확정되지만,
+딥러닝의 `F=49`는 같은 특징집합을 확장 적용한 재구성 가정이다.
 
 | 모델 | 표현 | 입력 shape | 논문 근거 |
 | --- | --- | --- | --- |
 | Random Forest | `tabular_subject_aggregate` | (N, F) = (141, 49) / (33, 49) | ✅ 명시 |
 | XGBoost | `tabular_subject_aggregate` | (N, F) = (141, 49) / (33, 49) | ✅ 명시 |
-| LSTM | `temporal_sequence` | (N, T, F) = (141, T, 49) | ✅ 개념만, T 미보고 |
-| Bi-LSTM | `temporal_sequence` | (N, T, F) | ✅ 개념만, T 미보고 |
-| 1D-CNN | `temporal_sequence` | (N, T, F) → Conv1d는 (N, F, T)로 전치 | ✅ 개념만 |
+| LSTM | `temporal_sequence` | 실험 A (141, 122, 49) / (33, 122, 49) | ⚠️ 3D 개념만; T·F 상세는 가정 |
+| Bi-LSTM | `temporal_sequence` | 실험 A (141, 122, 49) / (33, 122, 49) | ⚠️ 양방향 개념만; shape 상세는 가정 |
+| 1D-CNN | `temporal_sequence` | (N, T, F) → Conv1d는 (N, F, T)로 전치 | ⚠️ Conv→Pool→Flatten→FC 단서만 |
 
 ---
 
@@ -275,9 +276,9 @@
 
 다음이 논문에서 확인되지 않으므로, 본 작업은 **reported-method reconstruction**이다.
 
-- 다섯 모델 중 **세 개(LSTM/Bi-LSTM/1D-CNN)의 신경망 구조가 전혀 보고되지 않았다.**
-  층 수, hidden units, kernel size, filter 수, dropout, optimizer, learning rate,
-  epoch, batch size 중 **단 하나도** 명시되지 않았다.
+- 다섯 모델 중 **세 개(LSTM/Bi-LSTM/1D-CNN)의 실제 구현 구조가 보고되지 않았다.**
+  일반적인 상태 연결·Conv/Pool/Flatten 흐름 외에 층 수, hidden units, kernel size,
+  filter 수, dropout, optimizer, learning rate, epoch, batch size가 명시되지 않았다.
 - Random Forest 하이퍼파라미터가 **전혀** 보고되지 않았다.
 - 시퀀스 길이·패딩 규칙이 보고되지 않았다.
 - random seed가 보고되지 않았다.

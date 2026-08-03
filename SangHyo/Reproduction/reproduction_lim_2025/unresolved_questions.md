@@ -14,9 +14,10 @@
 
 ## 🔴 Q1. LSTM / Bi-LSTM / 1D-CNN의 구조가 무엇인가
 
-**논문 상태**: 세 모델 모두 **구조가 전혀 기재되지 않았다.** 3.3.2절은 LSTM·Bi-LSTM·
-1D-CNN의 *일반적 개념*만 설명하고, 실제 사용한 층 수·hidden units·filter 수·kernel
-size·dropout·optimizer·learning rate·epoch·batch size 중 **하나도** 제시하지 않는다.
+**논문 상태**: 세 모델의 **실제 구현 구조가 기재되지 않았다.** 3.3.2절의 일반 설명에서
+Bi-LSTM의 양방향 상태 연결과 CNN의 Conv→Pool→Flatten→FC 흐름은 읽을 수 있지만, 실제
+층 수·hidden units·filter 수·kernel size·dropout·optimizer·learning rate·epoch·batch
+size는 제시하지 않는다.
 
 **왜 문제인가**: 논문의 최고 성능 주장(1D-CNN AUC 0.810)이 바로 이 세 모델에서 나온다.
 구조를 모르면 그 수치는 원리적으로 재현 불가능하다.
@@ -36,7 +37,8 @@ size·dropout·optimizer·learning rate·epoch·batch size 중 **하나도** 제
 보인다. 동일 입력·동일 분할에서 두 트리 앙상블이 AUC 0.085 차이를 내는 원인이
 하이퍼파라미터인지 우연인지 판단할 수 없다.
 
-**현재 대응**: scikit-learn 기본값.
+**현재 대응**: information-gain 설명에 맞춘 `criterion: entropy`와 나머지 scikit-learn
+기본값. 실제 설정이 아니라 명시적 가정이다.
 
 **추가 관찰**: RF와 XGBoost의 Accuracy/F1/Recall이 **완전히 동일**하다(둘 다 TP5 FN2 FP8
 TN18). 논문은 이를 "두 모델이 예측한 클래스가 매우 유사"하다고 해석했다. 33명 중
@@ -55,8 +57,10 @@ TN18). 논문은 이를 "두 모델이 예측한 클래스가 매우 유사"하�
 "시계열 데이터의 패딩 구조"의 문제로 지목한다. 즉 이 미보고 항목이
 **논문의 핵심 결론(1D-CNN 우위)을 좌우한다.**
 
-**현재 대응**: `sequence_length: "max"`, pre-padding + 마스킹.
-실험 C의 inner CV에서 민감도 분석으로 탐색.
+**현재 대응**: 실험 A는 full-cohort-shape 가정 `sequence_length: 122`, pre-padding과
+관측/gap mask를 사용한다. 실험 B·C의 `max`는 fold-training에서만 결정한다. recurrent
+모델은 packed sequence를 위해 외부 padding만 뒤로 옮기고, Flatten-CNN은 설정된 padding
+위치를 보존한다. 모두 가정이며 민감도 분석 대상이다.
 
 ---
 

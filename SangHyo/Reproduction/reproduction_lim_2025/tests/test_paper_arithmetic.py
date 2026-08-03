@@ -17,6 +17,7 @@ from src.evaluation.compare import (
     PAPER_EVAL_SET,
     PAPER_RECONSTRUCTED_CONFUSION,
     PAPER_REPORTED,
+    build_comparison,
     verify_paper_arithmetic,
 )
 
@@ -114,3 +115,75 @@ def test_daily_row_count_disagrees_with_the_papers(real_data_root) -> None:
     )
     assert n_rows == 12183, f"expected the measured 12,183 rows, got {n_rows}"
     assert n_rows != 12184, "the papers' figure would now agree -- update the docs"
+
+
+def test_all_negative_cnn_is_not_mistaken_for_reproduction() -> None:
+    models = {}
+    for model in PAPER_REPORTED:
+        models[model] = {
+            "subject_level": {
+                "roc_auc": 0.60,
+                "f1": 0.0,
+                "sensitivity": 0.0,
+                "accuracy": 26 / 33,
+                "positive_rate_predicted": 0.0,
+                "n": 33,
+                "n_positive": 7,
+                "n_negative": 26,
+            }
+        }
+    comparison = build_comparison(
+        {
+            "paper_reported_reconstruction": {
+                "artifact_schema_version": 2,
+                "run_fingerprint": "test-run",
+                "all_audits_passed": True,
+                "degenerate_training_models": [],
+                "reproduction_class": "reported-method reconstruction",
+                "config": {
+                    "split": {"mode": "official_partition"},
+                    "preprocessing": {"scaler_scope": "train_only"},
+                },
+                "models": models,
+            }
+        }
+    )
+    assessment = comparison["reproduction_assessment"]
+    assert assessment["status"] == "core_conclusion_not_reproduced"
+    assert not assessment["criteria"]["cnn_not_single_class_at_fixed_threshold"]
+
+
+def test_paper_like_cnn_passes_the_core_conclusion_gate() -> None:
+    models = {}
+    for model, paper in PAPER_REPORTED.items():
+        models[model] = {
+            "subject_level": {
+                **paper,
+                "positive_rate_predicted": (
+                    12 / 33 if model == "cnn1d" else 13 / 33
+                ),
+                "n": 33,
+                "n_positive": 7,
+                "n_negative": 26,
+            }
+        }
+    comparison = build_comparison(
+        {
+            "paper_reported_reconstruction": {
+                "artifact_schema_version": 2,
+                "run_fingerprint": "test-run",
+                "all_audits_passed": True,
+                "degenerate_training_models": [],
+                "reproduction_class": "reported-method reconstruction",
+                "config": {
+                    "split": {"mode": "official_partition"},
+                    "preprocessing": {"scaler_scope": "train_only"},
+                },
+                "models": models,
+            }
+        }
+    )
+    assert (
+        comparison["reproduction_assessment"]["status"]
+        == "core_conclusion_reproduced"
+    )

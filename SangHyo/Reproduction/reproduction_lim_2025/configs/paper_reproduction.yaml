@@ -18,7 +18,8 @@ data:
   sleep_date_source: bedtime_end # bedtime_end | bedtime_start
 
 features:
-  # 논문은 58개라고 쓰지만, 논문 코드를 그대로 실행하면 49개가 나온다.
+  # 논문은 58개라고 쓰지만, RF/XGB 제시 코드를 실행하면 49개가 나온다.
+  # 딥러닝에도 같은 49개를 쓰는 것은 별도 reconstruction 가정이다.
   feature_set: paper_code_verbatim
   include_cognitive_tests: false
   # 실험 A는 논문 코드를 그대로 재현하므로 무분산·행정 변수도 남긴다.
@@ -55,7 +56,10 @@ representations:
 
 representation_options:
   # 전부 논문 미보고 → assumption_variant_sequence_length
-  sequence_length: max        # max | median | min | <정수>
+  # 전체 174명에서 확인되는 최대 122일을 명시해 official Validation의 양성 1명에서
+  # 첫 2일이 잘리지 않게 한다. 이는 실험 A 전용 full-cohort-shape 가정이며,
+  # 누수 통제 실험 B·C는 계속 fold-training에서만 max를 정한다.
+  sequence_length: 122        # max | median | min | <정수>
   padding: pre                # pre | post
   truncation: last            # last | first
   gap_handling: compress      # compress | calendar
@@ -83,8 +87,12 @@ training:
   learning_rate: 0.001
   batch_size: 16
   max_epochs: 100
+  # 논문은 딥러닝 내부 validation/early stopping을 보고하지 않았다. 따라서
+  # official Training 141명 전부를 optimizer 학습에 사용하고 100 epoch를 고정한다.
+  early_stopping: false
+  early_stopping_metric: loss
   early_stopping_patience: 10
-  validation_fraction: 0.2
+  validation_fraction: 0.0
   pos_weight: null            # 논문은 불균형 보정을 적용하지 않았다
 
 evaluation:

@@ -188,3 +188,19 @@ def validate_config(config: Config) -> None:
         raise ConfigError(
             f"preprocessing.scaler_scope must be 'train_only' or 'all_data', got {scope!r}"
         )
+
+    early_stopping = config.get("training.early_stopping", True)
+    if not isinstance(early_stopping, bool):
+        raise ConfigError("training.early_stopping must be true or false")
+    validation_fraction = float(config.get("training.validation_fraction", 0.2))
+    if not 0.0 <= validation_fraction < 1.0:
+        raise ConfigError("training.validation_fraction must be in [0, 1)")
+    if early_stopping and validation_fraction <= 0.0:
+        raise ConfigError(
+            "training.early_stopping=true requires validation_fraction > 0"
+        )
+    if not early_stopping and validation_fraction != 0.0:
+        raise ConfigError(
+            "training.early_stopping=false requires validation_fraction: 0.0 so "
+            "all outer-training subjects enter optimizer fitting"
+        )

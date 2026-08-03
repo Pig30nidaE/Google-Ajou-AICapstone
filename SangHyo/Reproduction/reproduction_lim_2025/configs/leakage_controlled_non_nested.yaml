@@ -67,6 +67,8 @@ training:
   learning_rate: 0.001
   batch_size: 16
   max_epochs: 100
+  early_stopping: true
+  early_stopping_metric: auc
   early_stopping_patience: 10
   validation_fraction: 0.2
   pos_weight: null

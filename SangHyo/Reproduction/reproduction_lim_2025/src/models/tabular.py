@@ -28,9 +28,12 @@ PAPER_XGB_REPORTED = {
 #: Named in the search description but missing from the reported result string.
 XGB_ASSUMED = {"max_depth": 6, "objective": "binary:logistic"}
 
-#: Nothing about Random Forest is reported; all of this is an assumption.
+#: No RF hyperparameter table is reported.  ``criterion='entropy'`` is the one
+#: value for which the prose gives a clue: Section 3.3.1 says that each tree picks
+#: splits by information gain.  The remaining values are conservative defaults.
 RF_ASSUMED = {
     "n_estimators": 100,
+    "criterion": "entropy",
     "max_depth": None,
     "min_samples_split": 2,
     "min_samples_leaf": 1,

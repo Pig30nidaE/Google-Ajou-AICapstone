@@ -64,7 +64,11 @@ def pool_to_subjects(
 
 
 def compute_metrics(
-    y_true: Sequence[int], y_prob: Sequence[float], *, threshold: float = 0.5
+    y_true: Sequence[int],
+    y_prob: Sequence[float],
+    *,
+    threshold: float = 0.5,
+    predictions: Sequence[int] | None = None,
 ) -> dict[str, Any]:
     """All primary and secondary metrics for one set of subject-level predictions."""
     y_true = np.asarray(y_true, dtype=np.int64)
@@ -72,20 +76,28 @@ def compute_metrics(
     if len(y_true) == 0:
         raise ValueError("no predictions to score")
 
-    y_pred = (y_prob >= threshold).astype(np.int64)
+    y_pred = (
+        (y_prob >= threshold).astype(np.int64)
+        if predictions is None
+        else np.asarray(predictions, dtype=np.int64)
+    )
+    if y_pred.shape != y_true.shape:
+        raise ValueError(
+            f"predictions shape {y_pred.shape} does not match labels {y_true.shape}"
+        )
     both_classes = len(np.unique(y_true)) == 2
 
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
-    sensitivity = float(tp / (tp + fn)) if (tp + fn) else float("nan")
-    specificity = float(tn / (tn + fp)) if (tn + fp) else float("nan")
-    precision = float(tp / (tp + fp)) if (tp + fp) else float("nan")
+    sensitivity = float(tp / (tp + fn)) if (tp + fn) else None
+    specificity = float(tn / (tn + fp)) if (tn + fp) else None
+    precision = float(tp / (tp + fp)) if (tp + fp) else None
 
     return {
         # primary
-        "roc_auc": float(roc_auc_score(y_true, y_prob)) if both_classes else float("nan"),
-        "pr_auc": float(average_precision_score(y_true, y_prob)) if both_classes else float("nan"),
+        "roc_auc": float(roc_auc_score(y_true, y_prob)) if both_classes else None,
+        "pr_auc": float(average_precision_score(y_true, y_prob)) if both_classes else None,
         "balanced_accuracy": (
-            float(balanced_accuracy_score(y_true, y_pred)) if both_classes else float("nan")
+            float(balanced_accuracy_score(y_true, y_pred)) if both_classes else None
         ),
         "sensitivity": sensitivity,
         "specificity": specificity,
@@ -98,7 +110,10 @@ def compute_metrics(
         "n": int(len(y_true)),
         "n_positive": int(y_true.sum()),
         "n_negative": int((y_true == 0).sum()),
-        "threshold": float(threshold),
+        "threshold": float(threshold) if predictions is None else None,
+        "classification_source": (
+            "shared_threshold" if predictions is None else "fold_specific_decisions"
+        ),
         "positive_rate_predicted": float(y_pred.mean()),
     }
 

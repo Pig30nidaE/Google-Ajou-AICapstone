@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from . import sequence, tabular
@@ -59,6 +60,15 @@ def build_model(
         return sequence.build_sequence_model(
             name, device=device, overrides=overrides, training=training
         )
+    raise ValueError(f"unknown model {name!r}; expected one of {ALL_MODELS}")
+
+
+def load_model(name: str, path: str | Path, *, device: str = "cpu"):
+    """Reload a persisted learner for the mandatory prediction round-trip audit."""
+    if name in TABULAR_MODELS:
+        return tabular.TabularModel.load(path)
+    if name in SEQUENCE_MODELS:
+        return sequence.SequenceModel.load(path, device=device)
     raise ValueError(f"unknown model {name!r}; expected one of {ALL_MODELS}")
 
 

@@ -119,3 +119,20 @@ def test_sequence_tensors_are_scaled_per_feature(synthetic_data) -> None:
     )
     assert scaled.shape == rep.X.shape
     assert np.isfinite(scaled).all()
+
+
+def test_preprocessor_state_roundtrip_preserves_transform_and_order() -> None:
+    train = np.array([[1.0, 10.0], [3.0, 30.0], [5.0, 50.0]])
+    raw = np.array([[2.0, np.nan], [4.0, 40.0]])
+    pre = FoldPreprocessor()
+    pre.fit(train, subjects=["a", "b", "c"], feature_names=["f1", "f2"])
+
+    restored = FoldPreprocessor.from_state_record(
+        pre.state_record(), expected_feature_names=["f1", "f2"]
+    )
+    assert np.allclose(restored.transform(raw), pre.transform(raw))
+
+    with pytest.raises(PreprocessingScopeError, match="feature order"):
+        FoldPreprocessor.from_state_record(
+            pre.state_record(), expected_feature_names=["f2", "f1"]
+        )

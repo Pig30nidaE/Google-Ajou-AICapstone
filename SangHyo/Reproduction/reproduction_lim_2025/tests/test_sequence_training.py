@@ -1,10 +1,9 @@
-"""Early stopping must not restore an untrained network.
+"""Sequence optimisation and the paper-arm fixed-epoch contract.
 
-Regression tests for the second failure in experiment A: the monitor split was
-unstratified and the monitored quantity was BCE loss on ~28 subjects.  That loss
-rises as soon as the net grows confident, so the best epoch was 0 and early
-stopping restored the initial weights -- the reported LSTM/Bi-LSTM numbers came
-from an essentially untrained model.
+The audited paper arm used an unreported monitor split and trained on only 113 of
+141 subjects.  The corrected paper arm uses all 141 for fixed epochs; extension
+arms retain a stratified monitor.  Epoch index 0 means the first trained epoch,
+so degeneracy is based on optimiser steps and parameter change instead.
 """
 
 from __future__ import annotations
@@ -60,7 +59,7 @@ def test_monitor_split_both_sides_have_both_classes() -> None:
 # --- monitored metric ---------------------------------------------------------
 
 def test_default_monitor_metric_is_auc() -> None:
-    """BCE loss on a tiny monitor split stopped training at epoch 0."""
+    """Extension arms monitor the primary ranking metric, not tiny-slice BCE."""
     assert TRAINING_DEFAULTS["early_stopping_metric"] == "auc"
 
 
@@ -100,7 +99,9 @@ def test_model_trains_past_initialisation_on_a_learnable_signal(name: str) -> No
     model.fit(X, y, lengths=np.full(n, timesteps), seed=0)
 
     history = model.history
-    assert history["best_epoch"] > 0, "restored the untrained initial weights"
+    assert history["best_epoch"] >= 0, "no trained epoch was retained"
+    assert history["optimizer_steps"] > 0
+    assert history["parameter_delta_l2"] > 0
     assert not history["degenerate_training"]
     probabilities = model.predict_proba(X, lengths=np.full(n, timesteps))
     assert probabilities.max() - probabilities.min() > 0.2, (
@@ -126,3 +127,45 @@ def test_history_records_the_diagnostics_the_report_needs() -> None:
     diagnostics = model.summary()["training_diagnostics"]
     assert diagnostics["monitor_metric"] == "auc"
     assert isinstance(diagnostics["degenerate_training"], bool)
+
+
+def test_fixed_epoch_mode_uses_every_outer_training_subject() -> None:
+    """Paper arm must not silently hold 20% of the 141 subjects out of fitting."""
+    pytest.importorskip("torch")
+    from src.models.registry import build_model
+
+    rng = np.random.default_rng(4)
+    X = rng.normal(size=(9, 8, 3))
+    y = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0])
+    model = build_model(
+        "cnn1d",
+        seed=0,
+        device="cpu",
+        training={
+            "max_epochs": 2,
+            "batch_size": 8,  # exercises the valid singleton final batch
+            "early_stopping": False,
+            "early_stopping_metric": "loss",
+            "validation_fraction": 0.0,
+        },
+    )
+    model.fit(X, y, lengths=np.full(len(X), 8), padding_side="pre", seed=0)
+
+    assert model.history["epochs_run"] == 2
+    assert model.history["optimizer_fit_size"] == len(X)
+    assert model.history["monitor_split_size"] == 0
+    assert not model.history["early_stopping_enabled"]
+    assert model.padding_side == "pre"
+
+
+def test_cnn_uses_the_paper_described_flatten_readout() -> None:
+    pytest.importorskip("torch")
+    from src.models.registry import build_model
+
+    model = build_model("cnn1d", seed=0, device="cpu")
+    model.build(n_features=3, n_timesteps=12)
+
+    # Two pool-size-2 stages reduce T=12 to 3; Flatten therefore feeds 64*3.
+    assert model.params["readout"] == "flatten"
+    assert model.module.output_timesteps == 3
+    assert model.module.head.in_features == 64 * 3

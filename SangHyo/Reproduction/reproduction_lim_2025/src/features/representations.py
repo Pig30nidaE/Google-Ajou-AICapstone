@@ -98,6 +98,15 @@ class FoldPreprocessor:
                 "training part of the current fold first"
             )
         X = np.asarray(X, dtype=np.float64)
+        if X.ndim not in (2, 3):
+            raise PreprocessingScopeError(
+                f"expected a 2D/3D feature array, got shape {X.shape}"
+            )
+        if X.shape[-1] != len(self.feature_names):
+            raise PreprocessingScopeError(
+                "feature count/order contract changed: state expects "
+                f"{len(self.feature_names)} columns, input has {X.shape[-1]}"
+            )
         shape = X.shape
         flat = X.reshape(-1, shape[-1]) if X.ndim == 3 else X
         if self.impute:
@@ -128,6 +137,77 @@ class FoldPreprocessor:
             "n_features": len(self.feature_names),
         }
 
+    def state_record(self) -> dict[str, Any]:
+        """Serializable transform state needed to reproduce raw-input inference."""
+        if not self._is_fit:
+            raise PreprocessingScopeError("cannot serialise an unfitted preprocessor")
+        return {
+            "standardize": bool(self.standardize),
+            "impute": bool(self.impute),
+            "feature_names": list(self.feature_names),
+            "medians": self.medians_.tolist(),
+            "mean": self.mean_.tolist(),
+            "scale": self.scale_.tolist(),
+            "fitted_subjects": list(self.fitted_subjects),
+        }
+
+    @classmethod
+    def from_state_record(
+        cls,
+        state: dict[str, Any],
+        *,
+        expected_feature_names: Sequence[str] | None = None,
+    ) -> "FoldPreprocessor":
+        """Restore a fitted transform and fail closed on order/shape corruption."""
+        required = {
+            "standardize", "impute", "feature_names", "medians", "mean", "scale",
+            "fitted_subjects",
+        }
+        missing = sorted(required - set(state))
+        if missing:
+            raise PreprocessingScopeError(
+                f"preprocessor checkpoint is missing fields: {missing}"
+            )
+
+        names = tuple(map(str, state["feature_names"]))
+        if expected_feature_names is not None:
+            expected = tuple(map(str, expected_feature_names))
+            if names != expected:
+                raise PreprocessingScopeError(
+                    "preprocessor feature order differs from the representation: "
+                    f"checkpoint={names}, representation={expected}"
+                )
+
+        arrays = {
+            "medians": np.asarray(state["medians"], dtype=np.float64),
+            "mean": np.asarray(state["mean"], dtype=np.float64),
+            "scale": np.asarray(state["scale"], dtype=np.float64),
+        }
+        for key, values in arrays.items():
+            if values.ndim != 1 or len(values) != len(names):
+                raise PreprocessingScopeError(
+                    f"preprocessor {key} shape {values.shape} does not match "
+                    f"{len(names)} feature names"
+                )
+            if not np.isfinite(values).all():
+                raise PreprocessingScopeError(
+                    f"preprocessor {key} contains a non-finite value"
+                )
+        if (arrays["scale"] <= 0).any():
+            raise PreprocessingScopeError("preprocessor scale must be strictly positive")
+
+        restored = cls(
+            standardize=bool(state["standardize"]),
+            impute=bool(state["impute"]),
+            fitted_subjects=tuple(map(str, state["fitted_subjects"])),
+            feature_names=names,
+        )
+        restored.medians_ = arrays["medians"]
+        restored.mean_ = arrays["mean"]
+        restored.scale_ = arrays["scale"]
+        restored._is_fit = True
+        return restored
+
 
 @dataclass
 class Representation:
@@ -143,7 +223,8 @@ class Representation:
     y: np.ndarray
     subjects: np.ndarray
     feature_names: tuple[str, ...]
-    lengths: np.ndarray | None = None      # valid timesteps per sequence
+    lengths: np.ndarray | None = None      # represented calendar/observed span
+    observation_mask: np.ndarray | None = None  # actual measured timesteps
     row_ids: np.ndarray | None = None      # source row ids, for overlap audits
     dates: np.ndarray | None = None        # source dates, for overlap audits
     meta: dict[str, Any] = field(default_factory=dict)
@@ -163,11 +244,19 @@ class Representation:
     def valid_mask(self) -> np.ndarray | None:
         """(N, T) boolean mask of real observations, or None if not a sequence.
 
-        This is the single source of truth for where the real data sits.  Nothing
-        downstream may re-derive it from ``lengths`` alone: with ``padding='pre'``
-        the valid steps are at the *end*, so ``arange(T) < lengths`` selects
-        exactly the padding.
+        This is the single source of truth for where measured rows sit.  It also
+        excludes internal missing calendar days.  Nothing downstream may
+        re-derive it from ``lengths`` alone: lengths describe the represented time
+        span, not necessarily the number of observed rows.
         """
+        if self.kind != "temporal_sequence" or self.lengths is None:
+            return None
+        if self.observation_mask is not None:
+            return np.asarray(self.observation_mask, dtype=bool)
+        return self.span_mask()
+
+    def span_mask(self) -> np.ndarray | None:
+        """External-padding mask; internal calendar gaps remain inside the span."""
         if self.kind != "temporal_sequence" or self.lengths is None:
             return None
         timesteps = int(self.X.shape[1])
@@ -178,14 +267,14 @@ class Representation:
         return index < lengths
 
     def left_aligned(self) -> tuple[np.ndarray, np.ndarray]:
-        """Return ``(X, lengths)`` with every sequence's valid steps at the front.
+        """Return ``(X, lengths)`` with every represented time span at the front.
 
-        ``pack_padded_sequence`` and the Conv1d pooling mask both require this
-        layout.  Converting here keeps the stored representation faithful to the
-        configured ``padding`` while making the model path correct either way --
-        and, because the models mask, it makes results padding-invariant.
+        ``pack_padded_sequence`` requires this layout.  Internal calendar gaps
+        stay in place as zero timesteps; only external pre-padding is moved.
+        CNNs do not call this method because Flatten is position-sensitive and
+        must preserve the configured padding side.
         """
-        mask = self.valid_mask()
+        mask = self.span_mask()
         if mask is None:
             return self.X, np.full(len(self.X), self.X.shape[1], dtype=np.int64)
         if self.padding_side != "pre":
@@ -211,6 +300,9 @@ class Representation:
             subjects=self.subjects[mask],
             feature_names=self.feature_names,
             lengths=None if self.lengths is None else self.lengths[mask],
+            observation_mask=(
+                None if self.observation_mask is None else self.observation_mask[mask]
+            ),
             row_ids=None if self.row_ids is None else self.row_ids[mask],
             dates=None if self.dates is None else self.dates[mask],
             meta=dict(self.meta),
@@ -316,7 +408,9 @@ def build_temporal_sequence(
     frame = frame.sort_values([schema.SUBJECT_ID, schema.DATE_COL])
     columns = list(feature_columns)
 
-    per_subject: list[tuple[str, int, np.ndarray, np.ndarray, np.ndarray]] = []
+    per_subject: list[
+        tuple[str, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    ] = []
     skipped: list[str] = []
     for subject, group in frame.groupby(schema.SUBJECT_ID, sort=True):
         if len(group) < min_observations:
@@ -328,22 +422,29 @@ def build_temporal_sequence(
             group["row_id"].to_numpy() if "row_id" in group.columns
             else np.full(len(group), -1)
         )
+        observed_mask = np.ones(len(values), dtype=bool)
         if gap_handling == "calendar":
-            values, dates, row_ids = _to_calendar_grid(values, dates, row_ids)
+            values, dates, row_ids, observed_mask = _to_calendar_grid(
+                values, dates, row_ids
+            )
         per_subject.append(
-            (str(subject), int(group[schema.LABEL_COL].iloc[0]), values, dates, row_ids)
+            (
+                str(subject), int(group[schema.LABEL_COL].iloc[0]), values,
+                dates, row_ids, observed_mask,
+            )
         )
 
     if not per_subject:
         raise ValueError("no subject met min_observations; cannot build sequences")
 
-    observed = [len(v) for _, _, v, _, _ in per_subject]
+    source_spans = [len(v) for _, _, v, _, _, _ in per_subject]
+    source_observed = [int(mask.sum()) for _, _, _, _, _, mask in per_subject]
     if sequence_length == "max":
-        length = int(max(observed))
+        length = int(max(source_spans))
     elif sequence_length == "median":
-        length = int(np.median(observed))
+        length = int(np.median(source_spans))
     elif sequence_length == "min":
-        length = int(min(observed))
+        length = int(min(source_spans))
     else:
         length = int(sequence_length)
     if length < 1:
@@ -351,23 +452,35 @@ def build_temporal_sequence(
 
     n_features = len(columns)
     X = np.zeros((len(per_subject), length, n_features), dtype=np.float64)
+    observation_mask = np.zeros((len(per_subject), length), dtype=bool)
     lengths = np.zeros(len(per_subject), dtype=np.int64)
     y = np.zeros(len(per_subject), dtype=np.int64)
     ids = np.empty(len(per_subject), dtype=object)
     used_rows: list[np.ndarray] = []
     used_dates: list[np.ndarray] = []
+    truncated_observations = 0
+    truncated_span_steps = 0
+    truncated_subjects: list[str] = []
 
-    for i, (subject, label, values, dates, row_ids) in enumerate(per_subject):
+    for i, (subject, label, values, dates, row_ids, observed_mask) in enumerate(per_subject):
         if len(values) > length:
+            truncated_span_steps += int(len(values) - length)
+            truncated_subjects.append(subject)
             if truncation == "last":
+                truncated_observations += int(observed_mask[:-length].sum())
                 values, dates, row_ids = values[-length:], dates[-length:], row_ids[-length:]
+                observed_mask = observed_mask[-length:]
             else:
+                truncated_observations += int(observed_mask[length:].sum())
                 values, dates, row_ids = values[:length], dates[:length], row_ids[:length]
+                observed_mask = observed_mask[:length]
         valid = len(values)
         if padding == "pre":
             X[i, length - valid:, :] = values
+            observation_mask[i, length - valid:] = observed_mask
         else:
             X[i, :valid, :] = values
+            observation_mask[i, :valid] = observed_mask
         lengths[i] = valid
         y[i] = label
         ids[i] = subject
@@ -381,6 +494,7 @@ def build_temporal_sequence(
         subjects=ids,
         feature_names=tuple(columns),
         lengths=lengths,
+        observation_mask=observation_mask,
         row_ids=np.array(used_rows, dtype=object),
         dates=np.array(used_dates, dtype=object),
         meta={
@@ -389,9 +503,20 @@ def build_temporal_sequence(
             "padding": padding,
             "truncation": truncation,
             "gap_handling": gap_handling,
-            "observed_days_min": int(min(observed)),
-            "observed_days_max": int(max(observed)),
-            "padding_fraction": round(float(1.0 - lengths.sum() / (len(lengths) * length)), 4),
+            "observed_days_min": int(observation_mask.sum(axis=1).min()),
+            "observed_days_max": int(observation_mask.sum(axis=1).max()),
+            "source_observed_days_min": int(min(source_observed)),
+            "source_observed_days_max": int(max(source_observed)),
+            "sequence_span_min": int(lengths.min()),
+            "sequence_span_max": int(lengths.max()),
+            "source_sequence_span_min": int(min(source_spans)),
+            "source_sequence_span_max": int(max(source_spans)),
+            "padding_or_gap_fraction": round(
+                float(1.0 - observation_mask.sum() / observation_mask.size), 4
+            ),
+            "truncated_observations": int(truncated_observations),
+            "truncated_span_steps": int(truncated_span_steps),
+            "truncated_subjects": truncated_subjects,
             "skipped_subjects": skipped,
         },
     )
@@ -399,14 +524,28 @@ def build_temporal_sequence(
 
 def _to_calendar_grid(
     values: np.ndarray, dates: np.ndarray, row_ids: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Place observations on a daily grid, leaving gaps as NaN rows."""
-    stamps = pd.to_datetime(pd.Series(dates))
+    stamps = pd.DatetimeIndex(pd.to_datetime(pd.Series(dates)))
+    if stamps.isna().any():
+        raise ValueError("calendar gap handling requires a valid date for every row")
+    if stamps.has_duplicates:
+        duplicates = stamps[stamps.duplicated()].unique().astype(str).tolist()
+        raise ValueError(
+            "calendar gap handling requires one row per subject-date; duplicate "
+            f"dates include {duplicates[:5]}"
+        )
     grid = pd.date_range(stamps.min(), stamps.max(), freq="D")
-    frame = pd.DataFrame(values, index=pd.DatetimeIndex(stamps))
+    frame = pd.DataFrame(values, index=stamps)
     frame = frame.reindex(grid)
-    id_series = pd.Series(row_ids, index=pd.DatetimeIndex(stamps)).reindex(grid, fill_value=-1)
-    return frame.to_numpy(dtype=np.float64), grid.to_numpy(), id_series.to_numpy()
+    id_series = pd.Series(row_ids, index=stamps).reindex(grid, fill_value=-1)
+    observed = pd.Series(True, index=stamps).reindex(grid, fill_value=False)
+    return (
+        frame.to_numpy(dtype=np.float64),
+        grid.to_numpy(),
+        id_series.to_numpy(),
+        observed.to_numpy(dtype=bool),
+    )
 
 
 def zero_padding(rep: Representation) -> None:

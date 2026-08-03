@@ -26,14 +26,18 @@ Recommended Colab runtime: **CPU / High-RAM** for the tree models,
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
 import importlib.util
+import json
 import os
 from pathlib import Path
+import platform
 import subprocess
 import sys
 import time
 import traceback
-from typing import Any
+from typing import Any, Mapping
 
 EXPERIMENT_NAME = "reproduction_lim_2025"
 EXPERIMENT_ROOT = Path(__file__).resolve().parent
@@ -43,6 +47,96 @@ REQUIREMENTS_FILE = EXPERIMENT_ROOT / "requirements_colab.txt"
 for path in (str(EXPERIMENT_ROOT), str(REPOSITORY_ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _collect_runtime_provenance(
+    data_root: Path, config_payload: Mapping[str, Any], device: str
+) -> dict[str, Any]:
+    """Record code, package and input identities needed for a real rerun."""
+    from src.data.loader import FILE_LAYOUT
+
+    versions: dict[str, str | None] = {}
+    for distribution in (
+        "numpy", "pandas", "scipy", "scikit-learn", "PyYAML",
+        "joblib", "torch", "xgboost",
+    ):
+        try:
+            versions[distribution] = importlib.metadata.version(distribution)
+        except importlib.metadata.PackageNotFoundError:
+            versions[distribution] = None
+
+    relative_files = sorted(
+        {relative for split in FILE_LAYOUT.values() for relative in split.values()}
+    )
+    data_hashes = {
+        relative: _sha256_file(data_root / relative) for relative in relative_files
+    }
+    code_files = [EXPERIMENT_ROOT / "run.py", REQUIREMENTS_FILE]
+    code_files.extend(sorted((EXPERIMENT_ROOT / "src").rglob("*.py")))
+    code_hashes = {
+        str(path.relative_to(EXPERIMENT_ROOT)): _sha256_file(path)
+        for path in code_files
+    }
+
+    platform_value = platform.platform()
+    accelerator: dict[str, Any] = {"resolved_device": device}
+    if device == "cuda":
+        import torch
+
+        accelerator.update(
+            {
+                "device_name": torch.cuda.get_device_name(0),
+                "compute_capability": list(torch.cuda.get_device_capability(0)),
+                "cuda_runtime": torch.version.cuda,
+            }
+        )
+
+    fingerprint_material = {
+        "python": sys.version,
+        "platform": platform_value,
+        "accelerator": accelerator,
+        "packages": versions,
+        "config": config_payload,
+        "code_files_sha256": code_hashes,
+        "data_file_sha256": data_hashes,
+    }
+    run_fingerprint = hashlib.sha256(
+        json.dumps(
+            fingerprint_material,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+    def git_value(*args: str) -> str | None:
+        result = subprocess.run(
+            ["git", "-C", str(REPOSITORY_ROOT), *args],
+            check=False, capture_output=True, text=True,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    dirty_output = git_value("status", "--porcelain")
+    return {
+        "python": sys.version,
+        "platform": platform_value,
+        "accelerator": accelerator,
+        "packages": versions,
+        "git_commit": git_value("rev-parse", "HEAD"),
+        "git_dirty": None if dirty_output is None else bool(dirty_output),
+        "data_root": str(data_root),
+        "data_file_sha256": data_hashes,
+        "code_files_sha256": code_hashes,
+        "run_fingerprint": run_fingerprint,
+    }
 
 
 def _resolve_data_root(namespace: dict[str, Any], explicit: str | None) -> Path:
@@ -390,9 +484,13 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
     })
 
     try:
+        runtime_provenance = _collect_runtime_provenance(
+            data_root, config.raw, device
+        )
         report = run_experiment(
             data, config, output_dir=output_dir, device=device,
             only_fold=args.fold, resume=args.resume,
+            run_fingerprint=runtime_provenance["run_fingerprint"],
         )
     except Exception as error:
         write_status(output_dir, {
@@ -404,15 +502,25 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         raise
 
     report["elapsed_seconds"] = time.monotonic() - started
+    report["runtime_provenance"] = runtime_provenance
+
+    comparison = build_comparison({config.experiment: report})
+    report["reproduction_assessment"] = comparison["reproduction_assessment"]
+    report["paper_metric_deltas"] = comparison["deltas"]
     write_json(output_dir / "FINAL_REPORT.json", report)
     write_json(output_dir / "TRAINING_COMPLETE.json", {
         "experiment": config.experiment,
+        "artifact_schema_version": report["artifact_schema_version"],
+        "run_fingerprint": report["run_fingerprint"],
         "models": list(report["models"]),
         "all_audits_passed": report["all_audits_passed"],
+        "collapsed_classification_models":
+            report.get("collapsed_classification_models", []),
+        "reproduction_status":
+            report["reproduction_assessment"].get("status"),
         "elapsed_seconds": report["elapsed_seconds"],
     })
 
-    comparison = build_comparison({config.experiment: report})
     write_text(output_dir / "comparison_partial.md", render_comparison_markdown(comparison))
 
     headline = {
@@ -421,12 +529,17 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         if block.get("subject_level")
     }
     degenerate = report.get("degenerate_training_models") or []
+    collapsed = report.get("collapsed_classification_models") or []
     write_status(output_dir, {
         "status": "complete", "experiment": config.experiment,
+        "artifact_schema_version": report["artifact_schema_version"],
+        "run_fingerprint": report["run_fingerprint"],
         "elapsed_seconds": report["elapsed_seconds"],
         "all_audits_passed": report["all_audits_passed"],
         "headline_subject_roc_auc": headline,
         "degenerate_training_models": degenerate,
+        "collapsed_classification_models": collapsed,
+        "reproduction_status": report["reproduction_assessment"].get("status"),
         "final_report": str(output_dir / "FINAL_REPORT.json"),
     })
 
@@ -434,8 +547,12 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
     print(f"  피험자 단위 ROC-AUC: {headline}")
     if degenerate:
         print(f"\n  ⚠️  학습 실패 모델: {degenerate}")
-        print("     early stopping이 epoch 0 가중치를 복원했다. 사실상 학습되지 않은")
-        print("     상태이므로 이 모델들의 수치를 성능으로 인용하지 않는다.")
+        print("     optimizer update/parameter change가 남지 않아 사실상 학습되지 않은")
+        print("     상태다. 이 모델들의 수치를 성능으로 인용하지 않는다.")
+    if collapsed:
+        print(f"\n  ⚠️  단일 클래스 예측 모델: {collapsed}")
+        print("     다수 클래스 Accuracy를 재현 성공으로 해석하지 않는다.")
+    print(f"  재현 판정: {report['reproduction_assessment'].get('status')}")
     print(f"  보고서: {output_dir / 'FINAL_REPORT.json'}")
     return report
 

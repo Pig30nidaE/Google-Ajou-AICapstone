@@ -72,6 +72,8 @@ training:
   learning_rate: 0.001
   batch_size: 16
   max_epochs: 60          # nested는 fit 횟수가 많아 예산을 줄인다
+  early_stopping: true
+  early_stopping_metric: auc
   early_stopping_patience: 8
   validation_fraction: 0.2
   pos_weight: null

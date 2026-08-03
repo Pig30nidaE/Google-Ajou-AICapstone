@@ -54,10 +54,13 @@ sleep의 `bedtime_end` 날짜 중복(train 11, val 1) 때문에 손실이 발생
 
 **논문**: "총 58개의 변수가 학습에 사용됐다."
 
-**가정**: 논문 코드(`groupby.mean(numeric_only=True)` + drop 목록)를 **문자 그대로**
-실행한 결과인 **49개**를 기본 특징집합으로 한다.
+**가정**: 논문에 제시된 RF/XGBoost 코드(`groupby.mean(numeric_only=True)` + drop 목록)를
+**문자 그대로** 적용했을 때 남는 **49개**를 기본 특징집합으로 한다. 딥러닝 입력 코드와
+최종 shape는 보고되지 않았으므로, LSTM/Bi-LSTM/1D-CNN에도 같은 49개를 쓰는 것은 별도의
+`assumption_variant_shared_49_features`다.
 
-**근거**: 논문 서술(58)과 논문 코드(49)가 모순될 때, **코드가 실제로 실행된 것**이다.
+**근거**: 논문 서술(58)과 제시 코드(49)가 모순될 때, 트리 모델에는 실행 가능한 코드 쪽이
+더 강한 근거다.
 서술을 맞추려면 존재하지 않는 컬럼 2개를 만들어내고 문자열 6개를 임의로 수치화해야 하는데,
 그 방법이 논문에 없으므로 재현 불가능하다.
 
@@ -144,10 +147,13 @@ sleep의 `bedtime_end` 날짜 중복(train 11, val 1) 때문에 손실이 발생
 
 논문에는 RF 하이퍼파라미터가 **하나도** 없다.
 
-**가정**: scikit-learn 기본값을 보수적으로 사용.
+**가정**: 대부분 scikit-learn 기본값을 사용하되, 본문이 각 트리가 information gain으로
+분할한다고 설명한 유일한 단서에 맞춰 `criterion: entropy`를 사용한다. 이것도 실제 RF
+설정표가 아니라 **본문 설명을 실행 가능하게 옮긴 가정**이다.
 
 ```yaml
 n_estimators: 100
+criterion: "entropy"    # information-gain 서술에서 추론한 가정
 max_depth: null
 min_samples_split: 2
 min_samples_leaf: 1
@@ -202,52 +208,56 @@ random_state: <config.seed>
 | 층 | LSTM 1층 | Bi-LSTM 1층 | Conv1d ×2 |
 | hidden / filters | 64 | 64 (양방향 → 128) | 64, 64 |
 | kernel_size | — | — | 3 |
-| pooling | — | — | MaxPool1d(2) → GlobalAvgPool |
+| readout / pooling | 마지막 hidden state | 마지막 forward/backward state 연결 | MaxPool1d(2) ×2 → Flatten |
 | dropout | 0.2 | 0.2 | 0.2 |
-| head | Linear(→1) | Linear(→1) | Linear(→1) |
+| head | Linear(64→1) | Linear(128→1) | Flatten된 전체 feature map → Linear(→1) |
 | 출력 | sigmoid | sigmoid | sigmoid |
 
-공통:
+공통 기본값(모두 가정):
 ```yaml
 loss: "bce"                 # 논문 미보고
 optimizer: "adam"           # 논문 미보고
 learning_rate: 0.001        # 논문 미보고
 batch_size: 16              # 논문 미보고. 141명 기준 보수적
 max_epochs: 100             # 논문 미보고
+early_stopping: true        # 실험 B·C만; 실험 A는 false
 early_stopping_patience: 10 # 논문 미보고
-early_stopping_metric: auc  # 논문 미보고 (아래 C-3-1 참조)
-validation_fraction: 0.2    # 논문 미보고. 층화 분할
+early_stopping_metric: auc  # 실험 B·C만 (아래 C-3-1 참조)
+validation_fraction: 0.2    # 실험 B·C만. 층화 분할
 pos_weight: null            # 논문이 불균형 보정 미적용
 ```
 
-### C-3-1. early stopping 모니터 지표를 AUC로 정한 이유
+**실험 A**는 논문에 내부 holdout/early stopping 보고가 없으므로
+`early_stopping: false`, `validation_fraction: 0.0`으로 두고 공식 Training **141명 전부**를
+고정 100 epoch 학습한다. 100 epoch 자체는 여전히 가정이다. 실험 B·C의 early stopping은
+재현 대상이 아니라 검증설계 확장을 위한 계산상 가정이다.
+
+### C-3-1. 기존 실험 A early stopping 실패와 수정
 
 **논문**: early stopping 자체를 언급하지 않는다. 전부 본 재현의 가정이다.
 
-**처음 선택(loss)의 실패**: 141명 중 20%인 28명을 모니터 분할로 떼고 BCE loss를
-감시했더니, loss가 epoch 0에서 최소였고 이후 계속 올라 early stopping이
-**초기화 직후 가중치를 복원**했다. train loss는 0.713 → 0.481로 내려가고 있었는데도
-보고된 것은 사실상 학습되지 않은 모델이었다. 게다가 모니터 분할이 **층화되지 않아**
-양성 비율이 seed마다 요동쳤다.
+**기존 코드의 실패**: `20260803_014223_utc`는 논문에 없는 20%(28명) 모니터 분할을
+Training 141명에서 떼어 optimizer에는 113명만 넣었다. CNN은 12 epoch 뒤 epoch 1을
+복원했고, 33명 전부를 음성으로 분류했다. 이는 논문 방법을 그대로 재구성했다고 보기
+어렵다.
 
 **수정**:
 
-1. 모니터 분할을 **층화**한다. 실제 데이터에서 양성 수가 11로 고정된다.
-2. 모니터 지표를 **ROC-AUC**로 바꾼다. 주 보고 지표가 AUC이고, 28명 BCE loss는
-   신경망이 확신을 갖기 시작하면 순위가 좋아지는 중에도 올라간다.
-3. **AUC 동점 시 loss로 tie-break**한다. 작은 모니터 분할에서 AUC는 1.0에 포화될 수
-   있고, 그러면 다시 epoch 0이 복원된다.
+1. **실험 A**: 내부 분할과 early stopping을 제거하고 141명 전부를 고정 epoch 학습한다.
+2. **실험 B·C**: early stopping을 유지하되 모니터 분할을 층화하고 ROC-AUC를 감시한다.
+3. 작은 모니터 분할에서 AUC가 동률이면 loss로 tie-break한다.
 
-**선택 근거의 독립성**: 이 결정은 **학습 동역학**(best epoch, 모니터 분할 내부 점수)만
-보고 내렸다. 33명 test AUC를 보고 고르지 않았다. test로 골랐다면 그것이야말로 이
-프로젝트가 막으려는 누수다.
+실험 A의 100 epoch와 실험 B·C의 모니터 정책은 모두 논문 미보고 가정이다. 향후 설정을
+바꿀 때 33명 Validation 성능으로 최적 epoch를 고르면 안 된다.
 
-**남은 안전장치**: 그럼에도 epoch 0이 복원되면 `degenerate_training: true`가 기록되고
-`FINAL_REPORT.json`의 `degenerate_training_models`와 실행 로그에 경고가 뜬다.
-해당 모델 수치는 성능으로 인용하지 않는다.
+**남은 안전장치**: optimizer step이 없거나, 최종 보존된 파라미터가 초기값에서 변하지
+않았거나, 학습 loss/파라미터 변화량이 비유한이면 `degenerate_training: true`가 기록되고
+`FINAL_REPORT.json`과 실행 로그에 경고가 뜬다. epoch 0은 첫 **학습 후** epoch이므로 그
+인덱스만으로 미학습 판정을 하지 않는다.
 
-**중요**: 이 구조로 논문의 1D-CNN AUC 0.810이 재현되지 않아도, 그것은 재현 실패가 아니라
-**논문이 구조를 보고하지 않았기 때문**이다. 결과 보고 시 반드시 함께 기재한다.
+**중요**: 미보고 설정 때문에 정확한 수치 재현 가능 여부는 판정할 수 없다. 다만 같은
+33명에서 1D-CNN이 전부 음성을 예측하고 AUC/F1/Recall과 모델 순위가 크게 다르면,
+논문의 **핵심 결론은 재구성되지 않은 것**으로 별도 판정한다.
 
 ---
 
@@ -257,12 +267,22 @@ pos_weight: null            # 논문이 불균형 보정 미적용
 
 **가정**:
 ```yaml
-sequence_length: "max"      # 데이터 최대 관측일수(174명 기준 122)
+sequence_length: 122        # 실험 A: 전체 코호트 최대 관측일수, 재구성 전용 가정
 padding: "pre"              # 앞쪽 0-padding, 최근 관측이 시퀀스 끝
 truncation: "last"          # 길면 최근 T일 사용
-mask_padding: true          # LSTM은 pack_padded_sequence, CNN은 마스크 곱
+mask_padding: true          # 관측/달력-gap과 외부 padding을 boolean mask로 구분
 min_observations: 1         # 최소 관측일수 미달 피험자 제외 (실측상 최소 35일이라 무해)
 ```
+
+실험 A에서 122는 논문이 실제로 썼다고 확인된 값이 아니다. 다만 논문이 전체 데이터를 먼저
+3차원 텐서로 만든 뒤 분할한 것으로 읽힐 여지가 있고, 기존 train-derived T=120이 Validation
+양성 1명의 첫 2일을 잘랐기 때문에 **full-cohort-shape 재구성 가정**으로 명시한다. 일반화
+성능을 주장하는 실험 B·C에서는 `sequence_length: max`를 각 fold의 training에서만 정하고,
+test가 shape를 결정하지 못하게 한다.
+
+LSTM/Bi-LSTM은 `pack_padded_sequence`를 위해 외부 padding만 뒤로 옮기되 내부 달력 gap의
+위치를 보존한다. Flatten을 쓰는 1D-CNN은 위치 민감하므로 설정된 pre/post padding을 그대로
+사용한다. 관측되지 않은 외부 padding과 내부 달력 gap은 표준화 후 정확히 0으로 복원한다.
 
 **대안**: `sequence_length: 35`(전 피험자 실관측 보장 최소값), `56`, `"median"`.
 프롬프트 §4-C에 따라 실험 C의 inner CV에서만 탐색 가능하며,
@@ -317,7 +337,7 @@ min_observations: 1         # 최소 관측일수 미달 피험자 제외 (실�
 | 항목 | 가정 | 근거 |
 | --- | --- | --- |
 | random seed | 42 (config 중앙관리) | 논문 미보고 |
-| 반복 횟수 | 실험 B·C 모두 `repeats: 5` 기본 | 프롬프트 §4-B 권장 |
+| 반복 횟수 | 실험 B `repeats: 5`, 실험 C `repeats: 3` | 정확도와 계산예산 절충 |
 | device | CUDA 있으면 GPU, 없으면 CPU 자동 | 프롬프트 §7 |
 | 딥러닝 프레임워크 | PyTorch | 저장소에 이미 torch 계열(`pytorch-tabnet`) 사용 이력 |
 | 결과 저장 위치 | Colab: `/content/drive/MyDrive/reproduction_lim_2025_result/<UTC_RUN_ID>/` | `SangHyo/AGENTS.md` §6 |
