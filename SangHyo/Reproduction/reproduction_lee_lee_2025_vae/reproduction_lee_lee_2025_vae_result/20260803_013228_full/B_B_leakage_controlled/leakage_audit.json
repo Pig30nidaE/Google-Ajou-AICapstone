@@ -1,0 +1,777 @@
+{
+  "name": "B_B_leakage_controlled",
+  "mode": "enforce",
+  "n_folds": 3,
+  "n_violations": 0,
+  "violations_by_code": {},
+  "violations": [],
+  "observations": [],
+  "fold_events": {
+    "fold_r0_f0": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5661,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 21
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5661,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 21
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5661,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 21
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8044
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5661,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 21
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4139,
+        "where": "tstr_test"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      }
+    ],
+    "fold_r0_f1": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3835,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3835,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3835,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8207
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 3835,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 3976,
+        "where": "outer_eval"
+      }
+    ],
+    "fold_r0_f2": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5748,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5748,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5748,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 116,
+        "n_rows": 8115
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 5748,
+        "target": "train"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 23
+      },
+      {
+        "kind": "eval",
+        "n_rows": 4068,
+        "where": "outer_eval"
+      }
+    ]
+  }
+}

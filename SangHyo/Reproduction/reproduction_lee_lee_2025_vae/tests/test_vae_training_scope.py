@@ -44,9 +44,29 @@ def test_auditor_accepts_train_only_dem_fit(fake_data, enforcing_auditor):
     assert dem.n > 0
     enforcing_auditor.record_vae_fit(
         fold.fold_id, subjects=dem.subject, labels=dem.y,
+        row_ids=dem.row_id,
         expected_label=CLASS_TO_CODE["Dem"], n_rows=dem.n,
     )
     assert enforcing_auditor.violations == []
+
+
+def test_auditor_rejects_vae_fit_on_eval_row_even_with_train_subject_label(
+    fake_data, enforcing_auditor
+):
+    """행 단위 split의 subject 중복이 있어도 원시 eval 행 사용을 놓치지 않는다."""
+    fold = make_group_folds(fake_data, n_splits=3, seed=0)[0]
+    _register(enforcing_auditor, fake_data, fold)
+    train = fake_data.take(fold.train_idx)
+    dem = train.take(train.y == CLASS_TO_CODE["Dem"])
+    with pytest.raises(LeakageError, match="VAE_FIT_ROW_SCOPE"):
+        enforcing_auditor.record_vae_fit(
+            fold.fold_id,
+            subjects=np.concatenate([dem.subject, dem.subject[:1]]),
+            labels=np.full(dem.n + 1, CLASS_TO_CODE["Dem"]),
+            row_ids=np.concatenate([dem.row_id, fake_data.row_id[fold.eval_idx][:1]]),
+            expected_label=CLASS_TO_CODE["Dem"],
+            n_rows=dem.n + 1,
+        )
 
 
 def test_auditor_rejects_vae_fit_on_all_dem(fake_data, enforcing_auditor):
@@ -57,6 +77,7 @@ def test_auditor_rejects_vae_fit_on_all_dem(fake_data, enforcing_auditor):
     with pytest.raises(LeakageError, match="VAE_FIT_SCOPE"):
         enforcing_auditor.record_vae_fit(
             fold.fold_id, subjects=all_dem.subject, labels=all_dem.y,
+            row_ids=all_dem.row_id,
             expected_label=CLASS_TO_CODE["Dem"], n_rows=all_dem.n,
         )
 
@@ -68,6 +89,7 @@ def test_auditor_rejects_vae_fit_on_all_classes(fake_data, enforcing_auditor):
     with pytest.raises(LeakageError, match="VAE_FIT_LABEL"):
         enforcing_auditor.record_vae_fit(
             fold.fold_id, subjects=train.subject, labels=train.y,
+            row_ids=train.row_id,
             expected_label=CLASS_TO_CODE["Dem"], n_rows=train.n,
         )
 
@@ -125,3 +147,5 @@ def test_vae_config_carries_paper_reported_defaults():
     assert cfg.dropout == 0.3
     assert cfg.learning_rate == 1e-4
     assert cfg.batch_norm is True
+    assert cfg.recon_reduction == "mean_per_feature"
+    assert cfg.kl_reduction == "mean"

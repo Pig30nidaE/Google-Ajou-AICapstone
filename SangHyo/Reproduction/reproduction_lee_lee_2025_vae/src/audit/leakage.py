@@ -50,6 +50,8 @@ class FoldRegistration:
     eval_subjects: frozenset
     train_row_ids: frozenset
     eval_row_ids: frozenset
+    validation_subjects: frozenset = field(default_factory=frozenset)
+    validation_row_ids: frozenset = field(default_factory=frozenset)
     events: list[dict] = field(default_factory=list)
 
 
@@ -102,6 +104,8 @@ class LeakageAuditor:
         eval_subjects: Iterable,
         train_row_ids: Iterable,
         eval_row_ids: Iterable,
+        validation_subjects: Iterable = (),
+        validation_row_ids: Iterable = (),
         require_disjoint_subjects: bool = True,
     ) -> None:
         """fold 경계를 등록하고 즉시 중복을 검사한다."""
@@ -111,13 +115,27 @@ class LeakageAuditor:
             eval_subjects=frozenset(np.asarray(list(eval_subjects), dtype=object).ravel()),
             train_row_ids=frozenset(np.asarray(list(train_row_ids)).ravel().tolist()),
             eval_row_ids=frozenset(np.asarray(list(eval_row_ids)).ravel().tolist()),
+            validation_subjects=frozenset(
+                np.asarray(list(validation_subjects), dtype=object).ravel()
+            ),
+            validation_row_ids=frozenset(
+                np.asarray(list(validation_row_ids)).ravel().tolist()
+            ),
         )
         self.folds[fold_id] = reg
 
         found = checks.check_row_overlap(reg.train_row_ids, reg.eval_row_ids, fold_id=fold_id)
+        found += checks.check_row_overlap(
+            reg.validation_row_ids, reg.eval_row_ids, fold_id=fold_id
+        )
+        found += checks.check_row_overlap(
+            reg.train_row_ids, reg.validation_row_ids, fold_id=fold_id
+        )
         if require_disjoint_subjects:
             found += checks.check_subject_overlap(
-                reg.train_subjects, reg.eval_subjects, fold_id=fold_id
+                reg.train_subjects | reg.validation_subjects,
+                reg.eval_subjects,
+                fold_id=fold_id,
             )
         else:
             # 실험 A: 행 단위 분할이라 피험자 중복이 설계상 발생한다. 측정만 한다.
@@ -140,14 +158,30 @@ class LeakageAuditor:
         fold_id: str,
         *,
         subjects: Iterable,
+        row_ids: Iterable,
         n_rows: int | None = None,
+        occurred_before_split: bool = False,
     ) -> None:
         """전처리기(scaler/imputer/outlier)의 fit 범위를 신고한다."""
         reg = self._fold(fold_id)
         subs = list(subjects)
-        self._log_event(fold_id, "fit", component=component, n_subjects=len(set(subs)), n_rows=n_rows)
-        found = checks.check_preprocessing_after_split(True, component, fold_id=fold_id)
+        rows = list(row_ids)
+        self._log_event(
+            fold_id,
+            "fit",
+            component=component,
+            n_subjects=len(set(subs)),
+            n_rows=n_rows,
+            row_scope_recorded=True,
+            occurred_before_split=occurred_before_split,
+        )
+        found = checks.check_preprocessing_after_split(
+            not occurred_before_split, component, fold_id=fold_id
+        )
         found += checks.check_fit_scope(component, subs, reg.train_subjects, fold_id=fold_id)
+        found += checks.check_fit_row_scope(
+            component, rows, reg.train_row_ids, fold_id=fold_id
+        )
         # observe 모드에서도 "평가 자료를 몇 행 보았는가"를 정량화한다.
         outside = set(subs) - set(reg.train_subjects)
         if outside:
@@ -160,6 +194,17 @@ class LeakageAuditor:
                     "n_rows_fit": n_rows,
                 }
             )
+        eval_rows_seen = set(rows) & set(reg.eval_row_ids)
+        if eval_rows_seen:
+            self.observations.append(
+                {
+                    "fold_id": fold_id,
+                    "kind": "fit_saw_eval_rows",
+                    "component": component,
+                    "n_eval_rows_seen": len(eval_rows_seen),
+                    "n_rows_fit": n_rows,
+                }
+            )
         self._handle(found)
 
     def record_vae_fit(
@@ -168,18 +213,41 @@ class LeakageAuditor:
         *,
         subjects: Iterable,
         labels: Iterable,
+        row_ids: Iterable,
         expected_label: int | None = None,
         n_rows: int | None = None,
     ) -> None:
         """VAE 학습 범위를 신고한다."""
         reg = self._fold(fold_id)
         subs = list(subjects)
+        rows = list(row_ids)
         self._log_event(
-            fold_id, "vae_fit", n_subjects=len(set(subs)), n_rows=n_rows, expected_label=expected_label
+            fold_id,
+            "vae_fit",
+            n_subjects=len(set(subs)),
+            n_rows=n_rows,
+            expected_label=expected_label,
+            row_scope_recorded=True,
         )
         found = checks.check_vae_fit_scope(
             subs, list(labels), reg.train_subjects, expected_label=expected_label, fold_id=fold_id
         )
+        row_violations = checks.check_fit_row_scope(
+            "vae", rows, reg.train_row_ids, fold_id=fold_id
+        )
+        for violation in row_violations:
+            violation.code = "VAE_FIT_ROW_SCOPE"
+        found += row_violations
+        eval_rows_seen = set(rows) & set(reg.eval_row_ids)
+        if eval_rows_seen:
+            self.observations.append(
+                {
+                    "fold_id": fold_id,
+                    "kind": "vae_fit_saw_eval_rows",
+                    "n_eval_rows_seen": len(eval_rows_seen),
+                    "n_rows_fit": n_rows,
+                }
+            )
         overlap_eval = set(subs) & set(reg.eval_subjects)
         if overlap_eval:
             self.observations.append(
@@ -233,13 +301,43 @@ class LeakageAuditor:
         self._log_event(fold_id, "eval", n_rows=len(is_synthetic), where=where)
         self._handle(found)
 
-    def record_early_stopping(self, fold_id: str, *, subjects: Iterable) -> None:
-        """early stopping에 쓰인 자료 범위를 신고한다."""
+    def record_early_stopping(
+        self,
+        fold_id: str,
+        *,
+        subjects: Iterable,
+        row_ids: Iterable,
+    ) -> None:
+        """early stopping 범위를 신고하고 outer eval 행 사용을 차단한다.
+
+        A의 명시적 validation은 허용하되, 행 단위 split에서 피험자 ID가 겹쳐도
+        test 행을 validation으로 잘못 넘기는 오류를 원시 row ID로 검출한다.
+        """
         reg = self._fold(fold_id)
-        self._log_event(fold_id, "early_stopping", n_subjects=len(set(subjects)))
-        self._handle(
-            checks.check_early_stopping_scope(subjects, reg.train_subjects, fold_id=fold_id)
+        subs = list(subjects)
+        rows = list(row_ids)
+        self._log_event(
+            fold_id,
+            "early_stopping",
+            n_subjects=len(set(subs)),
+            n_rows=len(rows),
+            row_scope_recorded=True,
         )
+        allowed_subjects = reg.train_subjects | reg.validation_subjects
+        allowed_rows = reg.train_row_ids | reg.validation_row_ids
+        found = checks.check_early_stopping_scope(
+            subs, allowed_subjects, fold_id=fold_id
+        )
+        row_violations = checks.check_fit_row_scope(
+            "early_stopping", rows, allowed_rows, fold_id=fold_id
+        )
+        for violation in row_violations:
+            violation.code = "EARLY_STOPPING_ROW_SCOPE"
+            violation.message = (
+                "early stopping이 허용된 train/validation 밖 원시행을 참조했다"
+            )
+        found += row_violations
+        self._handle(found)
 
     def record_selection(self, what: str, fold_id: str, *, subjects: Iterable) -> None:
         """하이퍼파라미터/임계값 선택에 쓰인 자료 범위를 신고한다."""

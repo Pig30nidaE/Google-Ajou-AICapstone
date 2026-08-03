@@ -1,0 +1,75 @@
+{
+  "stages": [
+    {
+      "stage": "데이터 점검 (--inspect-data)",
+      "status": "ok",
+      "seconds": 16.3
+    },
+    {
+      "stage": "이상치 방식 검증 (--audit-only)",
+      "status": "ok",
+      "seconds": 4.0
+    },
+    {
+      "stage": "실험 A primary(A1) 실행 가능성 확인 — 실패가 예상되며 그 자체가 결과다",
+      "status": "failed",
+      "error_type": "InfeasibleSplitError",
+      "error": "층화 80%:10%:10% 분할이 불가능하다. 이상치 제거 후 남은 기록: {'CN': 240, 'MCI': 126, 'Dem': 6} (최소 클래스 6행, 각 분할에 1행씩 넣으려면 최소 10행 필요).\n이것은 구현 오류가 아니라 논문 §5.1 본문 방식의 산술적 귀결이다: 46개 변수 각각에서 상·하위 10%를 제거하면 잔존율이 3.05%(372행, Dem 6행)가 된다. report_inconsistencies.md I-1 증거 B 참조.\n대안:\n  - configs/paper_isoforest_latent500.yaml (§4.2·그림 1의 Isolation Forest 해석)\n  - outlier.percentile.action: clip  (행을 지우지 않는 해석)\n  - outlier.percentile.q 를 더 작은 값으로 (예: 0.003 — 실측 최근접)",
+      "seconds": 2.0
+    },
+    {
+      "stage": "실험 A dry-run",
+      "status": "ok",
+      "seconds": 2.8
+    },
+    {
+      "stage": "실험 B dry-run",
+      "status": "ok",
+      "seconds": 1.4
+    },
+    {
+      "stage": "실험 C dry-run",
+      "status": "ok",
+      "seconds": 1.7
+    },
+    {
+      "stage": "실험 A 실행 (논문 방법 재구성)",
+      "status": "ok",
+      "seconds": 98.6
+    },
+    {
+      "stage": "실험 B 실행 (누수 통제 non-nested)",
+      "status": "ok",
+      "seconds": 638.8
+    },
+    {
+      "stage": "실험 C 실행 (Nested Group CV)",
+      "status": "ok",
+      "seconds": 1189.8
+    }
+  ],
+  "comparison": {
+    "metric": "macro_f1",
+    "n_cells_subject_level": 16,
+    "n_cells_record_level": 8,
+    "experiments_present": [
+      "A",
+      "B",
+      "C_free_selection"
+    ],
+    "notes": [
+      "실험 A는 논문과 동일하게 기록 단위로 평가했다(주 지표). 교차 비교를 위해 피험자 단위 집계도 함께 산출했다.",
+      "실험 C는 분류기와 증강 여부까지 inner CV가 선택했다. 따라서 모델별·증강별 칸을 채우지 않고 전체 결과 1건으로 보고한다. 모델×증강 칸을 채우려면 run.nested_per_cell: true로 실행하라."
+    ],
+    "caveat": "본 실험의 Dem 클래스는 독립 피험자 12명에서 유래한다. 합성 Dem 행은 이 12명(각 fold에서는 8명)의 기록 분포에서 생성된 것이며 새로운 피험자를 의미하지 않는다.",
+    "saved_tables": {
+      "main_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/main_comparison_subject_level.csv",
+      "paper_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/paper_comparison_record_level.csv",
+      "validation_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/validation_comparison.csv",
+      "deltas": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/deltas.csv",
+      "rank_changes": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/rank_changes.csv",
+      "selected_pipelines": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/selected_pipelines.csv"
+    }
+  },
+  "elapsed_seconds": 1955.9
+}

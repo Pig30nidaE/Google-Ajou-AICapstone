@@ -1,6 +1,7 @@
 # reproduction_spec.md — 이민지·이석훈(2025) VAE 재현 사양서
 
 작성일: 2026-08-02
+최근 갱신: 2026-08-03 (실제 산출물 감사 후 교정 사양 반영)
 대상 논문: 이민지·이석훈, 「VAE 기반 데이터 불균형 개선을 통한 치매 조기 탐지 기법」,
 *Journal of KIIT*, Vol.23, No.7, pp.1-12, Jul. 31, 2025.
 DOI [10.14801/jkiit.2025.23.7.1](https://doi.org/10.14801/jkiit.2025.23.7.1)
@@ -18,6 +19,22 @@ DOI [10.14801/jkiit.2025.23.7.1](https://doi.org/10.14801/jkiit.2025.23.7.1)
 | RQ4 | non-nested와 nested 평가의 차이는 얼마인가 | B → C delta |
 
 목표는 최고 성능이 아니라 **검증설계에 따른 성능 변화의 정량화**다.
+
+### 1.1 2026-08-03 실제 산출물 감사 판정
+
+`reproduction_lee_lee_2025_vae_result/20260803_013228_full/`은 **재현 실패**로 판정한다.
+
+| 핵심 증거 | 기존 산출물 | 비교값/판정 |
+| --- | ---: | ---: |
+| A Wide & Deep+VAE, 기록 단위 macro-F1 | 0.4524 | 논문 0.8556 |
+| A Wide & Deep+VAE, Dem recall | 0.1633 | 논문 0.8235 |
+| B VAE 합성/실제 평균 표준편차 비율 | 약 0.0856 | 분산 붕괴 |
+| B TSTR Dem recall | 모든 모델 0 | 합성자료 일반화 실패 |
+| C SMOTE 선택 | 2개 fold에서 합성행 0개 | 증강 비교로 무효 |
+
+기존 산출물은 실패 원인을 추적하는 감사 증거일 뿐이며, 재현 결과로 인용하지 않는다.
+아래 교정 사양은 코드 정적 수정의 기준이다. 이번 감사에서는 요청에 따라 학습·평가·테스트를
+실행하지 않았으므로, 교정본의 유효성은 재실행한 새 산출물로 다시 판단해야 한다.
 
 ---
 
@@ -86,13 +103,16 @@ Wide & Deep, 증강 전/후:
 
 | 모델 | CN F1 | MCI F1 | Dem F1 | Avg F1 |
 | --- | ---: | ---: | ---: | ---: |
-| XGBoost | 0.8914 | 0.7581 | 0.7816 | 0.8103 |
+| XGBoost | 0.8914 | **0.7501 (그림) / 0.7581 (본문)** | 0.7816 | 0.8103 (보고값) |
 | DNN | 0.8958 | 0.7770 | 0.7527 | 0.8085 |
 | TabNet | 0.8762 | 0.7485 | 0.7391 | 0.7879 |
 | Wide & Deep | 0.8897 | 0.8022 | 0.8750 | 0.8556 |
 
 **평가 단위: 일별 기록(row).** 논문은 피험자 단위 집계를 하지 않는다.
 복원된 평가셋 크기: 증강 전 N=1,097 / 증강 후 N=1,095 (**서로 다름**, I-4).
+XGBoost MCI 값은 그림과 본문이 충돌하며(I-18), 보고 Avg 0.8103은 본문 값 0.7581을 넣을 때만
+산술적으로 맞는다. 또한 Wide & Deep의 macro-F1은 증강 전 0.8616이 VAE 후 0.8556보다 높다.
+따라서 논문 자체도 “VAE가 전체 평균 성능을 개선했다”는 근거를 제공하지 않는다.
 
 ---
 
@@ -121,16 +141,22 @@ vae.latent_dim: 500             # §5.1 본문
 | --- | --- | ---: | --- |
 | `paper_percentile_latent500.yaml` | percentile 10% | 500 | **primary** |
 | `paper_percentile_latent50.yaml` | percentile 10% | 50 | 그림 2 해석 |
-| `paper_isoforest_latent500.yaml` | IsolationForest(0.1) | 500 | §4.2 해석 + 행 수 검증 |
+| `paper_isoforest_latent500.yaml` | IsolationForest(0.1) | 500 | raw VAE forensic 변형 + 기존 실패 산출물 |
 | `paper_isoforest_latent50.yaml` | IsolationForest(0.1) | 50 | §4.2 + 그림 2 |
+| `paper_isoforest_scaled_latent500.yaml` | IsolationForest(0.1) | 500 | **감사 후 교정 기본 A5** |
 
 추가 축(각 config에서 override 가능):
 
 - `outlier.percentile.scope`: `global` | `per_class`
 - `outlier.percentile.action`: `drop_row` | `clip`
 - `preprocessing.scaler_scope`: `all_data` | `train_with_synthetic` | `train_real_only`
-- `augmentation.vae.fit_scope`: `all_dem` | `train_dem_only`
+- `augmentation.vae.fit_scope`: 현재 교정 실행은 `train_dem_only`만 허용
 - `augmentation.vae.input_space`: `raw` | `scaled`
+
+2026-08-03 감사 후 교정 기본 실행은 **Isolation Forest(0.1) + scaled VAE 입력 +
+`train_dem_only`**를 사용한다. 기존 raw 입력 variant는 논문 서술 순서를 추적하는 forensic
+민감도 실험으로만 보존한다. 이는 원 저자 설정의 확정이 아니라 실패 원인을 통제하기 위한
+재구성 가정이다.
 
 ---
 
@@ -142,26 +168,26 @@ vae.latent_dim: 500             # §5.1 본문
 1. activity + sleep 합본 (12,183행 × 46변수)
 2. 이상치 제거          ← 전체 데이터에서 fit  (누수, 의도적)
 3. 행 단위 8:1:1 분할   ← 피험자 중복 발생 (누수, 의도적)
-4. VAE 학습 (fit_scope에 따라 all_dem | train_dem_only)
+4. 교정 설정의 scaler로 train Dem을 변환하고 VAE 학습 (`train_dem_only`만 허용, fit 감사 기록)
 5. 합성 Dem 4,000행 생성 → train에만 추가
-6. StandardScaler (scaler_scope에 따라)
+6. 합성자료를 원 단위로 복원·유효성 검사하고 분류기 입력 공간으로 변환
 7. XGBoost / DNN / TabNet / Wide&Deep 학습
 8. 기록 단위 metric 산출 → 논문 표 6·그림 3과 병기
 ```
 
 **누수 감사기는 `observe` 모드**로 동작한다. 위반을 예외로 던지지 않고 **측정해 보고**한다:
 
-- train/test 피험자 교집합 크기 (기대: Dem 12명 전원 중복)
+- train/test 피험자 교집합 크기와 클래스별 실제 평가 피험자 수
 - 이상치 detector가 본 test 행 수
 - scaler가 본 test 행 수
-- VAE가 본 test Dem 행 수
+- VAE source/test 피험자 교집합과 VAE가 직접 본 test 원시행 수(교정본 기대: 0)
 
 증강 전/후는 **반드시 같은 split·같은 seed**에서 비교한다
 (논문은 그러지 않았다, I-4 — 이 사실은 결과표 각주로 보고).
 
 **산출물**: `outputs/A_<label>/` 아래
 `record_level_metrics.csv`, `paper_comparison.csv`, `row_counts.csv`,
-`leakage_observation.json`, `confusion_matrices.json`.
+`leakage_observation.json`, `per_model/*.json`.
 
 ---
 
@@ -173,8 +199,8 @@ vae.latent_dim: 500             # §5.1 본문
 ### 강제 순서 (감사기가 각 단계를 기록·검증)
 
 ```
-1. 피험자 ID 기준 fold 분리         StratifiedGroupKFold(groups=subject)
-2. 이상치 처리기 fit ← train 피험자만
+1. 피험자 테이블 기준 fold 분리      subject_stratified
+2. Isolation Forest fit ← train 피험자만 (A와 같은 방법·contamination)
 3. imputer fit       ← train 피험자만
 4. scaler fit        ← train 피험자만
 5. VAE fit           ← train fold의 실제 Dem 기록만
@@ -199,8 +225,8 @@ vae.latent_dim: 500             # §5.1 본문
 ## 6. 실험 C — `nested_subject_independent`
 
 ```
-Outer: StratifiedGroupKFold(n_splits=3), n_repeats=1 (10까지 설정 가능)
-Inner: StratifiedGroupKFold(n_splits=3)
+Outer: subject_stratified(n_splits=3), n_repeats=1 (10까지 설정 가능)
+Inner: subject_stratified(n_splits=3)
 group: 피험자 ID
 ```
 
@@ -214,8 +240,15 @@ Dem 피험자가 12명이므로 **outer 5-fold를 기본값으로 쓰지 않는�
 `vae.lr`, `vae.batch_size`, `classifier`, 분류기 하이퍼파라미터, `class_weight`,
 필요시 `decision_rule`.
 
-탐색은 config의 `search.space`로 제한하고 `search.max_evals`로 상한을 둔다
-(기본 random search, Optuna 미사용).
+탐색은 config의 `search.space`로 제한하고 `search.max_evals`로 상한을 둔다.
+상한을 넘으면 분류기×증강법 arm을 균형 있게 순회하고 각 arm 내부만 seed 기반으로
+무작위화한다(Optuna 미사용).
+
+후보를 만들 때는 선택된 `augmentation.method`와 `outlier.method`에 실제로 활성화되는 축만
+남긴 뒤 정규화하고, 의미가 같은 후보는 중복 제거한다. 예를 들어 SMOTE 후보에 VAE의 latent,
+epoch, ratio 축을 곱하지 않는다. 증강법을 선택한 후보가 `n_synthetic=0`이면 유효한 증강 후보로
+간주하지 않고 오류로 처리한다. `max_evals`가 전체 유효 후보보다 작으면
+분류기×증강법 조합별 round-robin으로 예산을 배분한다.
 
 ### outer test에 절대 사용 금지
 
@@ -272,3 +305,7 @@ python run.py --config configs/nested_subject_independent.yaml
 
 따라서 본 재현은 **논문 수치와의 일치가 아니라, 논문 절차를 재구성했을 때 얻어지는 수치와
 검증설계를 강화했을 때의 변화량**을 결과로 제시한다.
+
+2026-08-03 기존 실행은 이 method-level 목표에도 도달하지 못했다. 교정본 재실행 전까지
+현재 상태는 **“재현 실패, 원인 교정 완료 후 검증 대기”**이며, 실패 산출물과 새 산출물을
+혼합 집계하지 않는다.

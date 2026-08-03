@@ -1,0 +1,23 @@
+{
+  "metric": "macro_f1",
+  "n_cells_subject_level": 16,
+  "n_cells_record_level": 8,
+  "experiments_present": [
+    "A",
+    "B",
+    "C_free_selection"
+  ],
+  "notes": [
+    "실험 A는 논문과 동일하게 기록 단위로 평가했다(주 지표). 교차 비교를 위해 피험자 단위 집계도 함께 산출했다.",
+    "실험 C는 분류기와 증강 여부까지 inner CV가 선택했다. 따라서 모델별·증강별 칸을 채우지 않고 전체 결과 1건으로 보고한다. 모델×증강 칸을 채우려면 run.nested_per_cell: true로 실행하라."
+  ],
+  "caveat": "본 실험의 Dem 클래스는 독립 피험자 12명에서 유래한다. 합성 Dem 행은 이 12명(각 fold에서는 8명)의 기록 분포에서 생성된 것이며 새로운 피험자를 의미하지 않는다.",
+  "saved_tables": {
+    "main_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/main_comparison_subject_level.csv",
+    "paper_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/paper_comparison_record_level.csv",
+    "validation_comparison": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/validation_comparison.csv",
+    "deltas": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/deltas.csv",
+    "rank_changes": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/rank_changes.csv",
+    "selected_pipelines": "/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/20260803_013228_full/COMPARISON/selected_pipelines.csv"
+  }
+}

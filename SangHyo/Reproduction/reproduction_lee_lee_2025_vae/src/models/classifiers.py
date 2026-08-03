@@ -46,7 +46,19 @@ class XGBoostClassifier(BaseClassifier):
         from xgboost import XGBClassifier
 
         params = {**self.DEFAULTS, **self.params}
-        params.pop("class_weight", None)
+        class_weight = params.pop("class_weight", None)
+        if class_weight:
+            class_weight = {
+                int(label): float(weight) for label, weight in class_weight.items()
+            }
+            balanced = np.asarray(
+                [class_weight.get(int(label), 1.0) for label in y], dtype=float
+            )
+            sample_weight = (
+                balanced
+                if sample_weight is None
+                else np.asarray(sample_weight, dtype=float) * balanced
+            )
         self._model = XGBClassifier(
             num_class=self.n_classes, random_state=self.seed, **params
         )
@@ -55,6 +67,10 @@ class XGBoostClassifier(BaseClassifier):
             kwargs["eval_set"] = [(eval_set[0], eval_set[1])]
             kwargs["verbose"] = False
         self._model.fit(X, y, sample_weight=sample_weight, **kwargs)
+        self.fit_log = {
+            "n_train": int(len(y)),
+            "class_weight_applied": bool(class_weight),
+        }
         return self
 
     def predict_proba(self, X):
@@ -65,6 +81,7 @@ class DNNClassifier(BaseClassifier, TorchTrainingMixin):
     """논문 보고: 512-256-128-64-32, ReLU, L2, BatchNorm, Dropout 0.5, softmax."""
 
     name = "DNN"
+    uses_early_stopping = True
     paper_reported_keys = ("hidden", "dropout", "batch_norm", "activation")
 
     DEFAULTS = {
@@ -120,6 +137,7 @@ class WideDeepClassifier(BaseClassifier, TorchTrainingMixin):
     """
 
     name = "WideDeep"
+    uses_early_stopping = True
     paper_reported_keys = ("deep_hidden", "dropout", "activation")
 
     DEFAULTS = {
@@ -210,6 +228,7 @@ class TabNetClassifier(BaseClassifier):
     """논문 보고: n_d = n_a = 64, n_steps = 5."""
 
     name = "TabNet"
+    uses_early_stopping = True
     paper_reported_keys = ("n_d", "n_a", "n_steps")
 
     DEFAULTS = {
@@ -242,14 +261,28 @@ class TabNetClassifier(BaseClassifier):
         if eval_set is not None and len(eval_set[0]):
             kwargs["eval_set"] = [(np.asarray(eval_set[0]), np.asarray(eval_set[1]))]
             kwargs["patience"] = p["patience"]
+        weights = self.params.get("class_weight", 0)
+        if weights:
+            weights = {int(label): float(weight) for label, weight in weights.items()}
+        if sample_weight is not None:
+            sample_weight = np.asarray(sample_weight, dtype=float)
+            if weights:
+                sample_weight = sample_weight * np.asarray(
+                    [weights.get(int(label), 1.0) for label in y], dtype=float
+                )
+            weights = sample_weight
         self._model.fit(
             np.asarray(X), np.asarray(y),
             max_epochs=p["max_epochs"],
             batch_size=min(p["batch_size"], max(len(y), 1)),
             virtual_batch_size=min(p["virtual_batch_size"], max(len(y), 1)),
-            weights=0,
+            weights=weights,
             **kwargs,
         )
+        self.fit_log = {
+            "n_train": int(len(y)),
+            "class_weight_applied": bool(self.params.get("class_weight")),
+        }
         return self
 
     def predict_proba(self, X):

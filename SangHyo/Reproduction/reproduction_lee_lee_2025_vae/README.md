@@ -14,9 +14,43 @@
 | --- | --- |
 | 논문 분석·데이터 대조 | ✅ 완료 |
 | 사전 문서 6종 | ✅ 완료 |
-| 코드·config·unit test | ✅ 완료 (79개 테스트 통과) |
-| dry-run 검증 | ✅ 완료 (A/B/C 3종) |
-| **실제 학습** | ⛔ **미실행** — Colab Pro+에서 사용자가 직접 수행 |
+| 기존 코드·config 검사 | 정적 검사 완료; 이번 교정 후 테스트 미실행 |
+| **2026-08-03 실제 산출물 감사** | ❌ **재현 실패** |
+| 감사 후 코드 교정 | 🔧 정적 수정 — 재실행 필요 |
+| 교정본 학습·평가·테스트 | ⏳ **미실행** — 이번 감사에서는 실행하지 않음 |
+
+---
+
+## 2026-08-03 산출물 감사 결론
+
+`reproduction_lee_lee_2025_vae_result/20260803_013228_full/`은 논문의 성능을 재현하지 못했다.
+차이는 난수 변동으로 설명할 수 있는 범위를 크게 넘고, 합성자료 붕괴와 실험 배선 결함도
+함께 확인되었다.
+
+| 감사 대상 | 기존 산출물 | 논문 보고값 또는 판정 |
+| --- | ---: | ---: |
+| A, Wide & Deep + VAE, 기록 단위 macro-F1 | **0.4524** | **0.8556** |
+| A, Wide & Deep + VAE, Dem recall | **0.1633** | **0.8235** |
+| B, VAE 합성자료의 평균 표준편차 비율(합성/실제) | **약 0.0856** | 심각한 분산 붕괴 |
+| B, TSTR Dem recall | **모든 모델 0** | 합성자료 일반화 실패 |
+| C, 선택된 SMOTE | 2개 fold에서 `n_synthetic=0` | 이름만 SMOTE인 no-op이므로 결과 무효 |
+| A 대조표 `n_dem_subjects` | **12로 고정 표기** | 실제 A3 test Dem 피험자 **8명** |
+
+따라서 이 디렉터리의 기존 산출물은 **실패 원인을 보여 주는 감사 증거**로만 보존한다.
+논문 재현 성능 또는 교정된 파이프라인의 성능 증거로 인용하면 안 된다. 교정본은 다음을
+전제로 다시 실행해야 한다.
+
+- VAE 입력은 표준화 공간으로 통일하고, 재구성 손실과 KL 모두 차원 평균으로 정규화한다.
+- VAE는 해당 fold의 실제 train Dem에만 적합하며, fit 대상은 감사 로그에 반드시 기록한다.
+- 전처리/VAE fit 범위는 피험자 집합뿐 아니라 원시 row ID로도 검사해, 행 단위 split에서
+  all-data fit이 `n_violations=0`으로 가려지지 않게 한다.
+- B는 A와 같은 Isolation Forest를 사용하고, B·C는 `subject_stratified` 분할을 사용한다.
+- C 탐색 후보는 활성화된 증강법에 유효한 축만 남겨 정규화·중복 제거하고, 증강량 0인
+  증강 후보는 유효한 증강으로 취급하지 않는다. 제한된 예산은 분류기×증강법 조합마다
+  round-robin 배분한다.
+
+이번 수정에서는 사용자의 지시에 따라 학습·평가·테스트를 실행하지 않았다. 따라서 위 교정이
+성능을 회복시켰다고 아직 주장할 수 없으며, **교정본 재실행 후 새 산출물을 별도로 감사해야 한다.**
 
 ---
 
@@ -25,7 +59,7 @@
 | 문서 | 내용 |
 | --- | --- |
 | [reproduction_spec.md](reproduction_spec.md) | 재현 사양, 실험 A/B/C 정의, 재현 수준 선언 |
-| [report_inconsistencies.md](report_inconsistencies.md) | **논문 내부 불일치 17건**. 가장 중요한 문서 |
+| [report_inconsistencies.md](report_inconsistencies.md) | **논문 내부 불일치 18건**. 가장 중요한 문서 |
 | [paper_data_mapping.md](paper_data_mapping.md) | 논문 변수 ↔ 실제 컬럼 대응 (46개 전부 일치) |
 | [assumptions.md](assumptions.md) | 미보고 항목의 가정값과 근거 |
 | [unresolved_questions.md](unresolved_questions.md) | 미해결 질문 15건 (저자 문의용) |
@@ -47,10 +81,11 @@
 
 논문 표 1·2의 **46개 변수가 실제 컬럼명과 문자 단위로 100% 일치**한다. 대체·추정이 필요 없다.
 
-### 2. 이상치 처리는 Isolation Forest다 (본문 서술은 오류) 🔴
+### 2. 이상치 행 수는 Isolation Forest를 강하게 지지한다 🔴
 
 논문은 §4.2·그림 1에서 Isolation Forest, §5.1에서 "상·하위 10%"라고 서로 다르게 서술한다.
-**실행 검증 결과 Isolation Forest가 맞다.**
+행 수와 잔존율은 **Isolation Forest(`contamination=0.1`)를 강하게 지지**하지만,
+논문이 seed와 세부 설정을 보고하지 않아 원 구현으로 확정할 수는 없다.
 
 | 방식 | 잔존 행 | CN | MCI | Dem | 논문과의 L1 |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -86,10 +121,12 @@ precision·recall에서 역산한 결과(혼동행렬 주변합까지 닫힘):
 본문 "Dem 0.8556 / 평균 0.875" ↔ 표 6 "Dem 0.8750 / 평균 0.8556".
 표 6이 `F1 = 2PR/(P+R)`과 macro 평균 모두에서 자기정합하므로 **표 6이 정본**이다.
 
-### 6. 분할은 행 단위다 → 피험자 전원이 train·test에 중복 등장
+### 6. 분할은 행 단위다 → train·test 피험자가 대규모로 중복 등장
 
-Dem 12명 전원이 train·valid·test에 동시에 존재한다. 이것이 논문 성능의 주된 낙관 편향
-후보이며, 실험 B·C가 정량화하려는 대상이다.
+논문 표 5의 행 수는 행 단위 8:1:1 분할과 정합한다. 실제 A3 산출물에서는 test 피험자
+167명 전원이 train에도 있었고, test에 포함된 Dem 피험자는 8명이었다. 논문의 정확한
+subject 교집합은 split seed가 미보고라 확정할 수 없지만, 반복측정 행 누수는 구조적으로
+발생한다. 이것이 논문 성능의 주된 낙관 편향 후보이며 실험 B·C가 통제하는 대상이다.
 
 ### 7. `sleep_temperature_delta` == `sleep_temperature_deviation`
 
@@ -119,7 +156,7 @@ python run.py --inspect-data
 ### 2) dry-run — 학습 전에 반드시 확인
 
 ```bash
-python run.py --config configs/paper_isoforest_latent500.yaml --dry-run
+python run.py --config configs/paper_isoforest_scaled_latent500.yaml --dry-run
 python run.py --config configs/leakage_controlled_non_nested.yaml --dry-run
 python run.py --config configs/nested_subject_independent.yaml --dry-run
 ```
@@ -130,13 +167,13 @@ preprocessing fit 범위 / VAE 학습 대상 범위 / 예상 합성행 수 / 누
 ### 3) 이상치 방식 검증
 
 ```bash
-python run.py --config configs/paper_isoforest_latent500.yaml --audit-only
+python run.py --config configs/paper_isoforest_scaled_latent500.yaml --audit-only
 ```
 
 ### 4) 실제 실행
 
 ```bash
-python run.py --config configs/paper_isoforest_latent500.yaml
+python run.py --config configs/paper_isoforest_scaled_latent500.yaml
 python run.py --config configs/leakage_controlled_non_nested.yaml
 python run.py --config configs/nested_subject_independent.yaml
 ```
@@ -163,8 +200,9 @@ python run.py --config configs/nested_subject_independent.yaml
 | --- | --- | ---: | --- |
 | `paper_percentile_latent500.yaml` | percentile 10% | 500 | **primary reported-method reconstruction** (§5.1 본문). ⚠️ 실행 불가 — 발견 #2 |
 | `paper_percentile_latent50.yaml` | percentile 10% | 50 | 그림 2 latent 해석 |
-| `paper_isoforest_latent500.yaml` | IsolationForest(0.1) | 500 | §4.2 해석. **실질 기준 config** |
+| `paper_isoforest_latent500.yaml` | IsolationForest(0.1) | 500 | raw VAE forensic 변형·기존 실패 산출물 |
 | `paper_isoforest_latent50.yaml` | IsolationForest(0.1) | 50 | 그림 기준 일관 변형 |
+| `paper_isoforest_scaled_latent500.yaml` | IsolationForest(0.1) | 500 | **감사 후 교정한 기본 A5** |
 | `leakage_controlled_non_nested.yaml` | (고정) | 500 | 실험 B |
 | `nested_subject_independent.yaml` | (inner 선택) | (inner 선택) | 실험 C |
 
@@ -179,9 +217,11 @@ python run.py --config configs/nested_subject_independent.yaml
 | | 실험 A | 실험 B | 실험 C |
 | --- | --- | --- | --- |
 | 이름 | `paper_reported_reconstruction` | `leakage_controlled_non_nested` | `nested_subject_independent` |
-| 분할 | 행 단위 8:1:1 | 피험자 StratifiedGroupKFold 3-fold | outer 3 × inner 3 |
+| 분할 | 행 단위 8:1:1 | 피험자 `subject_stratified` 3-fold | `subject_stratified` outer 3 × inner 3 |
+| 이상치 | Isolation Forest(0.1) 기준 | **A와 같은** Isolation Forest(0.1) | inner 후보에서 선택 |
 | 전처리 fit | 전체 데이터 (누수) | train fold만 | train fold만 |
-| VAE fit | train Dem | train fold Dem | train fold Dem |
+| VAE 입력 | **scaled** | **scaled** | **scaled** |
+| VAE fit | train Dem + fit 감사 기록 | train fold Dem + 강제 감사 | train fold Dem + 강제 감사 |
 | 하이퍼파라미터 | 논문 고정 | 논문 고정 | **inner CV에서 선택** |
 | 감사 모드 | `observe` (측정) | `enforce` | `enforce` |
 | 주 평가단위 | 기록 (논문과 동일) | **피험자** | **피험자** |
@@ -209,7 +249,7 @@ RUN_FILE    = "Reproduction/reproduction_lee_lee_2025_vae/run.py"
 | 2/10 | 이상치 방식 검증 (`--audit-only`) — Isolation Forest vs 상·하위 10% |
 | 3/10 | 실험 A primary(A1) 실행 가능성 확인 — **실패가 예상되며 그 자체가 결과다** |
 | 4~6/10 | 실험 A·B·C dry-run (fold 구성·누수 검사) |
-| 7/10 | 실험 A 실행 (논문 방법 재구성) |
+| 7/10 | 실험 A5 실행 (증거 기반 교정 재구성; 원저자 설정 아님) |
 | 8/10 | 실험 B 실행 (누수 통제 non-nested) |
 | 9/10 | 실험 C 실행 (Nested Group CV) |
 | 10/10 | 교차 실험 비교표 생성 → `outputs/COMPARISON/` |
@@ -263,7 +303,7 @@ base.ipynb는 저장소를 `/content/Google-Ajou-AICapstone`에 clone하는데
       LATEST.txt                        ← 가장 최근 실행 폴더 이름
       20260803_102655_full/             ← 실행할 때마다 새 폴더 (이전 결과를 덮어쓰지 않는다)
         inspection/
-        A_A3_isoforest_latent500/
+        A_A5_isoforest_scaled_latent500/
         B_B_leakage_controlled/
         C_C_nested/
         COMPARISON/                     ← 교차 실험 비교표
@@ -346,7 +386,7 @@ outer fold를 나눠 여러 세션(Pro+ 세션 한도 24시간)에 걸쳐 실행
 1. `--inspect-data` — 데이터가 논문 표 3과 일치하는지
 2. `--dry-run` 3종 — fold 구성과 예상 합성행 수
 3. `--audit-only` — 이상치 방식 검증
-4. `configs/paper_isoforest_latent500.yaml` (실험 A)
+4. `configs/paper_isoforest_scaled_latent500.yaml` (교정 기본 실험 A5)
 5. `configs/leakage_controlled_non_nested.yaml` (실험 B)
 6. `configs/nested_subject_independent.yaml` (실험 C, 가장 오래 걸림)
 
@@ -355,11 +395,12 @@ outer fold를 나눠 여러 세션(Pro+ 세션 한도 24시간)에 걸쳐 실행
 ## 결과 해석 시 반드시 지킬 것
 
 > 본 실험의 Dem 클래스는 **독립 피험자 12명**에서 유래한다.
-> 합성 Dem 행 N개는 이 12명(각 fold에서는 8명)의 기록 분포에서 생성된 것이며
+> 합성 Dem 행 N개는 해당 fold의 실제 train Dem 피험자 기록 분포에서 생성된 것이며
 > 새로운 피험자를 의미하지 않는다.
 > 피험자 단위 metric의 분모는 항상 실제 피험자 수다.
 
-모든 결과표에 `n_dem_subjects` 열이 필수로 출력된다.
+fold별 train/eval Dem 피험자 수는 산출물의 fold 구성과 `n_dem_subjects` 열에서 확인한다.
+문서나 비교 코드에 특정 수(예: “각 fold 8명”)를 고정해 쓰지 않는다.
 자세한 금지 표현과 진단 절차는 [synthetic_data_risk.md](synthetic_data_risk.md) 참조.
 
 ---

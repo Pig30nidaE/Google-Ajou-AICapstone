@@ -15,6 +15,7 @@ __all__ = [
     "TABLE6_WIDE_DEEP",
     "BODY_TEXT_WIDE_DEEP_CLAIM",
     "FIGURE3_F1",
+    "BODY_TEXT_FIGURE3_F1",
     "RECONSTRUCTED_EVAL_SETS",
     "VAE_REPORTED",
     "CLASSIFIER_REPORTED",
@@ -86,14 +87,20 @@ BODY_TEXT_WIDE_DEEP_CLAIM: dict[str, object] = {
 }
 
 # --------------------------------------------------------------------------------------
-# 그림 3 — 4개 모델 클래스별 F1 (§5.2 본문에서 판독, 내부 정합 검증 완료)
+# 그림 3 — 4개 모델 클래스별 F1 (그림의 표기를 그대로 전사)
 # 조건 미표기이나 W&D 값이 표 6의 증강 후와 동일하므로 "증강 후"로 판단 (I-12).
+# XGBoost MCI는 그림 0.7501 / 본문 0.7581로 충돌하며, 그림의 macro 0.8103은
+# 본문값 0.7581을 쓸 때에만 클래스별 단순 평균과 맞는다.
 # --------------------------------------------------------------------------------------
 FIGURE3_F1: dict[str, dict[str, float]] = {
-    "XGBoost": {"CN": 0.8914, "MCI": 0.7581, "Dem": 0.7816, "macro_avg": 0.8103},
+    "XGBoost": {"CN": 0.8914, "MCI": 0.7501, "Dem": 0.7816, "macro_avg": 0.8103},
     "DNN": {"CN": 0.8958, "MCI": 0.7770, "Dem": 0.7527, "macro_avg": 0.8085},
     "TabNet": {"CN": 0.8762, "MCI": 0.7485, "Dem": 0.7391, "macro_avg": 0.7879},
     "WideDeep": {"CN": 0.8897, "MCI": 0.8022, "Dem": 0.8750, "macro_avg": 0.8556},
+}
+
+BODY_TEXT_FIGURE3_F1: dict[str, dict[str, float]] = {
+    "XGBoost": {"MCI": 0.7581},
 }
 
 #: 표 6의 precision·recall에서 역산한 평가셋 크기 (report_inconsistencies.md I-4).

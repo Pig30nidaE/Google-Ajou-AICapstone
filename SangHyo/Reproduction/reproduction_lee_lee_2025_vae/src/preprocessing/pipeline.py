@@ -95,16 +95,21 @@ class FoldPreprocessor:
         self.feature_names = list(train.X.columns)
 
         # (2) 이상치 처리기 — train fold 자료에서만
-        self.auditor.record_fit(
-            "outlier_detector", self.fold_id, subjects=train.subject, n_rows=train.n
-        )
+        if self.outlier.name != "none":
+            self.auditor.record_fit(
+                "outlier_detector", self.fold_id,
+                subjects=train.subject, row_ids=train.row_id, n_rows=train.n,
+            )
         self.outlier.fit(train.X, train.y)
         res = self.outlier.transform(train.X, train.y)
 
         # (3) imputer — 이상치 처리 후의 train 자료에서만
         kept = train.take(res.keep_mask)
         X_kept = res.X.loc[res.keep_mask] if self.outlier.name == "percentile" else kept.X
-        self.auditor.record_fit("imputer", self.fold_id, subjects=kept.subject, n_rows=kept.n)
+        self.auditor.record_fit(
+            "imputer", self.fold_id,
+            subjects=kept.subject, row_ids=kept.row_id, n_rows=kept.n,
+        )
         self.imputer.fit(X_kept.to_numpy())
         n_imputed = int(np.isnan(X_kept.to_numpy()).sum())
 
@@ -152,7 +157,8 @@ class FoldPreprocessor:
             raise ValueError(f"unknown scaler_scope {self.scaler_scope!r}")
 
         self.auditor.record_fit(
-            "scaler", self.fold_id, subjects=fit_on.subject, n_rows=fit_on.n
+            "scaler", self.fold_id,
+            subjects=fit_on.subject, row_ids=fit_on.row_id, n_rows=fit_on.n,
         )
         self.scaler.fit(fit_on.X.to_numpy())
         if self.report is not None:

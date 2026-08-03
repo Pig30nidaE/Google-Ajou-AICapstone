@@ -37,6 +37,7 @@ augmentation:
     n_synthetic: 4000          # [유도] I-5
     fit_scope: train_dem_only  # [가정] D-4
     input_space: raw           # [논문] §4.2 순서 (D-5)
+    kl_reduction: sum          # 2026-08-03 A3 실패 조건을 forensic 용도로 보존
 
 audit:
   mode: observe

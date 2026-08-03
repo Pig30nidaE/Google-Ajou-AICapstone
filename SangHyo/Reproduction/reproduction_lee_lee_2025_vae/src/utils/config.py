@@ -146,3 +146,24 @@ def validate_config(cfg: Config) -> None:
     valid_aug = {"none", "vae", "class_weight", "random_oversampling", "smote"}
     if aug is not None and aug not in valid_aug:
         raise ConfigError(f"알 수 없는 augmentation.method: {aug!r} (가능: {sorted(valid_aug)})")
+
+    vae_fit_scope = cfg.get_path("augmentation.vae.fit_scope")
+    if vae_fit_scope not in (None, "train_dem_only"):
+        raise ConfigError(
+            "현재 VAE 데이터 배선은 augmentation.vae.fit_scope=train_dem_only만 지원한다. "
+            f"현재 값: {vae_fit_scope!r}. 지원하지 않는 범위를 조용히 train Dem으로 "
+            "대체하면 감사 기록과 실제 학습 범위가 달라지므로 fail-closed 처리한다."
+        )
+
+    vae_input_space = cfg.get_path("augmentation.vae.input_space")
+    if vae_input_space not in (None, "raw", "scaled"):
+        raise ConfigError("augmentation.vae.input_space는 raw 또는 scaled여야 한다")
+
+    recon_reduction = cfg.get_path("augmentation.vae.recon_reduction")
+    if recon_reduction not in (None, "mean_per_feature", "sum"):
+        raise ConfigError(
+            "augmentation.vae.recon_reduction은 mean_per_feature 또는 sum이어야 한다"
+        )
+    kl_reduction = cfg.get_path("augmentation.vae.kl_reduction")
+    if kl_reduction not in (None, "mean", "sum"):
+        raise ConfigError("augmentation.vae.kl_reduction은 mean 또는 sum이어야 한다")

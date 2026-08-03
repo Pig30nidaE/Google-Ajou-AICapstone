@@ -56,7 +56,8 @@ class CrossExperimentResults:
         for (model, aug), metrics in result.get("results_subject", {}).items():
             self.subject_level[("A", model, aug)] = metrics
         self.notes.append(
-            "실험 A는 논문과 동일하게 기록 단위로 평가했다(주 지표). "
+            "실험 A5는 논문의 기록 단위 평가 틀을 따르되, 미보고 VAE 입력 척도와 "
+            "손실 축척에는 결과 감사 후 교정한 가정을 사용했다. 원저자 설정의 정확 재현이 아니다. "
             "교차 비교를 위해 피험자 단위 집계도 함께 산출했다."
         )
 
@@ -108,9 +109,10 @@ def assemble_comparison(
     main.attrs["paper_note"] = (
         "'원 논문 보고값'은 논문이 보고한 macro F1이며 **기록 단위**다 "
         "(Wide & Deep은 표 6, 나머지 3모델은 그림 3). "
-        "'원 방법 재구현'·'누수 통제'·'Nested' 열은 모두 **피험자 단위**로 통일했다 — "
+        "'증거 기반 교정 A5'·'누수 통제'·'Nested' 열은 모두 **피험자 단위**로 통일했다 — "
         "평가단위를 섞으면 성능 변화의 원인을 구분할 수 없기 때문이다. "
         "논문과 직접 비교 가능한 기록 단위 수치는 paper_comparison_record_level.csv에 있다. "
+        "A5의 scaled VAE와 KL mean은 논문 미보고 사항에 대한 교정 가정이며 원저자 설정이 아니다. "
         "'not_reported'는 논문이 그 조합을 보고하지 않았다는 뜻이다."
     )
     saved["main_comparison"] = str(save_table(main, out / "main_comparison_subject_level.csv"))
@@ -125,18 +127,19 @@ def assemble_comparison(
                     "모델": label,
                     "증강": "없음" if aug == "none" else "VAE",
                     "원 논문 보고값(기록 단위)": _paper_macro_f1(model, aug),
-                    "재구현(기록 단위)": round(float(m.get(metric, float("nan"))), 4),
+                    "교정 A5(기록 단위)": round(float(m.get(metric, float("nan"))), 4),
                     "Dem F1": round(float(m.get("dem_f1", float("nan"))), 4),
                     "Dem recall": round(float(m.get("dem_recall", float("nan"))), 4),
                     "평가 행 수": m.get("n"),
-                    "n_dem_subjects": 12,
+                    "n_dem_subjects": m.get("n_dem_subjects_eval"),
                 }
             )
         rec = pd.DataFrame(rows)
         rec.attrs["caveat"] = DEM_SUBJECT_CAVEAT
         rec.attrs["paper_note"] = (
             "논문 표 6의 증강 전/후는 서로 다른 평가셋(N=1097 vs 1095)에서 측정되었다 "
-            "(report_inconsistencies.md I-4). 본 재현은 동일 split·동일 seed에서 비교했다."
+            "(report_inconsistencies.md I-4). A5는 동일 split·동일 seed에서 비교하며, "
+            "scaled VAE와 KL mean은 논문 미보고 사항에 대한 교정 가정이다."
         )
         saved["paper_comparison"] = str(
             save_table(rec, out / "paper_comparison_record_level.csv")
@@ -144,7 +147,7 @@ def assemble_comparison(
 
     # ---- 3) 검증방식 비교표
     validation: dict[str, dict] = {}
-    for exp, name in (("A", "원 방법 재구현 (행 단위 분할·전처리 누수)"),
+    for exp, name in (("A", "증거 기반 교정 A5 (행 단위 분할·전처리 누수)"),
                       ("B", "누수 통제 non-nested (피험자 독립)")):
         best = _best_cell(results.subject_level, exp, metric)
         if best:
@@ -164,7 +167,12 @@ def assemble_comparison(
     # ---- 4) delta / 순위 변화
     deltas = compute_deltas(results.subject_level)
     if len(deltas):
-        deltas.attrs["caveat"] = DEM_SUBJECT_CAVEAT
+        deltas.attrs["caveat"] = (
+            DEM_SUBJECT_CAVEAT
+            + " A→B delta는 행 분할→피험자 분할, all-data→train-only fit, "
+              "평가 이상치 보존 등 검증 프로토콜 변경의 결합 차이다. "
+              "단일 누수 요인의 인과효과로 해석할 수 없다."
+        )
         saved["deltas"] = str(save_table(deltas, out / "deltas.csv"))
     ranks = build_rank_change_table(results.subject_level, metric=metric)
     if len(ranks):

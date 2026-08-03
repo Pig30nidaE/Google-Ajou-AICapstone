@@ -153,8 +153,11 @@ def augment_train_fold(
     sub_cfg = dict(cfg.get(method) or {})
     n_syn = _resolve_n_synthetic(sub_cfg, n_real, counts, target)
     if n_syn <= 0:
-        log.warning("생성할 합성행 수가 0이다 (method=%s)", method)
-        return AugmentationResult(train, None, 0, {"method": method, "n_synthetic": 0})
+        raise ValueError(
+            f"augmentation.method={method!r}인데 생성할 합성행 수가 0이다. "
+            f"augmentation.{method}에 n_synthetic, ratio_to_real 또는 "
+            "match_majority=true 중 하나를 설정하라. no-op 증강 후보는 허용하지 않는다."
+        )
 
     log.info(
         "[%s] %s 증강: 실제 %s %d행 (피험자 %d명) -> 합성 %d행",
@@ -171,8 +174,29 @@ def augment_train_fold(
         X_syn, diag = _smote_generate(train, real, target, n_syn, sub_cfg, seed)
         X_syn_raw = None
     elif method == "vae":
+        fit_scope = sub_cfg.get("fit_scope", "train_dem_only")
+        if fit_scope != "train_dem_only":
+            raise ValueError(
+                "augmentation.vae.fit_scope는 현재 train_dem_only만 지원한다. "
+                f"요청값={fit_scope!r}. all_dem은 split 전 원자료를 별도로 넘겨야 하며, "
+                "현재 배선에서 허용하면 설정과 실제 학습 범위가 달라진다."
+            )
+        auditor.record_vae_fit(
+            fold_id,
+            subjects=real.subject,
+            labels=real.y,
+            row_ids=real.row_id,
+            expected_label=target,
+            n_rows=real.n,
+        )
         X_syn, X_syn_raw, diag = _vae_generate(
-            real, cfg, sub_cfg, preprocessor=preprocessor, seed=seed, fold_id=fold_id
+            real,
+            cfg,
+            sub_cfg,
+            n_synthetic=n_syn,
+            preprocessor=preprocessor,
+            seed=seed,
+            fold_id=fold_id,
         )
     else:
         raise ValueError(f"unknown augmentation method {method!r}")
@@ -220,18 +244,33 @@ def _smote_generate(train, real, target, n_syn, cfg, seed):
         "k_neighbors": k,
         "n_synthetic": len(X_syn),
         "note": (
-            "SMOTE는 소수 클래스 이웃 사이를 보간한다. Dem 피험자가 fold당 8명뿐이므로 "
-            "보간이 사실상 피험자 내부에서 일어날 수 있다 (synthetic_data_risk.md §3.5)."
+            "SMOTE는 소수 클래스 이웃 사이를 보간한다. "
+            f"현재 fold의 train Dem 피험자는 {len(real.subjects())}명이며, "
+            "보간이 사실상 피험자 내부에서 일어날 수 있다 "
+            "(synthetic_data_risk.md §3.5)."
         ),
     }
     return X_syn, diag
 
 
-def _vae_generate(real, cfg, sub_cfg, *, preprocessor, seed, fold_id):
+def _vae_generate(
+    real,
+    cfg,
+    sub_cfg,
+    *,
+    n_synthetic,
+    preprocessor,
+    seed,
+    fold_id,
+):
     """VAE 학습·생성·후처리. 학습 자료는 호출자가 이미 train fold로 제한했다."""
     from .vae import TabularVAE, VAEConfig
 
     input_space = sub_cfg.get("input_space", "scaled")
+    if input_space not in {"raw", "scaled"}:
+        raise ValueError(
+            f"augmentation.vae.input_space는 'raw' 또는 'scaled'여야 한다: {input_space!r}"
+        )
     if input_space == "raw":
         if preprocessor is None:
             raise ValueError("input_space='raw'에는 preprocessor가 필요하다 (inverse scaling)")
@@ -242,8 +281,7 @@ def _vae_generate(real, cfg, sub_cfg, *, preprocessor, seed, fold_id):
     vcfg = VAEConfig.from_dict(sub_cfg, input_dim=X_fit.shape[1], seed=seed)
     vae = TabularVAE(vcfg).fit(X_fit, subjects=real.subject)
 
-    n_syn = _resolve_n_synthetic(sub_cfg, len(real.X), {}, 0)
-    gen = vae.sample(n_syn, seed=seed)
+    gen = vae.sample(n_synthetic, seed=seed)
     gen_df = pd.DataFrame(gen, columns=real.features)
 
     # 후처리는 항상 원 단위에서 수행한다 (범위·부호 제약이 원 단위로 정의되므로).
@@ -272,6 +310,8 @@ def _vae_generate(real, cfg, sub_cfg, *, preprocessor, seed, fold_id):
         "latent_dim": vcfg.latent_dim,
         "input_space": input_space,
         "beta": vcfg.beta,
+        "recon_reduction": vcfg.recon_reduction,
+        "kl_reduction": vcfg.kl_reduction,
         "epochs_run": len(vae.log.train_total),
         "stopped_early": vae.log.stopped_early,
         "best_epoch": vae.log.best_epoch,

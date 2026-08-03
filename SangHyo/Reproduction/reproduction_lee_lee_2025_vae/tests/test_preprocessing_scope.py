@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from src.audit.checks import check_fit_scope, check_preprocessing_after_split
+from src.audit.checks import check_fit_row_scope, check_fit_scope, check_preprocessing_after_split
 from src.audit.leakage import LeakageAuditor, LeakageError
 from src.preprocessing.outliers import make_outlier_handler
 from src.preprocessing.pipeline import FoldPreprocessor
@@ -27,6 +27,25 @@ def test_fit_scope_violation_detected():
     v = check_fit_scope("scaler", ["a", "z"], ["a", "b"])
     assert len(v) == 1 and v[0].code == "FIT_SCOPE"
     assert v[0].detail["n_outside"] == 1
+
+
+def test_fit_row_scope_detects_eval_rows_even_when_subjects_overlap():
+    v = check_fit_row_scope("scaler", [1, 2, 3], [1, 2])
+    assert len(v) == 1 and v[0].code == "FIT_ROW_SCOPE"
+    assert v[0].detail["n_outside_rows"] == 1
+
+
+def test_auditor_row_scope_closes_subject_overlap_blind_spot(fake_data, enforcing_auditor):
+    fold = make_group_folds(fake_data, n_splits=3, seed=0)[0]
+    _register(enforcing_auditor, fake_data, fold)
+    train = fake_data.take(fold.train_idx)
+    with pytest.raises(LeakageError, match="FIT_ROW_SCOPE"):
+        enforcing_auditor.record_fit(
+            "scaler",
+            fold.fold_id,
+            subjects=train.subject,
+            row_ids=np.concatenate([train.row_id, fake_data.row_id[fold.eval_idx][:1]]),
+        )
 
 
 def test_preprocessing_before_split_detected():

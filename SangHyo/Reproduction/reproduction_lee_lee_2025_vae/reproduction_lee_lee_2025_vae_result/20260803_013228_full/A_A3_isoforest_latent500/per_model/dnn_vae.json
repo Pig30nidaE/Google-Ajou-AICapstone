@@ -1,0 +1,144 @@
+{
+  "record_level": {
+    "unit": "record",
+    "n": 1096,
+    "macro_f1": 0.39197452994533544,
+    "balanced_accuracy": 0.4144945106755573,
+    "macro_roc_auc_ovr": 0.6861274465929478,
+    "macro_pr_auc": 0.5417357960271776,
+    "accuracy": 0.6551094890510949,
+    "weighted_f1": 0.5261572085718081,
+    "brier": 0.4651264352734773,
+    "confusion_matrix": [
+      [
+        706,
+        0,
+        1
+      ],
+      [
+        340,
+        0,
+        0
+      ],
+      [
+        37,
+        0,
+        12
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7372752860629429,
+    "CN_precision": 0.6518928901200369,
+    "CN_recall": 0.9985855728429985,
+    "CN_f1": 0.788826815642458,
+    "n_CN": 707,
+    "n_CN_correct": 706,
+    "MCI_precision": 0.0,
+    "MCI_recall": 0.0,
+    "MCI_f1": 0.0,
+    "n_MCI": 340,
+    "n_MCI_correct": 0,
+    "Dem_precision": 0.9230769230769231,
+    "Dem_recall": 0.24489795918367346,
+    "Dem_f1": 0.3870967741935484,
+    "n_Dem": 49,
+    "n_Dem_correct": 12,
+    "dem_recall": 0.24489795918367346,
+    "dem_precision": 0.9230769230769231,
+    "dem_f1": 0.3870967741935484,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 12,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "subject_level": {
+    "unit": "subject",
+    "n": 167,
+    "macro_f1": 0.39706959706959705,
+    "balanced_accuracy": 0.4166666666666667,
+    "macro_roc_auc_ovr": 0.707719506364398,
+    "macro_pr_auc": 0.5928432614393019,
+    "accuracy": 0.6586826347305389,
+    "weighted_f1": 0.530841613476344,
+    "brier": 0.4644074146384193,
+    "confusion_matrix": [
+      [
+        108,
+        0,
+        0
+      ],
+      [
+        51,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        2
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7374810128101722,
+    "CN_precision": 0.6545454545454545,
+    "CN_recall": 1.0,
+    "CN_f1": 0.7912087912087912,
+    "n_CN": 108,
+    "n_CN_correct": 108,
+    "MCI_precision": 0.0,
+    "MCI_recall": 0.0,
+    "MCI_f1": 0.0,
+    "n_MCI": 51,
+    "n_MCI_correct": 0,
+    "Dem_precision": 1.0,
+    "Dem_recall": 0.25,
+    "Dem_f1": 0.4,
+    "n_Dem": 8,
+    "n_Dem_correct": 2,
+    "dem_recall": 0.25,
+    "dem_precision": 1.0,
+    "dem_f1": 0.4,
+    "n_dem_units": 8,
+    "n_dem_units_correct": 2,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "model": {
+    "model": "DNN",
+    "params": {
+      "hidden": [
+        512,
+        256,
+        128,
+        64,
+        32
+      ],
+      "dropout": 0.5,
+      "batch_norm": true,
+      "l2": 0.0001,
+      "lr": 0.001,
+      "epochs": 200,
+      "batch_size": 128,
+      "patience": 20
+    },
+    "paper_reported_keys": [
+      "hidden",
+      "dropout",
+      "batch_norm",
+      "activation"
+    ],
+    "assumed_keys": [
+      "batch_size",
+      "epochs",
+      "l2",
+      "lr",
+      "patience"
+    ]
+  }
+}

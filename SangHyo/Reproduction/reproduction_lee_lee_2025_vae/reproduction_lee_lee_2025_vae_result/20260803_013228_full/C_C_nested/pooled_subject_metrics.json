@@ -1,0 +1,107 @@
+{
+  "unit": "subject",
+  "n": 174,
+  "macro_f1": 0.3196508601184469,
+  "balanced_accuracy": 0.31611022787493376,
+  "macro_roc_auc_ovr": 0.5223432451831941,
+  "macro_pr_auc": 0.382005355257766,
+  "accuracy": 0.4425287356321839,
+  "weighted_f1": 0.4413405228882161,
+  "brier": 0.5989427277743007,
+  "confusion_matrix": [
+    [
+      65,
+      40,
+      6
+    ],
+    [
+      39,
+      10,
+      2
+    ],
+    [
+      8,
+      2,
+      2
+    ]
+  ],
+  "auc_skipped_classes": [],
+  "log_loss": 0.9837887415565474,
+  "CN_precision": 0.5803571428571429,
+  "CN_recall": 0.5855855855855856,
+  "CN_f1": 0.5829596412556054,
+  "n_CN": 111,
+  "n_CN_correct": 65,
+  "MCI_precision": 0.19230769230769232,
+  "MCI_recall": 0.19607843137254902,
+  "MCI_f1": 0.1941747572815534,
+  "n_MCI": 51,
+  "n_MCI_correct": 10,
+  "Dem_precision": 0.2,
+  "Dem_recall": 0.16666666666666666,
+  "Dem_f1": 0.18181818181818182,
+  "n_Dem": 12,
+  "n_Dem_correct": 2,
+  "dem_recall": 0.16666666666666666,
+  "dem_precision": 0.2,
+  "dem_f1": 0.18181818181818182,
+  "n_dem_units": 12,
+  "n_dem_units_correct": 2,
+  "class_order": [
+    "CN",
+    "MCI",
+    "Dem"
+  ],
+  "fold_variability": [
+    {
+      "metric": "macro_f1",
+      "n_folds": 3,
+      "mean": 0.2618,
+      "std": 0.0013,
+      "min": 0.2603,
+      "max": 0.2626,
+      "range": 0.0023
+    },
+    {
+      "metric": "dem_recall",
+      "n_folds": 3,
+      "mean": 0.2222,
+      "std": 0.3849,
+      "min": 0.0,
+      "max": 0.6667,
+      "range": 0.6667
+    }
+  ],
+  "bootstrap_ci": {
+    "macro_f1": {
+      "point": 0.3196508601184469,
+      "lo": 0.23686364147984273,
+      "hi": 0.4092347197127655,
+      "n_valid": 2000
+    },
+    "balanced_accuracy": {
+      "point": 0.31611022787493376,
+      "lo": 0.23688239112889076,
+      "hi": 0.4108729971096858,
+      "n_valid": 2000
+    },
+    "macro_roc_auc_ovr": {
+      "point": 0.5223432451831941,
+      "lo": 0.4409931853468939,
+      "hi": 0.6074374994408269,
+      "n_valid": 2000
+    },
+    "dem_recall": {
+      "point": 0.16666666666666666,
+      "lo": 0.0,
+      "hi": 0.43767361111111014,
+      "n_valid": 2000
+    },
+    "dem_f1": {
+      "point": 0.18181818181818182,
+      "lo": 0.0,
+      "hi": 0.4166666666666667,
+      "n_valid": 2000
+    }
+  }
+}

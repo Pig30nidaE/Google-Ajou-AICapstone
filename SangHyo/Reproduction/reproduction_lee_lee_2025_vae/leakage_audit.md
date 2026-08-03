@@ -33,12 +33,13 @@ subject ID나 MMSE가 입력에 들어가는 것은 논문 재현과 무관한 �
 
 ```python
 auditor.register_split(fold_id, train_subjects=…, eval_subjects=…,
-                       train_row_ids=…, eval_row_ids=…)
-auditor.record_fit("scaler", fold_id, subjects=…)       # 전처리기
-auditor.record_vae_fit(fold_id, subjects=…, labels=…, expected_label=2)
+                       train_row_ids=…, eval_row_ids=…,
+                       validation_subjects=…, validation_row_ids=…)
+auditor.record_fit("scaler", fold_id, subjects=…, row_ids=…)       # 전처리기
+auditor.record_vae_fit(fold_id, subjects=…, labels=…, row_ids=…, expected_label=2)
 auditor.record_synthetic(fold_id, source_subjects=…, n_rows=…, target="train")
 auditor.record_eval(fold_id, is_synthetic=…, subjects=…)
-auditor.record_early_stopping(fold_id, subjects=…)
+auditor.record_early_stopping(fold_id, subjects=…, row_ids=…)
 auditor.record_selection("latent_dim", fold_id, subjects=…)
 auditor.check_features(columns)
 ```
@@ -67,7 +68,9 @@ auditor.check_features(columns)
 | 11 | test 성능으로 이상치 임계값 선택 | `check_selection_scope` → `SELECTION_SCOPE` | `test_outer_test_isolation.py` |
 | 12 | test 성능으로 latent dimension 선택 | `check_selection_scope` → `SELECTION_SCOPE` | `test_outer_test_isolation.py` |
 | 13 | synthetic이 독립 subject로 집계 | `check_subject_aggregation_excludes_synthetic` → `SYNTHETIC_AS_SUBJECT` | `test_synthetic_test_exclusion.py` |
-| 14 | outer test가 early stopping에 사용 | `check_early_stopping_scope` → `EARLY_STOPPING_SCOPE` | `test_outer_test_isolation.py` |
+| 14 | outer test가 early stopping에 사용 | subject: `EARLY_STOPPING_SCOPE`; 원시행: `EARLY_STOPPING_ROW_SCOPE` | `test_outer_test_isolation.py` |
+| 15 | 전처리 fit 원시행 범위 | `check_fit_row_scope` → `FIT_ROW_SCOPE` | `test_preprocessing_scope.py` |
+| 16 | VAE fit 원시행 범위 | `check_fit_row_scope` → `VAE_FIT_ROW_SCOPE` | `test_vae_training_scope.py` |
 
 추가로 구현한 검사:
 
@@ -76,6 +79,7 @@ auditor.check_features(columns)
 | 합성행이 train 이외에 투입 | `SYNTHETIC_TARGET` |
 | VAE가 대상 클래스 밖 라벨로 학습 | `VAE_FIT_LABEL` |
 | fold 등록 없이 파이프라인 호출 | `SPLIT_NOT_REGISTERED` |
+| 명시적 validation과 outer test 행 혼입 | `EARLY_STOPPING_ROW_SCOPE` |
 
 ---
 
@@ -104,7 +108,7 @@ auditor.check_features(columns)
 | split 단위 | 행 | train 174명 / test 167명, **중복 167명** |
 | 이상치 처리기 fit | 전체 데이터 | test·valid 행이 임계값 결정에 참여 |
 | scaler fit | 전체 데이터 | 동일 |
-| VAE fit | train Dem만 (관대한 해석) | `all_dem` 변형도 제공 |
+| VAE fit | train Dem만 | 다른 범위는 미구현 상태에서 fail-closed |
 | 합성행 투입 | train만 | 평가에는 미투입 (논문과 동일) |
 
 → `outputs/A_*/leakage_observation.json`에 위반 코드별 건수와 관측치가 저장된다.
@@ -112,7 +116,7 @@ auditor.check_features(columns)
 ### 실험 B (`enforce`) — 순서 강제
 
 ```
-1. 피험자 ID 기준 fold 분리         make_group_folds(groups=subject)
+1. 피험자 1행 테이블 기준 층화 분리  make_group_folds(method=subject_stratified)
 2. 이상치 처리기 fit ← train만       FoldPreprocessor.fit()
 3. imputer fit       ← train만       FoldPreprocessor.fit()
 4. scaler fit        ← train 실제행만 FoldPreprocessor.fit_scaler()
@@ -123,19 +127,19 @@ auditor.check_features(columns)
 9. 평가에 합성행 절대 미추가           record_eval() 검증
 ```
 
-dry-run 확인 결과 (seed 42, 3-fold):
+교정 설계의 기대 구성(seed 42, 3-fold; **아직 재실행하지 않음**):
 
 | fold | train Dem 피험자 | eval Dem 피험자 | train Dem 기록 | VAE fit 기록 |
-| --- | ---: | ---: | ---: | ---: |
-| fold_r0_f0 | 8 | 4 | 520 | 520 |
-| fold_r0_f1 | 8 | 4 | 525 | 525 |
-| fold_r0_f2 | 8 | 4 | 525 | 525 |
+| --- | ---: | ---: | --- | --- |
+| fold_r0_f0 | 8 | 4 | 새 dry-run에서 확인 | train의 실제 Dem 행과 동일해야 함 |
+| fold_r0_f1 | 8 | 4 | 새 dry-run에서 확인 | train의 실제 Dem 행과 동일해야 함 |
+| fold_r0_f2 | 8 | 4 | 새 dry-run에서 확인 | train의 실제 Dem 행과 동일해야 함 |
 
 모든 fold에서 CN·MCI·Dem 피험자가 train·eval 양쪽에 존재한다.
 
-> ⚠️ **평가 fold에서 행을 삭제하지 않는다.** 이상치 처리가 `drop_row`면 평가 대상이
-> 바뀌어 fold 간 비교가 불가능해진다. 따라서 실험 B·C는 `action: clip`을 쓰고,
-> 평가에는 `apply_outlier_eval()`(clip만, 행 유지)을 적용한다.
+> ⚠️ **평가 fold에서 행을 삭제하지 않는다.** B는 A와 같은 Isolation Forest를 train에
+> 적합하지만, 독립 평가 표본을 사후 선택하지 않도록 eval의 `keep_mask`는 적용하지 않는다.
+> percentile 후보도 평가는 `apply_outlier_eval()`로 행 수를 유지한다.
 
 ### 실험 C (`enforce`) — 선택을 inner에 가둠
 
@@ -147,7 +151,8 @@ outer 감사기 기준으로 검증되지 않는 혼선이 없다. outer 감사�
 `record_selection("pipeline", outer_fold, subjects=outer_train.subject)`만 신고되며,
 outer eval 피험자가 섞이면 즉시 `SELECTION_SCOPE`가 발생한다.
 
-dry-run 확인 결과: outer 3-fold × 24 후보 × inner 3-fold + outer 3회 = **총 219회 모델 적합**.
+교정 설정상 예상 규모: outer 3-fold × 24 후보 × inner 3-fold + outer 3회 =
+**총 219회 모델 적합**. 수정 후 dry-run은 이번 감사에서 실행하지 않았다.
 
 ---
 
@@ -157,7 +162,8 @@ dry-run 확인 결과: outer 3-fold × 24 후보 × inner 3-fold + outer 3회 = 
 python -m pytest tests/ -q
 ```
 
-현재 상태: **79개 테스트 전부 통과** (실제 데이터가 있으면 통합 검증 포함).
+현재 상태: 2026-08-03 감사 후 회귀 테스트를 추가했지만, 사용자 지시에 따라 수정 뒤
+**테스트를 실행하지 않았다**. 아래 명령은 후속 재실행 시 사용할 검증 명령이다.
 
 ```bash
 python run.py --config configs/leakage_controlled_non_nested.yaml --dry-run
@@ -174,7 +180,7 @@ python run.py --config configs/leakage_controlled_non_nested.yaml --dry-run
 2. **`observe` 모드의 관측치는 위반 목록이지 완전한 누수 정량화가 아니다.**
    예컨대 "test 행이 scaler 평균에 얼마나 기여했는가"는 측정하지 않는다.
 3. **실험 A의 이상치 처리는 감사기 fold 등록 이전에 일어난다**(논문 순서 재현).
-   그 사실은 `observations`에 `outlier_fit_on_all_data`로 기록되지만
-   `record_fit` 경로를 타지 않는다.
+   fold 등록 뒤 역사적 fit 이벤트로 신고해 `PREPROCESSING_BEFORE_SPLIT`과 원시행 범위
+   위반을 기록하고, `observations`에도 `outlier_fit_on_all_data`를 남긴다.
 4. **피험자 라벨의 정확성은 검사 범위 밖이다.** 라벨 파일 3종과 MMSE의 `DIAG_NM`이
    174명 전원에서 일치함은 확인했으나, 그 라벨 자체의 타당성은 다루지 않는다.

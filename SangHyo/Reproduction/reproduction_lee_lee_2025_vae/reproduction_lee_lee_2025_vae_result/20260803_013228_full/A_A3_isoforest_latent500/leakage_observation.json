@@ -1,0 +1,126 @@
+{
+  "name": "A_A3_isoforest_latent500",
+  "mode": "observe",
+  "n_folds": 1,
+  "n_violations": 0,
+  "violations_by_code": {},
+  "violations": [],
+  "observations": [
+    {
+      "kind": "outlier_fit_on_all_data",
+      "detail": {
+        "method": "isolation_forest",
+        "contamination": 0.1,
+        "n_estimators": 100,
+        "random_state": 42
+      },
+      "n_rows_seen": 12183,
+      "n_dropped": 1219,
+      "note": "논문 §5.1의 순서. split 이전이므로 test·valid가 임계값 결정에 사용되었다 (I-7)."
+    },
+    {
+      "fold_id": "paper_row_split_seed42",
+      "kind": "subject_overlap_measured",
+      "n_shared_subjects": 167,
+      "n_train_subjects": 174,
+      "n_eval_subjects": 167
+    }
+  ],
+  "fold_events": {
+    "paper_row_split_seed42": [
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 174,
+        "n_rows": 8771
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 172,
+        "n_rows": 7894
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 174,
+        "n_rows": 10964
+      },
+      {
+        "kind": "eval",
+        "n_rows": 1096,
+        "where": "test"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 1097,
+        "where": "valid"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "fit",
+        "component": "outlier_detector",
+        "n_subjects": 174,
+        "n_rows": 8771
+      },
+      {
+        "kind": "fit",
+        "component": "imputer",
+        "n_subjects": 172,
+        "n_rows": 7894
+      },
+      {
+        "kind": "fit",
+        "component": "scaler",
+        "n_subjects": 174,
+        "n_rows": 10964
+      },
+      {
+        "kind": "synthetic",
+        "n_rows": 4000,
+        "target": "train"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 1096,
+        "where": "test"
+      },
+      {
+        "kind": "eval",
+        "n_rows": 1097,
+        "where": "valid"
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      },
+      {
+        "kind": "early_stopping",
+        "n_subjects": 35
+      }
+    ]
+  }
+}

@@ -70,6 +70,10 @@ class BaseClassifier:
     """모든 분류기가 만족해야 하는 계약."""
 
     name = "base"
+    #: ``True``인 모델만 학습행 일부를 early-stopping validation으로 분리한다.
+    #: XGBoost처럼 eval_set을 받더라도 실제 early stopping을 하지 않는 모델에서
+    #: 학습행 20%를 이유 없이 버리는 문제를 막는다.
+    uses_early_stopping = False
     #: 논문에서 보고된 하이퍼파라미터 키 (결과표에서 "가정값"과 구분해 표시한다).
     paper_reported_keys: tuple[str, ...] = ()
 

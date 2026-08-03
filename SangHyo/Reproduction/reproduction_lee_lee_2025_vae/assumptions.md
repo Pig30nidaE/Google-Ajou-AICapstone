@@ -1,6 +1,7 @@
 # assumptions.md — 논문 미보고 항목과 본 재현이 채택한 가정
 
 작성일: 2026-08-02
+최근 갱신: 2026-08-03 (실제 산출물 감사 후 교정 설계 반영)
 
 원칙:
 
@@ -9,6 +10,12 @@
 3. 미보고 항목을 "원 논문 구현"이라고 부르지 않는다. 설정 이름에 `assumed_` 접두를 붙인다.
 4. 모든 가정은 config로 변경 가능해야 한다. 코드에 상수로 박지 않는다.
 5. 논문과 데이터가 충돌하면 조용히 고치지 않고 여기와 `report_inconsistencies.md`에 남긴다.
+
+> 2026-08-03 기존 산출물은 재현에 실패했다. 특히 A의 Wide & Deep+VAE 기록 단위
+> macro-F1은 0.4524(논문 0.8556), Dem recall은 0.1633(논문 0.8235)이었다.
+> B 합성자료의 평균 표준편차 비율은 약 0.0856이고 모든 TSTR Dem recall이 0이었으며,
+> C는 두 fold에서 합성행 0개인 SMOTE를 선택했다. 아래의 “교정 기본값”은 이 감사를 반영한
+> 재실행 사양이며, 아직 성능이 검증된 값이 아니다.
 
 ---
 
@@ -119,29 +126,30 @@ valid, test = train_test_split(tmp,  test_size=0.5, stratify=y_tmp, random_state
 
 ### C-2. 실험 B·C의 group CV 구현 `assumed_group_cv_impl`
 
-사용자 지시대로 **StratifiedGroupKFold, group = 피험자 ID**를 기본으로 한다.
+교정 기본값은 **피험자 테이블을 직접 층화하는 `subject_stratified`**다.
 
 ```yaml
 split:
-  method: stratified_group_kfold   # sklearn.model_selection.StratifiedGroupKFold
+  method: subject_stratified
   n_splits: 3
   groups: subject
 ```
 
-sklearn 구현은 **행 단위 클래스 비율**을 맞추므로 fold별 Dem 피험자 수가 균등하다는
-보장이 없다. 따라서 다음을 **강제**한다.
+기존 `StratifiedGroupKFold`는 **행 단위 클래스 비율**을 맞추므로 실제 감사 산출물에서
+eval Dem 피험자 수가 3/6/3으로 나뉘었다. 이 구성은 “3-fold이므로 각 fold Dem 4명”이라는
+기존 문서 가정과 달랐다. 교정 설계는 다음을 강제한다.
 
 1. 모든 fold의 train·eval에 CN·MCI·Dem 피험자가 최소 1명씩 존재해야 한다. 아니면 `SplitError`.
-2. 대안 구현 `split.method: subject_stratified`를 제공한다.
-   피험자 테이블(174행)에 `StratifiedKFold`를 적용해 fold당 Dem 4명을 **보장**한다.
-3. `--dry-run`이 두 방식의 fold별 피험자 구성을 표로 출력한다.
+2. 피험자 테이블(174행)에 `StratifiedKFold`를 적용해 클래스별 피험자 수를 직접 층화한다.
+3. `--dry-run`과 결과 provenance가 실제 fold별 train/eval 피험자 수를 출력한다.
 
-**기본값은 지시에 따라 `stratified_group_kfold`**이며, 검증 실패 시 사용자가
-`subject_stratified`로 전환하도록 오류 메시지에 명시한다.
+`stratified_group_kfold`는 비교 민감도 변형으로만 남길 수 있으나, 결과 해석은 산출물에
+기록된 실제 fold 구성을 따라야 한다.
 
 ### C-3. n_splits = 3, n_repeats = 1 `assumed_fold_counts`
 
-Dem 피험자 12명 → 3-fold에서 fold당 4명. 사용자 지시대로 outer 5-fold는 기본값이 아니다.
+Dem 피험자가 12명뿐이므로 outer 5-fold는 기본값이 아니다. `subject_stratified` 3-fold에서는
+클래스별 피험자를 균등 분배하되, 보고서에는 실제 fold 구성을 산출물에서 읽어 기록한다.
 `n_repeats`는 실험 B·C 모두 config로 1~10 설정 가능하며 기본 1(계산량 고려).
 
 ---
@@ -170,9 +178,12 @@ Decoder: L → [256] → [512] → 46          # 마지막 층은 선형 출력,
 **논문**: "재구성 오차와 KL 발산의 **가중합**" — 가중치 값 미보고.
 
 **가정**: `beta = 1.0` (표준 VAE). config `vae.beta`.
-재구성 손실은 **변수당 평균 MSE**로 계산하고, KL은 latent 차원 **합**으로 계산한다
+재구성 손실은 **변수당 평균 MSE**로 계산하고, KL도 latent 차원 **평균**으로 계산한다
 (`vae.recon_reduction: mean_per_feature | sum`, `vae.kl_reduction: sum | mean`).
-이 조합이 달라지면 beta의 실효값이 수십~수백 배 달라지므로 두 reduction을 모두 로그에 남긴다.
+즉 교정 기본값은 `kl_reduction: mean`이다. 이전의 KL 합산은 latent=50과 500에서 beta의
+실효값을 각각 다르게 만들고, latent=500에서 KL 항을 과도하게 키워 합성분포 붕괴를 유발할 수
+있었다. 두 reduction과 latent 차원은 모두 로그에 남긴다. A1~A4에는 2026-08-03 실패 조건을
+추적할 수 있도록 `sum`을 명시적으로 보존하고, 교정 기본 A5/B/C는 `mean`을 쓴다.
 
 ### D-3. epoch / batch size / early stopping `assumed_vae_training_schedule`
 
@@ -184,7 +195,8 @@ Decoder: L → [256] → [512] → 46          # 마지막 층은 선형 출력,
 early stopping용 validation은 **VAE 학습에 쓰는 Dem 기록을 피험자 단위로 분리**해서 만든다
 (`vae.val_fraction: 0.2`, `vae.val_split_by: subject`). outer test는 절대 쓰지 않는다.
 
-> ⚠️ train fold의 Dem 피험자가 8명일 때 20%면 1~2명이다. 표본이 극히 작아
+> ⚠️ fold별 train Dem 피험자 수가 매우 작으므로 20% validation은 1~2명 수준일 수 있다.
+> 실제 수는 fold provenance에서 확인한다. 표본이 극히 작아
 > early stopping 자체가 불안정하다. `vae.early_stopping.enabled: false`로 끄고
 > 고정 epoch을 쓰는 변형도 제공한다. → `unresolved_questions.md` Q8.
 
@@ -194,22 +206,27 @@ early stopping용 validation은 **VAE 학습에 쓰는 Dem 기록을 피험자 �
 
 | 실험 | 기본값 |
 | --- | --- |
-| A | `train_dem_only` (관대한 해석). `all_dem` 변형도 제공 |
+| A | `train_dem_only` **고정**, fit 감사 기록 필수 |
 | B, C | `train_dem_only` **고정**, 감사기가 강제 |
 
-전체 클래스 자료로 VAE를 학습하는 변형(`fit_scope: all_classes`)은
-**논문에 그런 서술이 없으므로 구현하되 기본 비활성**이며, 사용 시 경고를 출력한다.
+실제 배선이 구현되지 않은 `all_dem` 또는 `all_classes`를 설정만 허용하면 누수를 측정하지
+못한 채 다른 실험으로 오인할 수 있다. 교정본은 현재 실제 구현과 감사가 일치하는
+`train_dem_only`만 허용하고, 다른 값은 조용히 대체하지 않고 즉시 오류로 중단한다.
+VAE fit 시 fold ID, 실제 피험자 ID, label, 행 수를 감사 로그에 기록한다.
 
 ### D-5. VAE 입력 공간 `assumed_vae_input_space`
 
-**논문 §4.2**의 순서상 스케일링이 증강 뒤에 오므로 VAE는 **원 단위**에서 학습된 것으로 읽힌다.
+**논문 §4.2**의 순서상 스케일링이 증강 뒤에 오므로 VAE는 원 단위에서 학습된 것으로 읽힐 수
+있지만, 입력 공간은 명시되지 않았다. 기존 raw 실행은 변수 스케일 차이에 지배되었고 합성값의
+71.36%가 clipping 전 train 최솟값 아래에 놓였다.
 
 | 실험 | 기본값 | 근거 |
 | --- | --- | --- |
-| A | `raw` | §4.2 서술 순서 |
-| B, C | `scaled` | 4자릿수 스케일 차이로 MSE가 대형 변수에 지배됨 |
+| A | `scaled` | 논문 입력 척도 미보고 + raw 산출물 붕괴 |
+| B, C | `scaled` | 4자릿수 스케일 차이로 MSE가 대형 변수에 지배되는 것을 방지 |
 
 `scaled`일 때 생성물은 **inverse_transform으로 원 단위로 되돌린 뒤** 유효성 검사를 한다.
+`raw`는 논문 서술 순서를 점검하는 forensic 민감도 변형일 뿐, 교정 기본 실행에는 쓰지 않는다.
 
 ### D-6. 생성값 후처리 `assumed_postprocess`
 

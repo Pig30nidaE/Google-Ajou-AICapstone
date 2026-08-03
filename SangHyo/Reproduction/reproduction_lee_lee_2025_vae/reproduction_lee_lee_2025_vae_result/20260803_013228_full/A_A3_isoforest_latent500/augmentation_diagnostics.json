@@ -1,0 +1,46 @@
+{
+  "none": {
+    "method": "none"
+  },
+  "vae": {
+    "method": "vae",
+    "n_synthetic": 4000,
+    "latent_dim": 500,
+    "input_space": "raw",
+    "beta": 1.0,
+    "epochs_run": 300,
+    "stopped_early": false,
+    "best_epoch": 289,
+    "final_train_recon": 44515523.2,
+    "final_train_kl": 432.8031005859375,
+    "recon_mse_fit_space": 43447208.0,
+    "paper_reported_recon_error": 0.0002,
+    "paper_recon_error_note": "논문 §5.1의 0.0002는 척도가 미보고다 (report_inconsistencies.md I-15). 위 값과 직접 비교할 수 없다.",
+    "validity": {
+      "n_negative_values_clipped": 0,
+      "negative_rate": 0.0,
+      "n_below_train_min": 131309,
+      "n_above_train_max": 0,
+      "out_of_range_rate": 0.7136358695652174,
+      "n_columns_rounded": 0,
+      "note_integer": "논문 미보고이므로 정수 반올림을 적용하지 않았다. 정수형 관측 변수 41개에 비정수 값이 생성될 수 있다."
+    },
+    "vae_source_subjects": [
+      "nia+017@rowan.kr",
+      "nia+045@rowan.kr",
+      "nia+067@rowan.kr",
+      "nia+112@rowan.kr",
+      "nia+139@rowan.kr",
+      "nia+196@rowan.kr",
+      "nia+219@rowan.kr",
+      "nia+230@rowan.kr",
+      "nia+287@rowan.kr",
+      "nia+306@rowan.kr",
+      "nia+338@rowan.kr",
+      "nia+341@rowan.kr"
+    ],
+    "n_source_subjects": 12,
+    "n_source_rows": 390,
+    "source_subject_hash": "3a8680ab0e937c5a"
+  }
+}

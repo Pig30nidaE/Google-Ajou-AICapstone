@@ -6,13 +6,15 @@ Outer 3-fold × n_repeats / Inner 3-fold, group = 피험자 ID.
 VAE 사용 여부·latent·synthetic ratio, 분류기와 그 하이퍼파라미터가 모두 후보이며,
 outer test는 선택의 어느 단계에도 관여하지 않는다.
 
-탐색은 config의 ``search.space``로 제한하고 ``search.max_evals``로 상한을 둔다
-(random search. Optuna를 쓰지 않는다 — 사용자 지시 15절).
+탐색은 config의 ``search.space``로 제한하고 ``search.max_evals``로 상한을 둔다.
+상한을 넘으면 ``classifier × augmentation`` arm을 균형 순회하고 arm 내부만
+seed 기반으로 무작위화한다(Optuna를 쓰지 않는다 — 사용자 지시 15절).
 """
 
 from __future__ import annotations
 
 import itertools
+import json
 import logging
 
 import numpy as np
@@ -33,27 +35,124 @@ log = logging.getLogger(__name__)
 __all__ = ["run_experiment_c", "plan_experiment_c", "enumerate_candidates"]
 
 
+def _canonicalize_candidate(candidate: dict) -> dict:
+    """비활성 분기의 하이퍼파라미터를 제거해 실제 파이프라인 단위로 정규화한다.
+
+    예를 들어 ``augmentation.method=smote``인 후보 두 개가 VAE latent 값만 다르면
+    실제 실행은 완전히 같다. 이런 명목상 후보가 탐색 예산을 중복 소비하지 않게 한다.
+    """
+    out = dict(candidate)
+    augmentation = out.get("augmentation.method")
+    if augmentation is not None and augmentation != "vae":
+        for key in tuple(out):
+            if key.startswith("augmentation.vae."):
+                out.pop(key)
+
+    outlier = out.get("outlier.method")
+    if outlier is not None and outlier != "percentile":
+        for key in tuple(out):
+            if key.startswith("outlier.percentile."):
+                out.pop(key)
+    if outlier is not None and outlier != "isolation_forest":
+        for key in tuple(out):
+            if key.startswith("outlier.isolation_forest."):
+                out.pop(key)
+    return out
+
+
+def _candidate_key(candidate: dict) -> str:
+    return json.dumps(candidate, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def _candidate_coverage(candidates: list[dict]) -> list[dict]:
+    counts: dict[tuple[str, str], int] = {}
+    for candidate in candidates:
+        key = (
+            str(candidate.get("classifier", "__base__")),
+            str(candidate.get("augmentation.method", "__base__")),
+        )
+        counts[key] = counts.get(key, 0) + 1
+    return [
+        {"classifier": classifier, "augmentation": augmentation, "n_candidates": count}
+        for (classifier, augmentation), count in sorted(counts.items())
+    ]
+
+
 def enumerate_candidates(space: dict, *, max_evals: int, seed: int) -> list[dict]:
     """탐색 공간에서 후보 설정을 만든다.
 
-    후보 수가 ``max_evals`` 이하면 전수, 아니면 무작위 표집한다.
-    과도한 탐색을 막기 위해 ``max_evals``는 config에서 반드시 지정해야 한다.
+    비활성 하위 축을 제거한 **유효 파이프라인**을 중복 제거한다. 후보가 상한보다
+    많으면 ``classifier × augmentation`` arm별로 round-robin 표집해 특정 모델의
+    VAE 후보가 우연히 전부 빠지는 일을 막는다. 각 arm 내부 순서는 seed가 고정된
+    무작위 순서다.
     """
     if not space:
         return [{}]
+    if max_evals <= 0:
+        raise ValueError("search.max_evals는 1 이상이어야 한다")
     keys = sorted(space)
     grids = [list(space[k]) for k in keys]
-    total = int(np.prod([len(g) for g in grids]))
-    if total <= max_evals:
-        return [dict(zip(keys, combo)) for combo in itertools.product(*grids)]
+    if any(not grid for grid in grids):
+        raise ValueError("search.space의 각 축은 후보를 하나 이상 가져야 한다")
+
+    unique: dict[str, dict] = {}
+    for combo in itertools.product(*grids):
+        candidate = _canonicalize_candidate(dict(zip(keys, combo)))
+        unique.setdefault(_candidate_key(candidate), candidate)
+    candidates = list(unique.values())
+    if len(candidates) <= max_evals:
+        return candidates
+
     rng = np.random.default_rng(seed)
-    seen, out = set(), []
-    while len(out) < max_evals and len(seen) < total:
-        cand = tuple(g[rng.integers(0, len(g))] for g in grids)
-        if cand in seen:
-            continue
-        seen.add(cand)
-        out.append(dict(zip(keys, cand)))
+    grouped: dict[tuple[str, str], list[dict]] = {}
+    for candidate in candidates:
+        arm = (
+            str(candidate.get("classifier", "__base__")),
+            str(candidate.get("augmentation.method", "__base__")),
+        )
+        grouped.setdefault(arm, []).append(candidate)
+    classifier_order = ["xgboost", "dnn", "tabnet", "wide_deep", "__base__"]
+    augmentation_order = ["none", "vae", "class_weight", "random_oversampling", "smote", "__base__"]
+    active_classifiers = [
+        classifier
+        for classifier in classifier_order
+        if any(key[0] == classifier for key in grouped)
+    ]
+    active_augmentations = [
+        augmentation
+        for augmentation in augmentation_order
+        if any(key[1] == augmentation for key in grouped)
+    ]
+    # Latin-square 순서: 어떤 prefix를 잘라도 classifier와 augmentation 양쪽의
+    # 후보 수 차이가 가능한 한 1 이내가 되게 한다. max_evals=24에서 앞 모델 두 개만
+    # 두 배의 탐색 기회를 얻었던 고정 중첩 순서 편향을 막는다.
+    arms: list[tuple[str, str]] = []
+    for offset in range(len(active_augmentations)):
+        for i, classifier in enumerate(active_classifiers):
+            augmentation = active_augmentations[(i + offset) % len(active_augmentations)]
+            arm = (classifier, augmentation)
+            if arm in grouped:
+                arms.append(arm)
+    arms += sorted(set(grouped) - set(arms))
+    for arm in arms:
+        order = rng.permutation(len(grouped[arm]))
+        grouped[arm] = [grouped[arm][int(i)] for i in order]
+
+    out: list[dict] = []
+    cursor = {arm: 0 for arm in arms}
+    while len(out) < max_evals:
+        progressed = False
+        for arm in arms:
+            i = cursor[arm]
+            if i >= len(grouped[arm]):
+                continue
+            out.append(grouped[arm][i])
+            cursor[arm] += 1
+            progressed = True
+            if len(out) == max_evals:
+                break
+        if not progressed:
+            break
     return out
 
 
@@ -87,15 +186,20 @@ def plan_experiment_c(data: LifelogData, cfg: dict, *, seed: int) -> dict:
     inner_cfg = sp.get("inner") or {}
     outer = make_group_folds(
         data,
-        method=outer_cfg.get("method", "stratified_group_kfold"),
+        method=outer_cfg.get("method", "subject_stratified"),
         n_splits=int(outer_cfg.get("n_splits", 3)),
         n_repeats=int(outer_cfg.get("n_repeats", 1)),
         seed=seed,
         prefix="outer",
     )
     search = cfg.get("search") or {}
+    space = search.get("space") or {}
     cands = enumerate_candidates(
-        search.get("space") or {}, max_evals=int(search.get("max_evals", 20)), seed=seed
+        space, max_evals=int(search.get("max_evals", 20)), seed=seed
+    )
+    nominal_count = int(np.prod([len(values) for values in space.values()])) if space else 1
+    effective_count = len(
+        enumerate_candidates(space, max_evals=max(nominal_count, 1), seed=seed)
     )
 
     inner_summary = []
@@ -103,7 +207,7 @@ def plan_experiment_c(data: LifelogData, cfg: dict, *, seed: int) -> dict:
         tr = data.take(f.train_idx)
         inner = make_group_folds(
             tr,
-            method=inner_cfg.get("method", "stratified_group_kfold"),
+            method=inner_cfg.get("method", "subject_stratified"),
             n_splits=int(inner_cfg.get("n_splits", 3)),
             n_repeats=1,
             seed=seed,
@@ -125,6 +229,9 @@ def plan_experiment_c(data: LifelogData, cfg: dict, *, seed: int) -> dict:
         "experiment": "C",
         "n_outer_folds": len(outer),
         "n_candidates": len(cands),
+        "n_nominal_candidates_before_conditioning": nominal_count,
+        "n_effective_candidates_after_conditioning": effective_count,
+        "candidate_coverage": _candidate_coverage(cands),
         "max_evals": int(search.get("max_evals", 20)),
         "total_model_fits": len(outer) * len(cands) * int(inner_cfg.get("n_splits", 3)) + len(outer),
         "candidates_preview": cands[:10],
@@ -172,7 +279,7 @@ def run_experiment_c(
 
     outer = make_group_folds(
         data,
-        method=outer_cfg.get("method", "stratified_group_kfold"),
+        method=outer_cfg.get("method", "subject_stratified"),
         n_splits=int(outer_cfg.get("n_splits", 3)),
         n_repeats=int(outer_cfg.get("n_repeats", 1)),
         seed=seed,
@@ -221,7 +328,7 @@ def run_experiment_c(
         # ---------- inner CV: 여기서만 선택이 일어난다 ----------
         inner = make_group_folds(
             outer_train,
-            method=inner_cfg.get("method", "stratified_group_kfold"),
+            method=inner_cfg.get("method", "subject_stratified"),
             n_splits=int(inner_cfg.get("n_splits", 3)),
             n_repeats=1,
             seed=seed,

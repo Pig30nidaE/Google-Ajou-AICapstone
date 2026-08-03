@@ -1,0 +1,50 @@
+defaults: base.yaml
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 실험 A5 — 결과 감사 후 교정한 증거 우선 재구성
+#
+# 논문의 이상치 후 전체 잔존율과 일치하는 Isolation Forest(c=0.1), 본문의
+# latent=500, 표 5에서 유도한 합성 4,000행을 사용한다. VAE 입력 척도는 논문에
+# 보고되지 않았으므로 scaled를 채택한다. 2026-08-03 A3(raw) 결과에서 재구성 MSE가
+# 43,447,208이고 합성 셀 71.36%가 train 최소값 아래였던 실패를 반복하지 않기 위한
+# 명시적 가정이며, 원 저자 설정이라고 부르지 않는다.
+# ══════════════════════════════════════════════════════════════════════════════
+
+label: A5_isoforest_scaled_latent500
+experiment:
+  name: paper_reported_reconstruction
+  variant: evidence_directed_scaled_variant
+  description: >
+    이상치는 §4.2·그림 1의 Isolation Forest, latent는 §5.1 본문의 500,
+    VAE 입력은 명시적 scaled 가정을 채택한 결과 감사 후 교정 변형.
+
+split:
+  unit: row
+  ratios: [0.8, 0.1, 0.1]
+
+preprocessing:
+  fit_scope: all_data          # 논문 절차의 누수를 관측하기 위한 실험 A 설정
+  scaler_scope: all_data       # 미보고 가정; 실험 B에서는 train_real_only로 통제
+
+outlier:
+  method: isolation_forest
+  isolation_forest:
+    contamination: 0.1
+    n_estimators: 100
+    max_samples: auto
+
+augmentation:
+  method: vae
+  vae:
+    latent_dim: 500
+    n_synthetic: 4000
+    fit_scope: train_dem_only
+    input_space: scaled
+    recon_reduction: mean_per_feature
+    kl_reduction: mean
+
+audit:
+  mode: observe
+
+diagnostics:
+  enabled: true

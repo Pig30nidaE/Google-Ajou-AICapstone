@@ -41,7 +41,9 @@ class VAEConfig:
     epochs: int = 300                     # 미보고 → 가정 (D-3)
     batch_size: int = 64                  # 미보고 → 가정 (D-3)
     recon_reduction: str = "mean_per_feature"  # mean_per_feature | sum
-    kl_reduction: str = "sum"                  # sum | mean
+    # reconstruction과 KL을 각각 feature/latent 차원으로 정규화한다. ``sum``은
+    # latent_dim=50/500에 따라 beta의 실효값을 10배 바꾸므로 민감도 분석용 opt-in이다.
+    kl_reduction: str = "mean"                 # mean | sum
     output_activation: str = "linear"          # linear | sigmoid
     layer_order: str = "linear_bn_relu_dropout"
     early_stopping: bool = True
@@ -75,7 +77,14 @@ class VAEConfig:
         for key in ("encoder_hidden", "decoder_hidden"):
             if key in kwargs and kwargs[key] is not None:
                 kwargs[key] = tuple(kwargs[key])
-        return cls(**kwargs)
+        cfg = cls(**kwargs)
+        if cfg.recon_reduction not in {"mean_per_feature", "sum"}:
+            raise ValueError(
+                "vae.recon_reduction은 'mean_per_feature' 또는 'sum'이어야 한다"
+            )
+        if cfg.kl_reduction not in {"mean", "sum"}:
+            raise ValueError("vae.kl_reduction은 'mean' 또는 'sum'이어야 한다")
+        return cfg
 
     def to_dict(self) -> dict:
         return {k: getattr(self, k) for k in self.__dataclass_fields__}
@@ -172,8 +181,8 @@ def vae_loss(recon, x, mu, logvar, cfg: VAEConfig):
         recon_loss = torch.nn.functional.mse_loss(recon, x, reduction="sum") / x.shape[0]
     else:  # mean_per_feature
         recon_loss = torch.nn.functional.mse_loss(recon, x, reduction="mean")
-    # latent 차원에 대해 합한 뒤 배치 평균. kl_reduction='mean'이면 차원으로 한 번 더 나눈다.
-    # 이 선택이 beta의 실효값을 latent_dim배(=50 또는 500) 바꾸므로 둘 다 로그에 남긴다 (D-2).
+    # latent 차원에 대해 합한 뒤 배치 평균. 기본 ``mean``은 latent 차원으로도 나눠
+    # latent_dim=50/500 사이에서 beta의 의미가 바뀌지 않게 한다 (D-2).
     kl_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
     kl = kl_per_sample.mean()
     if cfg.kl_reduction == "mean":

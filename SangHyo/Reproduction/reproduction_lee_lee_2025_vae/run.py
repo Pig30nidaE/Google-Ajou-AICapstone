@@ -3,7 +3,7 @@
 
 로컬 / 순수 CLI::
 
-    python run.py --config configs/paper_isoforest_latent500.yaml
+    python run.py --config configs/paper_isoforest_scaled_latent500.yaml
     python run.py --config configs/leakage_controlled_non_nested.yaml
     python run.py --config configs/nested_subject_independent.yaml
 
@@ -165,9 +165,10 @@ def _make_session_dir(base: Path, tag: str = "run") -> Path:
 
 #: 한 번에 실행(run_all)할 때 쓰는 실험 A config.
 #: A1(percentile)은 Dem이 6행만 남아 8:1:1 분할이 불가능하므로(I-1 증거 F)
-#: 기본 파이프라인은 A3(Isolation Forest)를 쓴다. A1은 실패를 기록만 하고 넘어간다.
+#: 기본 파이프라인은 감사 후 교정한 A5(Isolation Forest + scaled VAE)를 쓴다.
+#: A1은 실패를, A3(raw)는 2026-08-03 실패 산출물을 감사 증거로 보존한다.
 RUN_ALL_CONFIGS = {
-    "A": "configs/paper_isoforest_latent500.yaml",
+    "A": "configs/paper_isoforest_scaled_latent500.yaml",
     "B": "configs/leakage_controlled_non_nested.yaml",
     "C": "configs/nested_subject_independent.yaml",
 }
@@ -454,10 +455,11 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         "완료: %s. 누수 위반 %d건 (mode=%s). 출력 -> %s",
         experiment, audit["n_violations"], audit["mode"], res["paths"].root,
     )
-    if audit["n_violations"] and audit["mode"] == "observe":
+    if audit["mode"] == "observe":
         log.warning(
-            "실험 A는 논문 절차의 누수를 의도적으로 재현한다. "
-            "관측된 위반은 leakage_observation.json에 정리되어 있다."
+            "실험 A는 논문 절차의 누수를 의도적으로 재현한다 "
+            "(감사 위반 %d건, observations %d건). leakage_observation.json을 확인하라.",
+            audit["n_violations"], len(audit.get("observations", [])),
         )
     # run_all이 교차 비교표를 만들 수 있도록 결과 dict를 그대로 돌려준다.
     # (셸 종료코드로 쓰이는 경로에서는 main()이 int가 아닌 값을 0으로 처리한다.)
@@ -543,13 +545,19 @@ def _print_plan(kind: str, plan: dict) -> None:
 
         print("\n-- 실험 C 계획 --")
         print(f"  outer folds     : {plan['n_outer_folds']}")
-        print(f"  후보 설정 수    : {plan['n_candidates']} (max_evals={plan['max_evals']})")
+        print(
+            f"  후보 설정 수    : {plan['n_candidates']} (max_evals={plan['max_evals']}, "
+            f"명목 {plan['n_nominal_candidates_before_conditioning']} → "
+            f"유효 {plan['n_effective_candidates_after_conditioning']})"
+        )
         print(f"  총 모델 적합 수 : {plan['total_model_fits']}")
         print("\n  outer fold 구성:")
         print(pd.DataFrame(plan["outer_composition"]).to_string(index=False))
         print("\n  후보 미리보기:")
         for c in plan["candidates_preview"]:
             print(f"    {c}")
+        print("\n  분류기 × 증강법 후보 배분:")
+        print(pd.DataFrame(plan["candidate_coverage"]).to_string(index=False))
         print(f"\n  {plan['note']}")
 
 
@@ -652,7 +660,8 @@ def run_all(
         ("실험 A dry-run", ["--config", RUN_ALL_CONFIGS["A"], "--dry-run"], None),
         ("실험 B dry-run", ["--config", RUN_ALL_CONFIGS["B"], "--dry-run"], None),
         ("실험 C dry-run", ["--config", RUN_ALL_CONFIGS["C"], "--dry-run"], None),
-        ("실험 A 실행 (논문 방법 재구성)", ["--config", RUN_ALL_CONFIGS["A"]], "A"),
+        ("실험 A5 실행 (증거 기반 교정 재구성; 원저자 설정 아님)",
+         ["--config", RUN_ALL_CONFIGS["A"]], "A"),
         ("실험 B 실행 (누수 통제 non-nested)", ["--config", RUN_ALL_CONFIGS["B"]], "B"),
         ("실험 C 실행 (Nested Group CV)", ["--config", RUN_ALL_CONFIGS["C"]], "C"),
     ]

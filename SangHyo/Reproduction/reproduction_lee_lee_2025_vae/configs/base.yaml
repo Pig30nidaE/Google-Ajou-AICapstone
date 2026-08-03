@@ -58,9 +58,9 @@ augmentation:
     epochs: 300                  # [가정] D-3
     batch_size: 64               # [가정] D-3
     recon_reduction: mean_per_feature
-    kl_reduction: sum
+    kl_reduction: mean             # [가정] D-2. latent 차원 수에 무관한 beta 척도
     output_activation: linear    # [가정] D-1
-    fit_scope: train_dem_only    # train_dem_only | all_dem   (I-9)
+    fit_scope: train_dem_only    # 현재 유일한 지원값; 다른 범위는 fail-closed (I-9)
     input_space: scaled          # raw | scaled               (I-9, D-5)
     early_stopping:
       enabled: true
@@ -74,7 +74,9 @@ augmentation:
       round_integer_valued: false  # [가정] D-6. 논문 미보고이므로 기본 off
   smote:
     k_neighbors: 5
-  random_oversampling: {}
+    match_majority: true           # 생성량 미지정 no-op을 금지
+  random_oversampling:
+    match_majority: true           # 생성량 미지정 no-op을 금지
 
 models:
   xgboost:

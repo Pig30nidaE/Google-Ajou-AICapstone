@@ -43,6 +43,7 @@ augmentation:
     n_synthetic: 4000          # [유도] I-5. 표 5의 4,412 − 412
     fit_scope: train_dem_only  # [가정] D-4. 미보고 (I-9), 관대한 해석
     input_space: raw           # [논문] §4.2 순서상 스케일링이 증강 뒤에 온다 (D-5)
+    kl_reduction: sum          # 2026-08-03 이전 A1~A4 forensic 손실 정의 보존
 
 audit:
   mode: observe                # 논문 절차의 누수를 막지 않고 측정해서 보고한다

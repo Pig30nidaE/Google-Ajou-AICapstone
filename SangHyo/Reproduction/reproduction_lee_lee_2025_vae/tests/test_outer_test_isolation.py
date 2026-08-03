@@ -43,7 +43,9 @@ def test_auditor_rejects_early_stopping_on_outer_test(fake_data, enforcing_audit
     _register(enforcing_auditor, fake_data, fold)
     with pytest.raises(LeakageError, match="EARLY_STOPPING_SCOPE"):
         enforcing_auditor.record_early_stopping(
-            fold.fold_id, subjects=fake_data.subject[fold.eval_idx]
+            fold.fold_id,
+            subjects=fake_data.subject[fold.eval_idx],
+            row_ids=fake_data.row_id[fold.eval_idx],
         )
 
 
@@ -51,9 +53,42 @@ def test_auditor_accepts_early_stopping_inside_train(fake_data, enforcing_audito
     fold = make_group_folds(fake_data, n_splits=3, seed=0)[0]
     _register(enforcing_auditor, fake_data, fold)
     enforcing_auditor.record_early_stopping(
-        fold.fold_id, subjects=fake_data.subject[fold.train_idx][:10]
+        fold.fold_id,
+        subjects=fake_data.subject[fold.train_idx][:10],
+        row_ids=fake_data.row_id[fold.train_idx][:10],
     )
     assert enforcing_auditor.violations == []
+
+
+def test_explicit_validation_row_scope_rejects_outer_eval_even_when_subject_matches(fake_data):
+    """행 split처럼 subject가 겹쳐도 test 행은 early stopping에 쓸 수 없다."""
+    from src.audit.leakage import LeakageAuditor
+
+    train_idx = np.arange(0, fake_data.n, 3)
+    valid_idx = np.arange(1, fake_data.n, 3)
+    eval_idx = np.arange(2, fake_data.n, 3)
+    auditor = LeakageAuditor(mode="enforce", name="explicit-validation-row-scope")
+    auditor.register_split(
+        "row_split",
+        train_subjects=fake_data.subject[train_idx],
+        eval_subjects=fake_data.subject[eval_idx],
+        train_row_ids=fake_data.row_id[train_idx],
+        eval_row_ids=fake_data.row_id[eval_idx],
+        validation_subjects=fake_data.subject[valid_idx],
+        validation_row_ids=fake_data.row_id[valid_idx],
+        require_disjoint_subjects=False,
+    )
+    auditor.record_early_stopping(
+        "row_split",
+        subjects=fake_data.subject[valid_idx],
+        row_ids=fake_data.row_id[valid_idx],
+    )
+    with pytest.raises(LeakageError, match="EARLY_STOPPING_ROW_SCOPE"):
+        auditor.record_early_stopping(
+            "row_split",
+            subjects=fake_data.subject[eval_idx[:1]],
+            row_ids=fake_data.row_id[eval_idx[:1]],
+        )
 
 
 @pytest.mark.parametrize(
@@ -100,6 +135,32 @@ def test_internal_validation_indices_partition_all_rows(fake_data):
     assert sorted(np.concatenate([iv.train_idx, iv.val_idx]).tolist()) == list(range(fake_data.n))
 
 
+def test_model_without_early_stopping_uses_every_training_row(
+    fake_data, enforcing_auditor, monkeypatch
+):
+    """XGBoost 같은 모델은 validation 명목으로 train 20%를 버리면 안 된다."""
+    from src.models import registry
+
+    fold = make_group_folds(fake_data, n_splits=3, seed=0)[0]
+    _register(enforcing_auditor, fake_data, fold)
+    train = fake_data.take(fold.train_idx)
+    captured = {}
+
+    class FakeModel:
+        name = "fake-no-es"
+        uses_early_stopping = False
+        fit_log = {}
+
+        def fit(self, X, y, *, eval_set=None):
+            captured.update(n=len(y), eval_set=eval_set)
+
+    monkeypatch.setattr(registry, "make_model", lambda *_args, **_kwargs: FakeModel())
+    registry.fit_classifier(
+        "xgboost", train, {}, auditor=enforcing_auditor, fold_id=fold.fold_id
+    )
+    assert captured == {"n": train.n, "eval_set": None}
+
+
 def test_nested_inner_folds_never_touch_outer_eval():
     """inner fold의 어떤 행도 outer eval에 속하지 않는다.
 
@@ -127,9 +188,62 @@ def test_enumerate_candidates_respects_max_evals():
         "augmentation.method": ["none", "vae", "smote"],
         "augmentation.vae.latent_dim": [50, 500],
     }
-    assert len(enumerate_candidates(space, max_evals=100, seed=0)) == 24   # 전수
+    # none/smote에서 VAE latent 축은 비활성이므로 24개 명목 조합이 아니라
+    # 16개 유효 파이프라인만 남는다.
+    all_candidates = enumerate_candidates(space, max_evals=100, seed=0)
+    assert len(all_candidates) == 16
+    assert all(
+        "augmentation.vae.latent_dim" not in candidate
+        for candidate in all_candidates
+        if candidate["augmentation.method"] != "vae"
+    )
     got = enumerate_candidates(space, max_evals=5, seed=0)
     assert len(got) == 5 and len({tuple(sorted(c.items())) for c in got}) == 5
+    assert {c["augmentation.method"] for c in got} == {"none", "vae", "smote"}
+
+
+def test_enumerate_candidates_balances_augmentation_arms():
+    from src.experiments.nested_cv import enumerate_candidates
+
+    space = {
+        "classifier": ["xgboost", "dnn", "tabnet", "wide_deep"],
+        "augmentation.method": ["none", "vae", "class_weight", "smote"],
+        "augmentation.vae.latent_dim": [50, 500],
+        "augmentation.vae.ratio_to_real": [1.0, 3.0, 10.0],
+    }
+    got = enumerate_candidates(space, max_evals=8, seed=0)
+    counts = {
+        arm: sum(c["augmentation.method"] == arm for c in got)
+        for arm in ("none", "vae", "class_weight", "smote")
+    }
+    assert counts == {"none": 2, "vae": 2, "class_weight": 2, "smote": 2}
+    classifier_counts = {
+        classifier: sum(c["classifier"] == classifier for c in got)
+        for classifier in ("xgboost", "dnn", "tabnet", "wide_deep")
+    }
+    assert classifier_counts == {"xgboost": 2, "dnn": 2, "tabnet": 2, "wide_deep": 2}
+
+    covered = enumerate_candidates(space, max_evals=16, seed=0)
+    assert {
+        (candidate["classifier"], candidate["augmentation.method"])
+        for candidate in covered
+    } == {
+        (classifier, augmentation)
+        for classifier in ("xgboost", "dnn", "tabnet", "wide_deep")
+        for augmentation in ("none", "vae", "class_weight", "smote")
+    }
+
+    shipped_budget = enumerate_candidates(space, max_evals=24, seed=0)
+    per_classifier = [
+        sum(c["classifier"] == classifier for c in shipped_budget)
+        for classifier in ("xgboost", "dnn", "tabnet", "wide_deep")
+    ]
+    per_augmentation = [
+        sum(c["augmentation.method"] == augmentation for c in shipped_budget)
+        for augmentation in ("none", "vae", "class_weight", "smote")
+    ]
+    assert max(per_classifier) - min(per_classifier) <= 1
+    assert max(per_augmentation) - min(per_augmentation) <= 1
 
 
 def test_enumerate_candidates_empty_space():

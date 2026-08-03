@@ -1,0 +1,137 @@
+{
+  "record_level": {
+    "unit": "record",
+    "n": 1096,
+    "macro_f1": 0.33746253120860153,
+    "balanced_accuracy": 0.36192199652138085,
+    "macro_roc_auc_ovr": 0.6530196020960829,
+    "macro_pr_auc": 0.4391021483704851,
+    "accuracy": 0.6414233576642335,
+    "weighted_f1": 0.5547667421684102,
+    "brier": 0.4809773710826361,
+    "confusion_matrix": [
+      [
+        666,
+        36,
+        5
+      ],
+      [
+        303,
+        35,
+        2
+      ],
+      [
+        46,
+        1,
+        2
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7658128015505612,
+    "CN_precision": 0.6561576354679803,
+    "CN_recall": 0.942008486562942,
+    "CN_f1": 0.7735191637630662,
+    "n_CN": 707,
+    "n_CN_correct": 666,
+    "MCI_precision": 0.4861111111111111,
+    "MCI_recall": 0.10294117647058823,
+    "MCI_f1": 0.16990291262135923,
+    "n_MCI": 340,
+    "n_MCI_correct": 35,
+    "Dem_precision": 0.2222222222222222,
+    "Dem_recall": 0.04081632653061224,
+    "Dem_f1": 0.06896551724137931,
+    "n_Dem": 49,
+    "n_Dem_correct": 2,
+    "dem_recall": 0.04081632653061224,
+    "dem_precision": 0.2222222222222222,
+    "dem_f1": 0.06896551724137931,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 2,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "subject_level": {
+    "unit": "subject",
+    "n": 167,
+    "macro_f1": 0.2995862685899586,
+    "balanced_accuracy": 0.3498547567175018,
+    "macro_roc_auc_ovr": 0.7273393479328916,
+    "macro_pr_auc": 0.5829685361184938,
+    "accuracy": 0.6586826347305389,
+    "weighted_f1": 0.5439986179938011,
+    "brier": 0.4481573975696238,
+    "confusion_matrix": [
+      [
+        107,
+        1,
+        0
+      ],
+      [
+        48,
+        3,
+        0
+      ],
+      [
+        8,
+        0,
+        0
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7092994553329625,
+    "CN_precision": 0.656441717791411,
+    "CN_recall": 0.9907407407407407,
+    "CN_f1": 0.7896678966789668,
+    "n_CN": 108,
+    "n_CN_correct": 107,
+    "MCI_precision": 0.75,
+    "MCI_recall": 0.058823529411764705,
+    "MCI_f1": 0.10909090909090909,
+    "n_MCI": 51,
+    "n_MCI_correct": 3,
+    "Dem_precision": 0.0,
+    "Dem_recall": 0.0,
+    "Dem_f1": 0.0,
+    "n_Dem": 8,
+    "n_Dem_correct": 0,
+    "dem_recall": 0.0,
+    "dem_precision": 0.0,
+    "dem_f1": 0.0,
+    "n_dem_units": 8,
+    "n_dem_units_correct": 0,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "model": {
+    "model": "TabNet",
+    "params": {
+      "n_d": 64,
+      "n_a": 64,
+      "n_steps": 5,
+      "gamma": 1.3,
+      "lambda_sparse": 0.001,
+      "lr": 0.02,
+      "max_epochs": 200,
+      "patience": 20
+    },
+    "paper_reported_keys": [
+      "n_d",
+      "n_a",
+      "n_steps"
+    ],
+    "assumed_keys": [
+      "gamma",
+      "lambda_sparse",
+      "lr",
+      "max_epochs",
+      "patience"
+    ]
+  }
+}

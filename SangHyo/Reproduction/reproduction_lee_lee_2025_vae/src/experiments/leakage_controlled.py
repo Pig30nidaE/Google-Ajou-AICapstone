@@ -35,7 +35,7 @@ __all__ = ["run_experiment_b", "plan_experiment_b", "run_one_fold"]
 def _split_cfg(cfg: dict) -> dict:
     s = cfg.get("split") or {}
     return {
-        "method": s.get("method", "stratified_group_kfold"),
+        "method": s.get("method", "subject_stratified"),
         "n_splits": int(s.get("n_splits", 3)),
         "n_repeats": int(s.get("n_repeats", 1)),
     }

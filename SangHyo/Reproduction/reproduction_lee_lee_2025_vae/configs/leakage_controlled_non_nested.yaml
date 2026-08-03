@@ -22,27 +22,27 @@ label: B_leakage_controlled
 experiment:
   name: leakage_controlled_non_nested
   description: >
-    피험자 독립 StratifiedGroupKFold. 논문 설정 고정, 누수만 통제.
+    피험자 테이블 층화 3-fold. 실험 A와 동일한 Isolation Forest·VAE 설정을
+    유지하되, 독립 평가 피험자의 행은 삭제하지 않고 split 및 fit 범위를 통제.
 
 split:
   unit: subject
-  method: stratified_group_kfold   # 사용자 지시 기본값. group = 피험자 ID
-  n_splits: 3                      # Dem 12명 → fold당 4명
+  method: subject_stratified       # 174명 subject table을 층화
+  n_splits: 3                      # Dem 12명 → eval fold마다 정확히 4명
   n_repeats: 1                     # 1~10 설정 가능
-  # fold에 세 클래스 피험자가 모두 없으면 SplitError.
-  # 그 경우 subject_stratified로 전환하라 (assumptions.md C-2).
+  # 일별 행에 StratifiedGroupKFold를 적용하면 Dem이 3/6/3명으로 갈렸던
+  # 2026-08-03 결과를 피하기 위해 피험자 1행 테이블을 직접 층화한다.
 
 preprocessing:
   fit_scope: train_fold_only
   scaler_scope: train_real_only    # 합성 4,000행이 통계량을 지배하지 않도록 (B-4)
 
 outlier:
-  method: percentile               # 논문 설정 고정 (A1과 같은 방식)
-  percentile:
-    q: 0.10
-    scope: global
-    action: clip                   # ⚠️ 평가 fold의 행을 지우지 않기 위해 clip을 쓴다.
-                                   #    drop_row면 train에서만 삭제되고 평가는 clip된다.
+  method: isolation_forest         # A5와 같은 알고리즘; fit 범위만 train fold로 제한
+  isolation_forest:
+    contamination: 0.1
+    n_estimators: 100
+    max_samples: auto
 
 augmentation:
   method: vae

@@ -1,0 +1,145 @@
+{
+  "record_level": {
+    "unit": "record",
+    "n": 1096,
+    "macro_f1": 0.4524179646356374,
+    "balanced_accuracy": 0.4326298836366229,
+    "macro_roc_auc_ovr": 0.6916632894151903,
+    "macro_pr_auc": 0.4844537938141345,
+    "accuracy": 0.6377737226277372,
+    "weighted_f1": 0.6100687272595399,
+    "brier": 0.4710185024968491,
+    "confusion_matrix": [
+      [
+        588,
+        113,
+        6
+      ],
+      [
+        233,
+        103,
+        4
+      ],
+      [
+        32,
+        9,
+        8
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7385016294923573,
+    "CN_precision": 0.6893317702227433,
+    "CN_recall": 0.8316831683168316,
+    "CN_f1": 0.7538461538461538,
+    "n_CN": 707,
+    "n_CN_correct": 588,
+    "MCI_precision": 0.4577777777777778,
+    "MCI_recall": 0.3029411764705882,
+    "MCI_f1": 0.36460176991150445,
+    "n_MCI": 340,
+    "n_MCI_correct": 103,
+    "Dem_precision": 0.4444444444444444,
+    "Dem_recall": 0.16326530612244897,
+    "Dem_f1": 0.23880597014925373,
+    "n_Dem": 49,
+    "n_Dem_correct": 8,
+    "dem_recall": 0.16326530612244897,
+    "dem_precision": 0.4444444444444444,
+    "dem_f1": 0.23880597014925373,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 8,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "subject_level": {
+    "unit": "subject",
+    "n": 167,
+    "macro_f1": 0.49970548862115133,
+    "balanced_accuracy": 0.4611474219317357,
+    "macro_roc_auc_ovr": 0.7292714967782099,
+    "macro_pr_auc": 0.568142631945359,
+    "accuracy": 0.6646706586826348,
+    "weighted_f1": 0.6207459779236708,
+    "brier": 0.455084485476773,
+    "confusion_matrix": [
+      [
+        97,
+        11,
+        0
+      ],
+      [
+        39,
+        12,
+        0
+      ],
+      [
+        5,
+        1,
+        2
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.7181131840415304,
+    "CN_precision": 0.6879432624113475,
+    "CN_recall": 0.8981481481481481,
+    "CN_f1": 0.7791164658634538,
+    "n_CN": 108,
+    "n_CN_correct": 97,
+    "MCI_precision": 0.5,
+    "MCI_recall": 0.23529411764705882,
+    "MCI_f1": 0.32,
+    "n_MCI": 51,
+    "n_MCI_correct": 12,
+    "Dem_precision": 1.0,
+    "Dem_recall": 0.25,
+    "Dem_f1": 0.4,
+    "n_Dem": 8,
+    "n_Dem_correct": 2,
+    "dem_recall": 0.25,
+    "dem_precision": 1.0,
+    "dem_f1": 0.4,
+    "n_dem_units": 8,
+    "n_dem_units_correct": 2,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "model": {
+    "model": "WideDeep",
+    "params": {
+      "deep_hidden": [
+        256,
+        128,
+        64
+      ],
+      "dropout": 0.3,
+      "wide_features": "all",
+      "wide_crosses": [],
+      "combine": "sum",
+      "lr": 0.001,
+      "epochs": 200,
+      "batch_size": 128,
+      "patience": 20
+    },
+    "paper_reported_keys": [
+      "deep_hidden",
+      "dropout",
+      "activation"
+    ],
+    "assumed_keys": [
+      "batch_size",
+      "combine",
+      "epochs",
+      "lr",
+      "patience",
+      "wide_crosses",
+      "wide_features"
+    ],
+    "wide_input_note": "논문은 Wide 컴포넌트 입력을 보고하지 않았다. 46개 원 특성의 선형 층으로 가정했다 (assumptions.md E-4)."
+  }
+}

@@ -27,7 +27,8 @@ __all__ = [
 
 DEM_SUBJECT_CAVEAT = (
     "본 실험의 Dem 클래스는 독립 피험자 12명에서 유래한다. "
-    "합성 Dem 행은 이 12명(각 fold에서는 8명)의 기록 분포에서 생성된 것이며 "
+    "합성 Dem 행은 각 fold의 train Dem 피험자 기록 분포에서 생성된 것이며 "
+    "정확한 source 피험자 수는 fold_composition 및 augmentation diagnostics에 기록된다. "
     "새로운 피험자를 의미하지 않는다."
 )
 
@@ -80,7 +81,7 @@ def build_main_comparison_table(
             }
             n_dem = None
             for exp, col in (
-                ("A", "원 방법 재구현"),
+                ("A", "증거 기반 교정 A5"),
                 ("B", "누수 통제 non-nested"),
                 ("C", "Nested Group CV"),
             ):
@@ -135,7 +136,8 @@ def compute_deltas(
     """세 종류의 delta를 계산한다.
 
     * ``vae_effect``       Δ(VAE − none), 실험별
-    * ``leakage_control``  Δ(B − A), 증강조건별
+    * ``leakage_control``  Δ(B − A), 증강조건별. 여러 검증설계 변경의 결합 차이이며
+      단일 누수 요인의 인과효과가 아니다.
     * ``nesting``          Δ(C − B), 증강조건별
     """
     rows = []

@@ -24,6 +24,7 @@ __all__ = [
     "check_subject_overlap",
     "check_row_overlap",
     "check_fit_scope",
+    "check_fit_row_scope",
     "check_vae_fit_scope",
     "check_no_synthetic_in_eval",
     "check_synthetic_source_subjects",
@@ -112,6 +113,38 @@ def check_fit_scope(
                 f"'{component}'가 train 밖 피험자 {len(outside)}명의 자료로 fit되었다",
                 fold_id,
                 {"component": component, "n_outside": len(outside)},
+            )
+        ]
+    return []
+
+
+def check_fit_row_scope(
+    component: str,
+    fit_row_ids: Iterable,
+    train_row_ids: Iterable,
+    *,
+    fold_id: str | None = None,
+) -> list[Violation]:
+    """전처리/VAE fit 원시행이 등록된 train 행의 부분집합인지 확인한다.
+
+    행 단위 split에서는 같은 피험자가 train과 eval에 모두 있어 subject-set 검사만으로
+    all-data fit을 놓칠 수 있다. 원시 row ID 검사는 그 사각지대를 닫는다.
+    """
+    fit = set(np.asarray(list(fit_row_ids)).ravel().tolist())
+    # 합성행은 음수 sentinel row ID를 가지며 원시 eval 행을 뜻하지 않는다.
+    fit = {
+        row_id for row_id in fit
+        if not isinstance(row_id, (int, np.integer)) or int(row_id) >= 0
+    }
+    train = set(np.asarray(list(train_row_ids)).ravel().tolist())
+    outside = fit - train
+    if outside:
+        return [
+            Violation(
+                "FIT_ROW_SCOPE",
+                f"'{component}'가 train 밖 원시행 {len(outside)}건으로 fit되었다",
+                fold_id,
+                {"component": component, "n_outside_rows": len(outside)},
             )
         ]
     return []

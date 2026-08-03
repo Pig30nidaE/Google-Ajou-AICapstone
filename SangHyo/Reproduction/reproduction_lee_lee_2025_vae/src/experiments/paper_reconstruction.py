@@ -125,13 +125,26 @@ def run_experiment_a(
 
     # ---- (1) 전처리를 split **이전에** 수행한다 = 논문 §5.1의 순서 (누수, 의도적)
     fit_scope = (cfg.get("preprocessing") or {}).get("fit_scope", "all_data")
-    pre_cfg = {"outlier": cfg.get("outlier"), "preprocessing": cfg.get("preprocessing")}
+    # fit_scope=all_data이면 이상치 처리는 아래에서 이미 한 번만 적용한다. 이후 fold
+    # preprocessor에 같은 IsolationForest를 다시 fit하면 imputer만 두 번째 subset을
+    # 보게 되는 비일관 경로가 생기므로 outlier=no-op으로 명시한다.
+    global_outlier_applied = fit_scope == "all_data"
+    pre_cfg = {
+        "outlier": {"method": "none"} if global_outlier_applied else cfg.get("outlier"),
+        "preprocessing": cfg.get("preprocessing"),
+    }
 
     row_counts_before = data.class_counts(by="record")
+    global_outlier_fit_subjects = None
+    global_outlier_fit_row_ids = None
+    global_outlier_fit_n_rows = 0
     if fit_scope == "all_data":
         # 감사기에 신고하려면 fold가 먼저 등록되어야 하므로(그것이 감사기의 요점이다),
         # 논문 순서를 재현하는 이 단계는 직접 수행하고 관측만 기록한다.
         n_before = data.n
+        global_outlier_fit_subjects = data.subject.copy()
+        global_outlier_fit_row_ids = data.row_id.copy()
+        global_outlier_fit_n_rows = data.n
         data, outlier_desc, n_dropped = _apply_outlier_before_split(data, cfg, seed=seed)
         auditor.observations.append(
             {
@@ -175,8 +188,21 @@ def run_experiment_a(
         eval_subjects=data.subject[split.test_idx],
         train_row_ids=data.row_id[split.train_idx],
         eval_row_ids=data.row_id[split.test_idx],
+        validation_subjects=data.subject[split.valid_idx],
+        validation_row_ids=data.row_id[split.valid_idx],
         require_disjoint_subjects=False,   # 행 단위 분할이므로 중복을 측정만 한다
     )
+    if global_outlier_applied:
+        # 실제 fit은 split 전에 일어났지만 경계를 등록한 뒤 역사적 이벤트로 신고한다.
+        # row ID 검사를 함께 해야 행 단위 split의 피험자 중복 때문에 누수가 가려지지 않는다.
+        auditor.record_fit(
+            "global_outlier_detector",
+            fold_id,
+            subjects=global_outlier_fit_subjects,
+            row_ids=global_outlier_fit_row_ids,
+            n_rows=global_outlier_fit_n_rows,
+            occurred_before_split=True,
+        )
 
     train0 = data.take(split.train_idx)
     valid0 = data.take(split.valid_idx)
@@ -192,7 +218,17 @@ def run_experiment_a(
     for aug in augmentations:
         # 증강 전/후가 **동일 split**을 쓰도록 매 조건마다 같은 인덱스에서 시작한다.
         pre = FoldPreprocessor(pre_cfg, auditor=auditor, fold_id=fold_id, seed=seed)
-        pre.fit(train0)
+        # all_data 설정에서는 실제 이상치 처리는 위에서 한 번 끝났고, 여기서는 no-op
+        # outlier + imputer의 명시된 fit 범위를 그대로 재현한다. 결측은 0건이지만
+        # config와 감사 로그가 서로 다른 범위를 말하지 않게 한다.
+        pre.fit(data if global_outlier_applied else train0)
+
+        if global_outlier_applied:
+            train_clean, valid_clean, test_clean = train0, valid0, test0
+        else:
+            train_clean = pre.apply_outlier(train0)
+            valid_clean = pre.apply_outlier_eval(valid0)
+            test_clean = pre.apply_outlier_eval(test0)
 
         aug_cfg = dict(cfg.get("augmentation") or {})
         aug_cfg["method"] = aug
@@ -200,33 +236,40 @@ def run_experiment_a(
         # scaler_scope=all_data는 논문 §5.1 흐름의 재현이다 (I-8, 누수).
         # input_space=raw이면 VAE는 원 단위에서 학습되며(§4.2 순서), generators가
         # preprocessor로 inverse scaling을 수행한다.
-        pre.fit_scaler(data if pre.scaler_scope == "all_data" else train0)
-        train_s = pre.transform(train0)
+        pre.fit_scaler(data if pre.scaler_scope == "all_data" else train_clean)
+        train_s = pre.transform(train_clean)
 
         res = augment_train_fold(
             train_s, aug_cfg, auditor=auditor, fold_id=fold_id,
             preprocessor=pre, seed=seed,
         )
         aug_diags[aug] = res.diagnostics
-        test_s = pre.transform(test0)
-        valid_s = pre.transform(valid0)
+        test_s = pre.transform(test_clean)
+        valid_s = pre.transform(valid_clean)
         auditor.record_eval(fold_id, is_synthetic=test_s.is_synthetic, where="test")
         auditor.record_eval(fold_id, is_synthetic=valid_s.is_synthetic, where="valid")
 
         for model_name in models:
             model = fit_classifier(
                 model_name, res.data, cfg, auditor=auditor, fold_id=fold_id,
-                class_weight=res.class_weight, seed=seed,
+                class_weight=res.class_weight, validation=valid_s, seed=seed,
             )
             proba = model.predict_proba(test_s.X.to_numpy())
             # 논문은 기록 단위로 평가했다. 그것이 실험 A의 주 지표다.
             m_rec = compute_metrics(test_s.y, proba, unit="record")
+            valid_proba = model.predict_proba(valid_s.X.to_numpy())
+            m_valid = compute_metrics(valid_s.y, valid_proba, unit="record")
             subj = aggregate_to_subject(
                 test_s.subject, test_s.y, proba,
                 is_synthetic=test_s.is_synthetic,
                 method=(cfg.get("aggregate") or {}).get("method", "mean"),
             )
             m_sub = compute_metrics(subj.y, subj.proba, unit="subject")
+            # 기록 단위 지표의 n_Dem은 Dem '행' 수다. 결과표에서 이를 피험자 수로
+            # 오인하거나 코호트 전체 12명으로 고정하지 않도록 실제 test 피험자 수를
+            # 별도 메타데이터로 전달한다.
+            m_rec["n_dem_subjects_eval"] = int(m_sub["n_Dem"])
+            m_rec["n_dem_subjects_correct"] = int(m_sub["n_Dem_correct"])
             results[(model_name, aug)] = m_rec
             results_subject[(model_name, aug)] = m_sub
             per_run.append(
@@ -237,11 +280,19 @@ def run_experiment_a(
                     "augmentation": aug,
                     "seed": seed,
                     **{f"record_{k}": v for k, v in m_rec.items() if not isinstance(v, (list, dict))},
+                    **{f"validation_record_{k}": v for k, v in m_valid.items()
+                       if not isinstance(v, (list, dict))},
                     **{f"subject_{k}": v for k, v in m_sub.items() if not isinstance(v, (list, dict))},
                 }
             )
             save_json(
-                {"record_level": m_rec, "subject_level": m_sub, "model": model.describe()},
+                {
+                    "record_level": m_rec,
+                    "validation_record_level": m_valid,
+                    "subject_level": m_sub,
+                    "model": model.describe(),
+                    "fit_log": model.fit_log,
+                },
                 paths("per_model", f"{model_name}_{aug}.json"),
             )
 
@@ -280,6 +331,7 @@ def _paper_comparison(results: dict[tuple[str, str], dict], label: str) -> pd.Da
             "reproduction_Dem_f1": round(m["Dem_f1"], 4),
             "reproduction_Dem_recall": round(m["dem_recall"], 4),
             "reproduction_n_eval_rows": m["n"],
+            "reproduction_n_dem_subjects_eval": m.get("n_dem_subjects_eval"),
         }
         if model == "wide_deep":
             col = "without_augmentation" if aug == "none" else "with_vae"
