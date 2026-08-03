@@ -7,9 +7,8 @@
 # 실험 A와의 차이:
 #   1. 길이 L 시퀀스에 대해 경계 직전 L-1일을 embargo 한다
 #      (split.embargo_matches_sequence_length: true → engine이 L-1로 설정한다).
-#   2. train 기간 끝에서 validation 기간을 떼어 early stopping에 쓴다.
-#      test는 early stopping에도 하이퍼파라미터 선택에도 쓰지 않는다.
-#   3. test 기간은 마지막에 한 번만 평가한다.
+# 실험 A와 마찬가지로 train 기간 끝의 validation을 early stopping에 쓰며 test는
+# monitor나 하이퍼파라미터 선택에 쓰지 않는다. B1이 추가하는 split 통제는 embargo다.
 
 experiment: strict_same_subject_temporal
 estimand: A

@@ -69,9 +69,9 @@ Data and LSTM Model*, Mathematics 12(20), 3208.
 
 | 실험명 | Estimand | 분할 | 선택 | config |
 | --- | :---: | --- | --- | --- |
-| `paper_temporal_reconstruction` | A | 피험자별 마지막 1주일 (날짜 먼저 분할) | 논문 설정 고정 | `paper_temporal_{3,4,5}day.yaml` |
+| `paper_temporal_reconstruction` | A | 피험자별 마지막 1주일 + train-side 14일 validation(A-06) | 논문 설정 고정 | `paper_temporal_{3,4,5}day.yaml` |
 | `paper_literal_variant` | A + 누수 | 시퀀스 먼저, 그 뒤 분할 | 논문 설정 고정 | `paper_literal_variant.yaml` |
-| `strict_same_subject_temporal` | A | 위 + L-1일 embargo + validation 기간 | 논문 설정 고정 | `strict_same_subject_temporal.yaml` |
+| `strict_same_subject_temporal` | A | 위 + L-1일 embargo | 논문 설정 고정 | `strict_same_subject_temporal.yaml` |
 | `fixed_subject_independent` | B | 5-fold StratifiedGroupKFold | 논문 설정 고정 | `fixed_subject_independent.yaml` |
 | `nested_subject_independent` | B | outer 5 × inner 3 Group CV | inner CV에서만 | `nested_subject_independent.yaml` |
 
@@ -98,6 +98,7 @@ AI-Hub CSV (12,183행)
 일별 표: 174명 × 32변수, raw_row_id 부여
   ↓ ★ 먼저 분할 (원시 날짜 또는 피험자)
   ↓ ★ 각 split 안에서만 시퀀스 생성 (연속 calendar day만, stride 1)
+  ↓ ★ train 후보에서 validation 분리(temporal LSTM, A-06)
   ↓ ★ train에만 undersampling
   ↓ ★ train에만 scaler fit
   ↓ 누수 검사 13종 (실패 시 즉시 중단)
@@ -111,8 +112,8 @@ AI-Hub CSV (12,183행)
 1. 논문 코드가 공개되지 않았다.
 2. 시퀀스 절단과 분할의 선후가 확정되지 않는다(Q-03).
 3. validation 자료의 출처가 확정되지 않는다(Q-09).
-4. 프레임워크가 다르다. 논문은 프레임워크를 명시하지 않았고 이 저장소는 PyTorch를
-   쓴다. Keras와 PyTorch는 LSTM 초기화와 게이트 세부가 달라 소수점 일치가 불가능하다.
+4. 논문은 프레임워크를 명시하지 않았고 이 저장소는 PyTorch를 쓴다. 실제 저자
+   프레임워크와 초기화·게이트 기본값이 달랐을 수 있어 소수점 일치를 보장할 수 없다.
 5. 비교모델의 입력 변환이 미보고다(Q-10).
 6. H2O AutoML이 무엇까지 선택했는지 미보고다(Q-11).
 7. batch size, epoch, dropout, seed가 전부 미보고다.

@@ -3,8 +3,9 @@
 Hong et al. (2024), *Prediction of Cognitive Impairment Using Sleep Lifelog Data
 and LSTM Model* (Mathematics 12, 3208) 재현 + 누수 점검 + 신규 피험자 일반화 평가.
 
-**현재 상태: 코드·config·테스트·문서 완료, dry-run 검증 완료. 학습 미실행.**
-정식 학습은 Colab Pro+에서 수행한다.
+**현재 상태:** 2026-08-03의 5일 결과를 감사한 뒤 방법·보고·비식별화 결함을
+수정했다. 수정 코드의 학습 재실행은 아직 하지 않았다. 정식 학습은 Colab Pro+에서
+수행한다.
 
 ---
 
@@ -41,6 +42,10 @@ python run.py --inspect-data
 ```bash
 python run.py --config configs/paper_temporal_5day.yaml --dry-run
 ```
+
+실험 A의 LR/RF/XGBoost는 논문에 맞춰 H2O 3.46.0.1을 사용한다. H2O AutoML에는
+SVM family가 없어 SVM은 sklearn으로 명시되며, 결과의 `method_fidelity`에서 이
+차이를 확인한다. backend는 자동으로 조용히 대체되지 않는다.
 
 ```bash
 python -m pytest tests/ -q
@@ -200,7 +205,9 @@ python run.py --compare
 ## 결과 읽는 법
 
 1. `LAUNCHER_STATUS.json`의 `status == "complete"`와 `TRAINING_COMPLETE.json`을
-   모두 확인한다. `starting`에서 끝난 run은 성능표에서 제외한다.
+   모두 확인하고 두 파일의 `attempt_id`가 같은지 확인한다. 새 시도는 기존 완료
+   마커를 `stale_completion_markers/<attempt_id>/`로 이동하므로, `starting` 또는
+   `failed`에서 끝난 run은 과거 마커와 관계없이 성능표에서 제외한다.
 2. `estimand` 필드를 먼저 본다. A와 B를 같은 표에서 비교하지 않는다.
 3. `headline_unit`을 본다. A는 시퀀스 단위, B는 피험자 단위다.
 4. `result_kind == "leakage_diagnostic"`인 결과는 성능이 아니다.

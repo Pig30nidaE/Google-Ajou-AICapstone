@@ -32,6 +32,8 @@ SPLIT_MODES = (
 MODEL_NAMES = ("lstm", "logistic_regression", "svm", "random_forest", "xgboost")
 
 BASELINE_REPRESENTATIONS = ("flatten", "mean", "last_day", "summary")
+BASELINE_BACKENDS = ("sklearn", "h2o")
+BASELINE_MODEL_NAMES = ("logistic_regression", "svm", "random_forest", "xgboost")
 
 #: Experiments whose split intentionally puts the same subject on both sides.
 #: These estimate Estimand A and must declare it.
@@ -99,6 +101,18 @@ class Config:
     def scaler_scope(self) -> str:
         return str(self.get("preprocessing.scaler_scope", "train_only"))
 
+    def baseline_backend_for(self, model_name: str) -> str:
+        """Resolve a model-specific backend, falling back to the global default."""
+        overrides = self.get("models.backend_by_model", {}) or {}
+        return str(overrides.get(model_name, self.get("models.baseline_backend", "sklearn")))
+
+    @property
+    def uses_h2o(self) -> bool:
+        return any(
+            model != "lstm" and self.baseline_backend_for(model) == "h2o"
+            for model in self.models
+        )
+
 
 def load_config(path: str | Path) -> Config:
     path = Path(path).expanduser().resolve()
@@ -138,6 +152,40 @@ def validate_config(config: Config) -> None:
             f"got {representation!r}"
         )
 
+    default_backend = str(config.get("models.baseline_backend", "sklearn"))
+    if default_backend not in BASELINE_BACKENDS:
+        raise ConfigError(
+            f"models.baseline_backend must be one of {BASELINE_BACKENDS}, "
+            f"got {default_backend!r}"
+        )
+    backend_overrides = config.get("models.backend_by_model", {}) or {}
+    if not isinstance(backend_overrides, Mapping):
+        raise ConfigError("models.backend_by_model must be a mapping")
+    unknown_backend_models = set(backend_overrides) - set(BASELINE_MODEL_NAMES)
+    if unknown_backend_models:
+        raise ConfigError(
+            "models.backend_by_model contains unsupported model keys: "
+            f"{sorted(unknown_backend_models)}"
+        )
+    invalid_backends = {
+        name: backend
+        for name, backend in backend_overrides.items()
+        if str(backend) not in BASELINE_BACKENDS
+    }
+    if invalid_backends:
+        raise ConfigError(f"invalid per-model backends: {invalid_backends}")
+    if "svm" in config.models and config.baseline_backend_for("svm") == "h2o":
+        raise ConfigError(
+            "H2O AutoML has no SVM family. Configure "
+            "models.backend_by_model.svm: sklearn and record the method mismatch."
+        )
+    if config.uses_h2o and config.experiment != "paper_temporal_reconstruction":
+        raise ConfigError(
+            "the H2O AutoML path is limited to paper_temporal_reconstruction. "
+            "In fixed/nested subject experiments it would re-select hyperparameters "
+            "inside each outer fit and invalidate their fixed/nested selection contract."
+        )
+
     # --- global safety: never negotiable -------------------------------------
     if config.scaler_scope != "train_only":
         raise ConfigError(
@@ -151,6 +199,25 @@ def validate_config(config: Config) -> None:
         )
     if config.get("features.include_subject_id", False):
         raise ConfigError("subject id must never be an input variable")
+    if float(config.get("lstm.recurrent_dropout", 0.0)) != 0.0:
+        raise ConfigError(
+            "lstm.recurrent_dropout is not implemented by the current one-layer "
+            "PyTorch model; set it to 0.0 instead of silently ignoring it"
+        )
+
+    if "lstm" in config.models and bool(config.get("lstm.early_stopping", False)):
+        validation_days = int(config.get("split.validation_days", 0))
+        supports_explicit_monitor = (
+            config.experiment
+            in {"paper_temporal_reconstruction", "strict_same_subject_temporal"}
+            and validation_days > 0
+        )
+        if not supports_explicit_monitor:
+            raise ConfigError(
+                "lstm.early_stopping=true requires an explicit train-side validation "
+                "period (split.validation_days > 0). This runner must never silently "
+                "disable early stopping or monitor the outer test set."
+            )
 
     declared = str(config.get("estimand", ""))
     if declared and declared != config.estimand:

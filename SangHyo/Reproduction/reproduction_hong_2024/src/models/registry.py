@@ -123,12 +123,23 @@ def fit(
         h2o_backend.ensure_available(
             require_exact_version=bool((h2o_config or {}).get("require_exact_version", False))
         )
+        h2o_backend.start(
+            max_mem_size=str((h2o_config or {}).get("max_mem_size", "4G")),
+            nthreads=int((h2o_config or {}).get("nthreads", -1)),
+        )
         config = h2o_backend.H2OConfig(
             seed=seed,
-            **{k: v for k, v in (h2o_config or {}).items() if k != "require_exact_version"},
+            **{
+                k: v
+                for k, v in (h2o_config or {}).items()
+                if k
+                not in {"require_exact_version", "max_mem_size", "nthreads"}
+            },
         )
         names = input_feature_names(train, model_name, representation=representation)
-        model, meta = h2o_backend.fit_automl(X, train.y, config, feature_names=names)
+        model, meta = h2o_backend.fit_automl(
+            X, train.y, config, model_name=model_name, feature_names=names
+        )
         return model, {"model": model_name, "representation": representation,
                        "n_train_sequences": len(train), **meta}
 

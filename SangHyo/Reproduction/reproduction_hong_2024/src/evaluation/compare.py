@@ -8,6 +8,7 @@ what population the number actually describes.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,8 @@ PAPER_RESULTS: dict[str, dict[str, float]] = {
 }
 
 PAPER_PRECISION_AT_100 = 0.96
+TABLE5_METRICS = ("sensitivity", "specificity", "roc_auc", "accuracy", "precision", "f1")
+REPRODUCTION_AUDIT_TOLERANCE = 0.03
 
 EXPERIMENT_COLUMNS = (
     ("paper_temporal_reconstruction", "원 시간분할 재구현"),
@@ -82,13 +85,118 @@ VALIDATION_PROPERTIES = [
 ]
 
 
-def load_reports(paths: dict[str, str | Path]) -> dict[str, dict[str, Any]]:
+def load_reports(
+    paths: dict[str, str | Path | list[str | Path] | tuple[str | Path, ...]]
+) -> dict[str, dict[str, Any]]:
+    """Load reports, merging per-length runs that belong to one experiment."""
     out: dict[str, dict[str, Any]] = {}
-    for name, path in paths.items():
-        path = Path(path)
-        if path.is_file():
-            out[name] = read_json(path)
+    for name, value in paths.items():
+        candidates = list(value) if isinstance(value, (list, tuple)) else [value]
+        parts: list[tuple[Path, dict[str, Any]]] = []
+        for candidate in candidates:
+            path = Path(candidate)
+            if path.is_file():
+                parts.append((path, read_json(path)))
+        if not parts:
+            continue
+        out[name] = _merge_report_parts(name, parts)
     return out
+
+
+def _merge_report_parts(
+    name: str, parts: list[tuple[Path, dict[str, Any]]]
+) -> dict[str, Any]:
+    if len(parts) == 1:
+        return parts[0][1]
+
+    merged = dict(parts[0][1])
+    reference_path, reference = parts[0]
+
+    def config_except_length(report: dict[str, Any]) -> dict[str, Any] | None:
+        raw = report.get("resolved_config")
+        if not isinstance(raw, dict):
+            return None
+        normalised = deepcopy(raw)
+        sequence = normalised.get("sequence")
+        if isinstance(sequence, dict):
+            sequence.pop("lengths", None)
+        return normalised
+
+    compatibility_fields = ("estimand", "seed", "data", "models", "runtime_signature_context")
+    reference_config = config_except_length(reference)
+    results: dict[str, Any] = {}
+    models: set[str] = set()
+    lengths: set[int] = set()
+    partial = False
+    for path, report in parts:
+        if report.get("experiment") not in (None, name):
+            raise ValueError(
+                f"cannot merge {path}: experiment={report.get('experiment')!r}, "
+                f"expected {name!r}"
+            )
+        for field in compatibility_fields:
+            if report.get(field) != reference.get(field):
+                raise ValueError(
+                    f"cannot merge {path}: {field} differs from {reference_path}"
+                )
+        current_config = config_except_length(report)
+        if reference_config is None or current_config is None:
+            raise ValueError(
+                "per-length report merging requires resolved_config in every source"
+            )
+        if current_config != reference_config:
+            raise ValueError(
+                f"cannot merge {path}: non-length config differs from {reference_path}"
+            )
+        overlap = set(results) & set(report.get("results") or {})
+        if overlap:
+            raise ValueError(f"duplicate result keys while merging {path}: {sorted(overlap)}")
+        results.update(report.get("results") or {})
+        models.update(map(str, report.get("models") or []))
+        lengths.update(int(value) for value in report.get("sequence_lengths") or [])
+        partial |= bool((report.get("run_scope") or {}).get("is_partial_run", False))
+
+    if name == "paper_temporal_reconstruction" and lengths != {3, 4, 5}:
+        partial = True
+
+    source_metadata = [
+        {
+            "report_path": str(path),
+            "config_path": report.get("config_path"),
+            "run_signature": report.get("run_signature"),
+            "artifacts": report.get("artifacts"),
+            "resolved_config": report.get("resolved_config"),
+        }
+        for path, report in parts
+    ]
+    for misleading_single_source_field in (
+        "artifacts", "config_path", "resolved_config", "run_signature"
+    ):
+        merged.pop(misleading_single_source_field, None)
+
+    merged.update(
+        {
+            "experiment": name,
+            "results": results,
+            "models": sorted(models),
+            "sequence_lengths": sorted(lengths),
+            "source_reports": [str(path) for path, _ in parts],
+            "source_metadata": source_metadata,
+            "combined_from_per_length_runs": True,
+            "all_audits_passed": all(
+                bool(report.get("all_audits_passed", False)) for _, report in parts
+            ),
+            "n_audit_warnings": sum(
+                int(report.get("n_audit_warnings", 0)) for _, report in parts
+            ),
+            "run_scope": {
+                "is_partial_run": partial,
+                "combined_from_per_length_runs": True,
+                "source_count": len(parts),
+            },
+        }
+    )
+    return merged
 
 
 def _value(block: dict[str, Any], unit: str, metric: str) -> Any:
@@ -109,6 +217,8 @@ def _lookup(report: dict[str, Any], model: str, length: int, unit: str, metric: 
     paper's 0.92, which is exactly the pick-the-best-length bias experiment C
     exists to avoid.  Partial blocks are reported separately, in table 5.
     """
+    if (report.get("run_scope") or {}).get("is_partial_run", False):
+        return None
     block = report.get("results", {}).get(f"{model}_L{length}")
     if not block or block.get("is_partial_subset"):
         return None
@@ -117,6 +227,8 @@ def _lookup(report: dict[str, Any], model: str, length: int, unit: str, metric: 
 
 def _nested_estimate(report: dict[str, Any], model: str) -> dict[str, Any] | None:
     """The one honest nested number per model: all outer folds, length chosen inside."""
+    if (report.get("run_scope") or {}).get("is_partial_run", False):
+        return None
     block = report.get("results", {}).get(f"{model}_Lnested")
     if not block:
         return None
@@ -163,6 +275,124 @@ def _partial_diagnostics(report: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(out, key=lambda r: (str(r["model"]), str(r["sequence_length"])))
 
 
+def _implied_prevalence(row: dict[str, float]) -> float | None:
+    """Infer class prevalence from sensitivity, specificity and precision."""
+    sensitivity = row["sensitivity"]
+    specificity = row["specificity"]
+    precision = row["precision"]
+    denominator = sensitivity * (1 - precision) + precision * (1 - specificity)
+    if denominator <= 0:
+        return None
+    return float(precision * (1 - specificity) / denominator)
+
+
+def _paper_key(model: str, length: int) -> str | None:
+    if model == "lstm":
+        return f"lstm_{length}day"
+    return model if model in PAPER_RESULTS else None
+
+
+def _paper_metric_diagnostics(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """Compare every reported Table 5 metric, not only the headline AUC."""
+    if (report.get("run_scope") or {}).get("is_partial_run", False):
+        return []
+    rows: list[dict[str, Any]] = []
+    for key, block in (report.get("results") or {}).items():
+        if block.get("is_partial_subset") or block.get("result_kind") == "leakage_diagnostic":
+            continue
+        model = str(block.get("model", ""))
+        length_value = block.get("sequence_length")
+        if isinstance(length_value, list):
+            if len(length_value) != 1:
+                continue
+            length_value = length_value[0]
+        if length_value is None:
+            continue
+        length = int(length_value)
+        target_key = _paper_key(model, length)
+        target = PAPER_RESULTS.get(target_key or "")
+        actual = block.get("sequence_level") or {}
+        if not target or not actual:
+            continue
+
+        comparisons = {
+            metric: {
+                "paper": target[metric],
+                "reproduction": actual.get(metric),
+                "delta": (
+                    None
+                    if actual.get(metric) is None
+                    else float(actual[metric] - target[metric])
+                ),
+                "within_abs_0_03": (
+                    False
+                    if actual.get(metric) is None
+                    else abs(float(actual[metric] - target[metric]))
+                    <= REPRODUCTION_AUDIT_TOLERANCE
+                ),
+            }
+            for metric in TABLE5_METRICS
+        }
+
+        fit = block.get("fit") or {}
+        fidelity = block.get("method_fidelity") or {}
+        training = fit.get("training") or {}
+        sequence_pk = block.get("precision_at_k") or {}
+        n_positive = int(actual.get("n_positive", 0))
+        effective_k = min(100, int(actual.get("n", 0)))
+        max_sequence_pk = (
+            float(min(n_positive, effective_k) / effective_k) if effective_k else None
+        )
+        subject_pk = block.get("subject_precision_at_k") or {}
+
+        rows.append(
+            {
+                "key": key,
+                "model": model,
+                "sequence_length": length,
+                "n_sequences": actual.get("n"),
+                "n_subjects": (block.get("subject_level") or {}).get("n_subjects"),
+                "backend": fit.get("backend"),
+                "representation": fit.get("representation"),
+                "method_fidelity": fidelity,
+                "early_stopping_applied": bool(
+                    training.get("early_stopping_applied")
+                    or (
+                        training.get("used_validation")
+                        and (fit.get("params") or {}).get("early_stopping")
+                    )
+                ),
+                "observed_sequence_prevalence": actual.get("prevalence"),
+                "paper_implied_prevalence": _implied_prevalence(target),
+                "metrics": comparisons,
+                "all_table5_metrics_within_abs_0_03": all(
+                    item["within_abs_0_03"] for item in comparisons.values()
+                ),
+                "sequence_precision_at_100": sequence_pk.get("precision_at_k"),
+                "sequence_precision_at_100_max_possible": sequence_pk.get(
+                    "max_possible_precision_at_k", max_sequence_pk
+                ),
+                "subject_precision_at_100": subject_pk.get("precision_at_k"),
+                "subject_precision_at_100_max_possible": subject_pk.get(
+                    "max_possible_precision_at_k"
+                ),
+                "paper_precision_at_100": (
+                    PAPER_PRECISION_AT_100 if model == "lstm" and length == 5 else None
+                ),
+                "paper_precision_at_100_attainable_on_sequence_set": (
+                    max_sequence_pk is not None
+                    and PAPER_PRECISION_AT_100 <= max_sequence_pk
+                    if model == "lstm" and length == 5
+                    else None
+                ),
+            }
+        )
+
+    order = {"lstm": 0, "xgboost": 1, "random_forest": 2,
+             "logistic_regression": 3, "svm": 4}
+    return sorted(rows, key=lambda row: (row["sequence_length"], order.get(row["model"], 99)))
+
+
 def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
     """Assemble tables 1-3 from whichever experiment reports exist."""
     table1, table2 = [], []
@@ -207,7 +437,12 @@ def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "table3_validation_properties": VALIDATION_PROPERTIES,
         "table4_nested_selected": nested_estimates,
         "table5_nested_partial_subsets": _partial_diagnostics(nested_report),
+        "table6_paper_metric_reproduction": _paper_metric_diagnostics(
+            reports.get("paper_temporal_reconstruction") or {}
+        ),
         "paper_results": PAPER_RESULTS,
+        "paper_precision_at_100": PAPER_PRECISION_AT_100,
+        "reproduction_audit_tolerance": REPRODUCTION_AUDIT_TOLERANCE,
         "deltas": deltas,
         "available_reports": sorted(reports),
     }
@@ -407,6 +642,62 @@ def render_comparison_markdown(comparison: dict[str, Any]) -> str:
                 f"| {row['model']} | {row['sequence_length']}일 | {row['n_folds']} | "
                 f"{row['n_subjects']} | {cell(row['roc_auc'])} |"
             )
+
+    diagnostics = comparison.get("table6_paper_metric_reproduction") or []
+    lines += [
+        "",
+        "## 표 6. 논문 Table 5 전체 지표 재현 진단",
+        "",
+        "각 셀은 `논문 → 재구현 (차이)`다. ±0.03은 누락을 드러내기 위한 감사 띠이며, "
+        "통계적 동등성 판정은 아니다.",
+        "",
+    ]
+    if diagnostics:
+        lines += [
+            "| 모델 | 길이 | backend | n(seq/subj) | Sens. | Spec. | AUC | Acc. | Prec. | F1 | 전체 ±.03 |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        ]
+
+        def metric_cell(row: dict[str, Any], metric: str) -> str:
+            item = row["metrics"][metric]
+            return (
+                f"{cell(item['paper'])} → {cell(item['reproduction'])} "
+                f"({cell(item['delta'])})"
+            )
+
+        for row in diagnostics:
+            lines.append(
+                f"| {row['model']} | {row['sequence_length']}일 | {row.get('backend') or '–'} | "
+                f"{row.get('n_sequences')}/{row.get('n_subjects')} | "
+                f"{metric_cell(row, 'sensitivity')} | {metric_cell(row, 'specificity')} | "
+                f"{metric_cell(row, 'roc_auc')} | {metric_cell(row, 'accuracy')} | "
+                f"{metric_cell(row, 'precision')} | {metric_cell(row, 'f1')} | "
+                f"{'예' if row['all_table5_metrics_within_abs_0_03'] else '아니오'} |"
+            )
+
+        for row in diagnostics:
+            if row.get("paper_precision_at_100") is None:
+                continue
+            lines += [
+                "",
+                f"- **LSTM {row['sequence_length']}일 P@100**: 논문 "
+                f"{cell(row['paper_precision_at_100'])}, 재구현 sequence "
+                f"{cell(row.get('sequence_precision_at_100'))}, 현재 평가군의 이론상 최대 "
+                f"{cell(row.get('sequence_precision_at_100_max_possible'))}. "
+                f"논문값 달성 가능: "
+                f"{'예' if row.get('paper_precision_at_100_attainable_on_sequence_set') else '아니오'}.",
+                f"- 관측 sequence prevalence {cell(row.get('observed_sequence_prevalence'))}, "
+                f"논문 Table 5의 sensitivity/specificity/precision이 암시하는 prevalence "
+                f"{cell(row.get('paper_implied_prevalence'))}.",
+                f"- 같은 평가군의 subject P@100 "
+                f"{cell(row.get('subject_precision_at_100'))}, 이론상 최대 "
+                f"{cell(row.get('subject_precision_at_100_max_possible'))}. "
+                "논문의 P@100 단위가 보고되지 않아 sequence 값과 섞지 않는다.",
+                f"- early stopping 실제 적용: {'예' if row.get('early_stopping_applied') else '아니오'}.",
+                "- method fidelity: " + str(row.get("method_fidelity") or {}) + ".",
+            ]
+    else:
+        lines.append("비교 가능한 paper-temporal 결과가 없다.")
 
     lines += ["", "## 차이값과 그 해석", ""]
     for row in comparison["deltas"]["per_sequence_length"]:

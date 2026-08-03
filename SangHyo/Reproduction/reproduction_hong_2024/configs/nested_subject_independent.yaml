@@ -54,7 +54,7 @@ threshold:
 lstm:
   max_epochs: 60                 # nested는 fit 횟수가 많으므로 예산을 줄인다
   patience: 8
-  early_stopping: true
+  early_stopping: false                # outer refit용 독립 monitor가 없어 고정 epoch
   recurrent_dropout: 0.0
 
 tuning:

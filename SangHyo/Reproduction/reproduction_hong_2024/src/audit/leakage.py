@@ -26,6 +26,7 @@ import pandas as pd
 from ..data import schema
 from ..preprocessing.scaler import SequenceScaler, fingerprint
 from ..sequences.builder import SequenceSet
+from ..utils.io import hash_subject
 
 
 class LeakageError(AssertionError):
@@ -146,8 +147,15 @@ def audit_sequence_split(
     early_stopping_source: str | None = None,
     expect_subject_overlap: bool = False,
     allow_boundary_crossing: bool = False,
+    allow_literal_overlap_diagnostic: bool = False,
 ) -> AuditLog:
-    """Run every §12 check on one already-built train/test pair."""
+    """Run every §12 check on one already-built train/test pair.
+
+    ``allow_literal_overlap_diagnostic`` is deliberately narrow: it only turns
+    the two row/date-overlap failures created by ``build_sequences_literal``
+    into warnings.  Scaler, sampling, feature, provenance, and duplicate-window
+    failures remain fatal even in that diagnostic arm.
+    """
     log = AuditLog(context)
 
     train_subjects = set(train.subjects.tolist())
@@ -166,22 +174,26 @@ def audit_sequence_split(
             "no_subject_overlap",
             not subject_overlap,
             f"{len(subject_overlap)} subjects in both train and test: "
-            f"{sorted(subject_overlap)[:3]}",
+            f"{sorted(hash_subject(value) for value in subject_overlap)[:3]}",
         )
 
-    # 2-3. raw row and (subject, date) overlap -- fatal in every estimand
+    # 2-3. Raw row and (subject, date) overlap are fatal in every performance
+    # estimate.  The explicitly labelled literal-leakage diagnostic records its
+    # intended overlap as warnings, while all unrelated checks still fail closed.
     row_overlap = train.raw_row_ids() & test.raw_row_ids()
     log.add(
         "no_raw_row_overlap",
         not row_overlap,
         f"{len(row_overlap)} raw daily records appear in both splits",
+        severity="warning" if allow_literal_overlap_diagnostic else "fatal",
     )
     date_overlap = train.subject_date_pairs() & test.subject_date_pairs()
     log.add(
         "no_shared_subject_dates",
         not date_overlap,
         f"{len(date_overlap)} (subject, date) pairs appear in both splits: "
-        f"{sorted(map(str, date_overlap))[:3]}",
+        f"{sorted((hash_subject(subject), str(date)) for subject, date in date_overlap)[:3]}",
+        severity="warning" if allow_literal_overlap_diagnostic else "fatal",
     )
 
     # 4. windows that quietly bridge a calendar gap
@@ -189,7 +201,7 @@ def audit_sequence_split(
         n_gap = int((~sequences.provenance["is_calendar_consecutive"]).sum()) if len(sequences) else 0
         log.add(
             f"{name}_sequences_are_calendar_consecutive",
-            n_gap == 0 or allow_boundary_crossing,
+            n_gap == 0,
             f"{n_gap} {name} sequences span a calendar gap",
             severity="fatal" if not allow_boundary_crossing else "warning",
         )
@@ -205,11 +217,14 @@ def audit_sequence_split(
     # 6. the scaler saw training data and nothing else
     if scaler is not None:
         source = scaler_fit_source if scaler_fit_source is not None else train
+        expected_fingerprint = fingerprint(source)
         log.add(
             "scaler_fitted_on_train_only",
-            scaler.fitted_on == fingerprint(source),
-            f"scaler fingerprint {scaler.fitted_on} != training fingerprint "
-            f"{fingerprint(source)}",
+            scaler.fitted_on == expected_fingerprint,
+            {
+                "actual_scaler_fingerprint": scaler.fitted_on,
+                "expected_training_fingerprint": expected_fingerprint,
+            },
         )
 
     # 7. sampling touched training only
@@ -229,12 +244,20 @@ def audit_sequence_split(
     )
     log.add(
         "hyperparameters_not_chosen_on_test",
-        hyperparameter_source in {"paper_reported", "config_fixed", "inner_cv"},
+        hyperparameter_source
+        in {
+            "paper_reported",
+            "config_fixed",
+            "config_fixed_unreported",
+            "train_internal_cv",
+            "inner_cv",
+        },
         f"hyperparameter provenance is {hyperparameter_source!r}",
     )
     log.add(
         "early_stopping_not_monitored_on_test",
-        early_stopping_source in {None, "none", "train_holdout", "inner_cv", "validation_period"},
+        early_stopping_source
+        in {None, "none", "not_applicable", "train_holdout", "inner_cv", "validation_period"},
         f"early stopping monitored {early_stopping_source!r}; the outer test set "
         "must never be the monitor",
     )
@@ -301,7 +324,8 @@ def audit_outer_test_isolation(
     log.add(
         "outer_test_absent_from_inner_cv",
         not leaked,
-        f"{len(leaked)} outer-test subjects reached the inner CV: {sorted(leaked)[:3]}",
+        f"{len(leaked)} outer-test subjects reached the inner CV: "
+        f"{sorted(hash_subject(value) for value in leaked)[:3]}",
     )
     log.add(
         "selection_scores_come_from_inner_cv",
@@ -336,7 +360,7 @@ def audit_temporal_split(split: Any, *, sequence_length: int) -> AuditLog:
     )
     log.add(
         "embargo_covers_window",
-        split.embargo_days == 0 or split.embargo_days >= sequence_length - 1,
+        split.embargo_days >= sequence_length - 1,
         f"embargo of {split.embargo_days} days is shorter than the {sequence_length - 1} "
         "days a window reaches back",
         severity="warning",

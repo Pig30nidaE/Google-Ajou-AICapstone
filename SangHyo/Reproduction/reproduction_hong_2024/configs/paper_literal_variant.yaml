@@ -52,7 +52,7 @@ threshold:
 lstm:
   max_epochs: 100
   patience: 10
-  early_stopping: true
+  early_stopping: false                # 진단 arm에는 독립 validation이 없어 고정 epoch
   recurrent_dropout: 0.0
 
 tuning:

@@ -90,8 +90,10 @@
 - 가능성: (a) train에서 일부를 뗐다, (b) test를 validation으로 겸용했다,
   (c) Keras `validation_split`을 썼다.
 - (b)라면 보고된 성능은 낙관적이다.
-- **현재 처리:** 실험 A는 validation 없음, 실험 B1은 train 끝 14일. 어느 경우에도
-  test를 monitor로 쓰지 않는다(A-06).
+- **현재 처리:** 실험 A/B1은 train 끝 14일을 명시적 validation으로 사용한다.
+  이 기간은 논문 미보고 가정으로 결과에 기록한다. A'·B2·C outer refit은 별도
+  monitor가 없어 early stopping을 끈다. 어느 경우에도 test를 monitor로 쓰지
+  않는다(A-06).
 
 ## Q-10. 비교모델(SVM/LR/RF/XGBoost)의 입력 형태
 
@@ -110,8 +112,10 @@
   고정한 채 돌렸다는 뜻인데, 그 설정은 보고되지 않았다.
 - AutoML이 자체 CV를 어떤 분할로 돌렸는지도 알 수 없다. 시퀀스 단위 무작위 CV였다면
   같은 피험자가 fold를 넘나들었을 것이다.
-- **현재 처리:** H2O는 선택 backend. 사용 시 training fold만 전달하고, 어느 backend가
-  돌았는지 결과에 기록한다(A-17).
+- **현재 처리:** 실험 A의 LR/RF/XGBoost는 H2O 3.46.0.1을 필수로 하고 training
+  fold만 전달한 뒤 요청 family(GLM/DRF/XGBoost)를 고정한다. H2O AutoML로
+  재현할 수 없는 SVM은 sklearn 경로임을 명시한다. 어느 backend·버전·family가
+  돌았는지 결과에 기록한다(A-17). 따라서 SVM 행은 여전히 exact-method 재현이 아니다.
 
 ## Q-12. 논문 Table 5의 F1이 precision·sensitivity와 정합하는가
 

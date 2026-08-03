@@ -2,9 +2,9 @@
 
 Hong et al. §4.2 names the tool and the version explicitly -- "H2O, a Python (H2O
 version 3.46.0.1) AutoML library" -- so this backend exists to follow the paper
-where the environment allows it.  It is never required: ``run.py`` falls back to
-the scikit-learn / XGBoost path whenever ``h2o`` is not importable, and the
-result records which backend actually ran.
+where the environment allows it.  A run never silently falls back: the resolved
+per-model backend is recorded, and requesting H2O without the pinned dependency
+fails before a different method can be mistaken for the paper's.
 
 Two cautions are wired in rather than left to the reader:
 
@@ -23,6 +23,7 @@ from typing import Any
 import numpy as np
 
 REQUIRED_VERSION = "3.46.0.1"
+_STARTED = False
 
 
 class H2ONotAvailable(RuntimeError):
@@ -33,7 +34,6 @@ class H2ONotAvailable(RuntimeError):
 class H2OConfig:
     max_models: int = 20
     max_runtime_secs: int = 600
-    include_algos: tuple[str, ...] = ("GLM", "DRF", "XGBoost", "GBM")
     nfolds: int = 5
     seed: int = 42
     sort_metric: str = "AUC"
@@ -61,7 +61,8 @@ def ensure_available(*, require_exact_version: bool = False) -> str:
     if not is_available():
         raise H2ONotAvailable(
             "h2o is not installed. Either `pip install h2o==3.46.0.1` or set "
-            "models.baseline_backend: sklearn in the config."
+            "the affected models.backend_by_model entry to sklearn and accept the "
+            "recorded method mismatch."
         )
     version = installed_version()
     if require_exact_version and version != REQUIRED_VERSION:
@@ -74,19 +75,27 @@ def ensure_available(*, require_exact_version: bool = False) -> str:
 
 
 def start(*, max_mem_size: str = "4G", nthreads: int = -1) -> None:
+    global _STARTED
+    if _STARTED:
+        return
     import h2o
 
     h2o.init(max_mem_size=max_mem_size, nthreads=nthreads)
     h2o.no_progress()
+    _STARTED = True
 
 
 def shutdown() -> None:
+    global _STARTED
     try:
         import h2o
 
-        h2o.cluster().shutdown()
+        if _STARTED:
+            h2o.cluster().shutdown()
     except Exception:  # pragma: no cover - shutdown is best-effort
         pass
+    finally:
+        _STARTED = False
 
 
 def fit_automl(
@@ -94,9 +103,10 @@ def fit_automl(
     y: np.ndarray,
     config: H2OConfig,
     *,
+    model_name: str,
     feature_names: list[str] | None = None,
 ) -> tuple[Any, dict[str, Any]]:
-    """Run AutoML on the training fold only.
+    """Run family-constrained AutoML on the training fold only.
 
     Note the deliberate absence of a ``validation`` parameter: H2O's own
     ``nfolds`` cross-validation runs *inside* this training frame, so no held-out
@@ -106,7 +116,20 @@ def fit_automl(
     import pandas as pd
     from h2o.automl import H2OAutoML
 
+    family_algos = {
+        "logistic_regression": ("GLM",),
+        "random_forest": ("DRF",),
+        "xgboost": ("XGBoost",),
+    }
+    if model_name not in family_algos:
+        raise H2ONotAvailable(
+            f"H2O AutoML cannot faithfully produce the requested {model_name!r} row. "
+            "In particular, SVM is not one of this reproduction's H2O AutoML "
+            "families; use the explicitly labelled sklearn reconstruction instead."
+        )
+
     version = ensure_available()
+    start()
     names = feature_names or [f"f{i}" for i in range(X.shape[1])]
     frame = pd.DataFrame(np.asarray(X), columns=names)
     frame["target"] = np.asarray(y).astype(int)
@@ -117,7 +140,7 @@ def fit_automl(
     automl = H2OAutoML(
         max_models=config.max_models,
         max_runtime_secs=config.max_runtime_secs,
-        include_algos=list(config.include_algos),
+        include_algos=list(family_algos[model_name]),
         nfolds=config.nfolds,
         seed=config.seed,
         sort_metric=config.sort_metric,
@@ -131,6 +154,8 @@ def fit_automl(
         "matches_paper_version": version == REQUIRED_VERSION,
         "leader_model_id": str(leader.model_id),
         "leader_algo": str(leader.algo),
+        "requested_model": model_name,
+        "family_constrained_algos": list(family_algos[model_name]),
         "n_train_rows": int(len(X)),
         **config.describe(),
     }

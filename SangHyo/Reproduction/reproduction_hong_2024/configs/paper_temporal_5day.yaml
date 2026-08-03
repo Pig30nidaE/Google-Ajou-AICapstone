@@ -35,7 +35,7 @@ split:
   final_week_mode: calendar_days       # A-05 (마지막 7개 '날짜')
   final_week_length: 7
   embargo_days: 0                      # 실험 A는 논문 그대로. embargo는 B1에서.
-  validation_days: 0                   # A-06 (논문에 validation 기간 서술 없음)
+  validation_days: 14                  # A-06 (논문 미보고; test와 분리된 train-side 기간)
 
 preprocessing:
   scaler_scope: train_only             # 변경 불가. config 검증에서 강제된다.
@@ -61,9 +61,14 @@ tuning:
 models:
   enabled: [lstm, logistic_regression, svm, random_forest, xgboost]
   representation: flatten              # A-09 (비교모델 입력변환, 논문 미보고)
-  baseline_backend: sklearn            # h2o로 바꾸면 논문의 AutoML 경로를 쓴다
+  baseline_backend: sklearn            # 모델별 override가 없을 때의 명시적 fallback
+  backend_by_model:
+    logistic_regression: h2o           # 논문 §4.2의 H2O AutoML 3.46.0.1
+    random_forest: h2o
+    xgboost: h2o
+    svm: sklearn                        # H2O AutoML에 SVM family가 없음(Q-11)
   h2o:
-    require_exact_version: false       # 논문은 3.46.0.1
+    require_exact_version: true
     max_models: 20
     max_runtime_secs: 600
 

@@ -6,9 +6,9 @@ in the limitations section).  Everything else -- batch size, epoch budget,
 dropout, patience, the validation source for early stopping -- is unreported and
 lives in the config, documented as A-10 through A-14.
 
-The paper used a Keras/TensorFlow stack; this package uses PyTorch to match the
-rest of the repository.  That makes this a reported-method reconstruction, not a
-bit-exact reproduction.
+The paper does not report its framework.  This package uses PyTorch to match the
+rest of the repository, so framework-level defaults remain an explicit source of
+non-equivalence.  This is a reported-method reconstruction, not a bit-exact one.
 """
 
 from __future__ import annotations
@@ -98,11 +98,17 @@ class SequenceLSTM:
         checks that, and the engine only ever passes an inner/held-out-train
         slice here.
         """
+        cfg = self.config
+        if cfg.early_stopping and validation is None:
+            raise ValueError(
+                "early_stopping=True requires an explicit train-side validation set; "
+                "silently running every epoch would not reproduce the reported method"
+            )
+
         import torch
         from torch import nn
         from torch.utils.data import DataLoader, TensorDataset
 
-        cfg = self.config
         torch.manual_seed(cfg.seed)
         self.model = self._build()
 
@@ -168,6 +174,8 @@ class SequenceLSTM:
                 and len(self.history["train_loss"]) < cfg.max_epochs
             ),
             "used_validation": validation is not None,
+            "early_stopping_requested": bool(cfg.early_stopping),
+            "early_stopping_applied": bool(cfg.early_stopping and validation is not None),
         }
         return self
 

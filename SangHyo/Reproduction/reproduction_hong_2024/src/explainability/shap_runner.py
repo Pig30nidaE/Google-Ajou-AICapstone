@@ -24,8 +24,8 @@ from typing import Any, Sequence
 import numpy as np
 import pandas as pd
 
-from ..data import schema
 from ..sequences.builder import SequenceSet
+from ..utils.io import hash_subject
 
 TIME_AGGREGATIONS = ("mean_abs", "sum", "last_step", "max_abs")
 SHAP_MODES = ("out_of_fold", "paper_style")
@@ -83,8 +83,8 @@ class ShapResult:
         """Per-subject importance, so a 118-window subject cannot dominate."""
         per_sequence = np.abs(self.values).mean(axis=1)
         frame = pd.DataFrame(per_sequence, columns=list(self.feature_columns))
-        frame[schema.SUBJECT_ID] = list(subjects)
-        return frame.groupby(schema.SUBJECT_ID).mean().reset_index()
+        frame["subject_hash"] = [hash_subject(subject) for subject in subjects]
+        return frame.groupby("subject_hash").mean().reset_index()
 
 
 def compute_shap(
@@ -141,7 +141,9 @@ def compute_shap(
             "n_explained": int(len(ex_idx)),
             "explained_split": explain.split_name,
             "sequence_length": explain.sequence_length,
-            "explained_subjects": sorted(set(explain.subjects[ex_idx].tolist())),
+            "explained_subject_hashes": sorted(
+                {hash_subject(subject) for subject in explain.subjects[ex_idx].tolist()}
+            ),
             "caveat": (
                 "paper_style는 학습에 사용한 자료 위에서 계산한 단일 모델 설명이다. "
                 "일반화 가능한 변수 중요도로 해석하지 않는다."

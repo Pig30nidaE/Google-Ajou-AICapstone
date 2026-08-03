@@ -56,11 +56,13 @@
 - 논문은 "best balance between accuracy and **validation loss**"(§4.2)와 early
   stopping 적용(한계 절)을 언급하지만 validation을 **어디서 떼었는지 쓰지 않았다.**
 - 선택:
-  - 실험 A(논문 재구현): validation 없음(`validation_days: 0`). 논문에 서술이
-    없으므로 추가하지 않는 쪽을 재구현으로 본다.
-  - 실험 B1: train 기간 끝 14일을 validation으로 사용.
-  - 실험 C: inner CV fold가 validation 역할.
+  - 실험 A/B1: test보다 앞선 train 기간의 마지막 14일을 validation으로 사용한다.
+    14일은 **논문 보고값이 아닌 민감한 구현 가정**이다. 논문이 명시한 early
+    stopping을 실제 적용하면서 test monitor를 피하기 위한 선택이다.
+  - 실험 A'·B2·C의 outer refit: 별도 validation이 없으므로 early stopping을 끄고
+    고정 epoch를 사용한다. 실험 C의 inner fold는 하이퍼파라미터 선택용 validation이다.
 - **어떤 경우에도 test 기간을 early stopping monitor로 쓰지 않는다.**
+- `early_stopping: true`인데 독립 validation이 없으면 실행 전 config 검증이 실패한다.
 - config: `split.validation_days`
 
 ### A-07. undersampling 방식 — 영향 **높음**
@@ -123,11 +125,14 @@
 
 ### A-17. H2O AutoML은 선택 backend — 영향 **높음**
 - 논문 §4.2는 버전까지 명시했다: "H2O version 3.46.0.1".
-- 이 저장소는 기본적으로 sklearn/XGBoost 경로로 실행하고, `h2o`가 설치되어 있고
-  config가 요청할 때만 AutoML을 쓴다. 어느 backend가 돌았는지 결과에 기록한다.
-- H2O AutoML은 모델군까지 데이터로 고르므로, 실험 C에서는 반드시 inner CV **안**에
-  있어야 한다.
-- config: `models.baseline_backend: sklearn | h2o`
+- 실험 A의 정식 config는 LR/RF/XGBoost에 H2O 3.46.0.1을 요구한다. 미설치·버전
+  불일치 때 sklearn으로 조용히 바꾸지 않고 실패한다. SVM만 아래 제약 때문에
+  sklearn을 명시적으로 사용한다. 어느 backend가 돌았는지 결과에 기록한다.
+- H2O 경로는 요청한 비교모델별로 family를 고정(GLM/DRF/XGBoost)한 뒤 training
+  fold 내부 AutoML로 하이퍼파라미터를 고른다. H2O AutoML에 SVM family가 없어
+  `baseline_backend: h2o`로 SVM을 요청하면 조용히 다른 모델을 쓰지 않고 실패한다.
+- 실험 C에서 H2O 선택을 쓴다면 반드시 inner CV **안**에 있어야 한다.
+- config: `models.baseline_backend`, `models.backend_by_model.<model>`
 
 ---
 

@@ -70,14 +70,27 @@ def precision_at_k(y_true: np.ndarray, y_score: np.ndarray, k: int = 100) -> dic
     """The paper's precision@K (Equation 11); it reports precision@100 = 0.96."""
     y_true = np.asarray(y_true).astype(int)
     y_score = np.asarray(y_score, dtype=float)
-    k = int(min(k, len(y_true)))
-    if k == 0:
-        return {"k": 0, "precision_at_k": float("nan")}
-    top = np.argsort(-y_score, kind="stable")[:k]
+    requested_k = int(k)
+    effective_k = int(min(requested_k, len(y_true)))
+    if effective_k == 0:
+        return {
+            "requested_k": requested_k,
+            "k": 0,
+            "precision_at_k": float("nan"),
+            "max_possible_precision_at_k": float("nan"),
+            "n_positive_available": int(y_true.sum()),
+            "k_was_truncated": requested_k > 0,
+        }
+    top = np.argsort(-y_score, kind="stable")[:effective_k]
     return {
-        "k": k,
+        "requested_k": requested_k,
+        "k": effective_k,
         "precision_at_k": float(y_true[top].mean()),
-        "k_was_truncated": bool(k < 100),
+        "max_possible_precision_at_k": float(
+            min(int(y_true.sum()), effective_k) / effective_k
+        ),
+        "n_positive_available": int(y_true.sum()),
+        "k_was_truncated": bool(effective_k < requested_k),
     }
 
 
@@ -138,6 +151,32 @@ def subject_level_metrics(
     metrics["aggregation"] = method
     metrics["n_subjects"] = int(len(frame))
     return metrics
+
+
+def subject_precision_at_k(
+    subjects: Sequence[str],
+    y_true: np.ndarray,
+    y_score: np.ndarray,
+    *,
+    k: int = 100,
+    method: str = "mean",
+    threshold: float = 0.5,
+) -> dict[str, Any]:
+    """Precision@K after collapsing every subject to exactly one score."""
+    frame = aggregate_to_subject(
+        subjects, y_true, y_score, method=method, threshold=threshold
+    )
+    report = precision_at_k(
+        frame["y_true"].to_numpy(), frame["y_score"].to_numpy(), k=k
+    )
+    report.update(
+        {
+            "unit": "subject",
+            "aggregation": method,
+            "n_subjects": int(len(frame)),
+        }
+    )
+    return report
 
 
 def all_aggregation_metrics(

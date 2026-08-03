@@ -17,6 +17,9 @@ Runners
 
 from __future__ import annotations
 
+import hashlib
+from importlib import metadata as importlib_metadata
+import json
 from pathlib import Path
 from typing import Any, Callable
 
@@ -34,7 +37,7 @@ from .sequences.builder import SequenceSet, build_sequences, build_sequences_lit
 from .splits import group as group_splits
 from .splits import temporal as temporal_splits
 from .utils.config import Config
-from .utils.io import CheckpointStore, hash_subject, write_json
+from .utils.io import CheckpointStore, hash_sequence_id, hash_subject, write_json
 from .utils.seeding import fold_seed, seed_everything
 
 
@@ -45,6 +48,48 @@ def _sampling_options(config: Config) -> dict[str, Any]:
         "strategy": str(config.get("sampling.strategy", "random_sequence")),
         "target_ratio": float(config.get("sampling.target_ratio", 1.0)),
     }
+
+
+def _dependency_versions() -> dict[str, str | None]:
+    versions: dict[str, str | None] = {}
+    for distribution in ("numpy", "pandas", "scikit-learn", "torch", "xgboost", "h2o"):
+        try:
+            versions[distribution] = importlib_metadata.version(distribution)
+        except importlib_metadata.PackageNotFoundError:
+            versions[distribution] = None
+    return versions
+
+
+def _run_signature(data: LifelogData, config: Config, *, device: str) -> str:
+    """Bind resumable checkpoints to code, resolved config and loaded data."""
+    digest = hashlib.sha256()
+    digest.update(
+        json.dumps(config.raw, sort_keys=True, ensure_ascii=True, default=str).encode("utf-8")
+    )
+    digest.update(
+        json.dumps(
+            {"device": device, "dependencies": _dependency_versions()},
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+    columns = [
+        schema.SUBJECT_ID,
+        schema.DATE_COL,
+        schema.RAW_ROW_ID,
+        schema.LABEL_COL,
+        *data.feature_columns,
+    ]
+    row_hashes = pd.util.hash_pandas_object(data.daily[columns], index=True).to_numpy()
+    digest.update(row_hashes.tobytes())
+    source_root = Path(__file__).resolve().parent
+    for source in sorted(source_root.rglob("*.py")):
+        digest.update(str(source.relative_to(source_root)).encode("utf-8"))
+        digest.update(source.read_bytes())
+    runner_source = source_root.parent / "run.py"
+    if runner_source.is_file():
+        digest.update(b"run.py")
+        digest.update(runner_source.read_bytes())
+    return digest.hexdigest()
 
 
 def _lstm_defaults(config: Config) -> dict[str, Any]:
@@ -84,6 +129,7 @@ def _score_block(
     scores: np.ndarray,
     *,
     threshold: float,
+    seed: int,
     include_subject: bool = True,
 ) -> dict[str, Any]:
     """Sequence-level and subject-level metrics for one evaluation set."""
@@ -99,6 +145,17 @@ def _score_block(
         block["subject_level_sensitivity_analysis"] = metrics.all_aggregation_metrics(
             subjects, sequences.y, scores, threshold=threshold
         )
+        block["subject_precision_at_k"] = metrics.subject_precision_at_k(
+            subjects, sequences.y, scores, k=100, method="mean", threshold=threshold
+        )
+        block["subject_bootstrap_ci"] = metrics.bootstrap_ci(
+            subjects,
+            sequences.y,
+            scores,
+            seed=seed,
+            aggregation="mean",
+            threshold=threshold,
+        )
     return block
 
 
@@ -107,7 +164,9 @@ def _predictions_frame(sequences: SequenceSet, scores: np.ndarray, **extra: Any)
     frame = pd.DataFrame(
         {
             "subject_hash": [hash_subject(s) for s in sequences.subjects],
-            "sequence_id": sequences.provenance["sequence_id"],
+            "sequence_hash": [
+                hash_sequence_id(value) for value in sequences.provenance["sequence_id"]
+            ],
             "start_date": sequences.provenance["start_date"],
             "end_date": sequences.provenance["end_date"],
             "sequence_length": sequences.sequence_length,
@@ -120,7 +179,94 @@ def _predictions_frame(sequences: SequenceSet, scores: np.ndarray, **extra: Any)
     )
     for key, value in extra.items():
         frame[key] = value
+    _assert_predictions_deidentified(frame)
     return frame
+
+
+def _assert_predictions_deidentified(frame: pd.DataFrame) -> None:
+    """Fail before writing if an output table still carries an internal identifier."""
+    forbidden_columns = {"subject_id", "sequence_id", "email", "sample_email"}
+    leaked_columns = forbidden_columns & {str(column).lower() for column in frame.columns}
+    if leaked_columns:
+        raise ValueError(
+            f"prediction artifact contains raw-identifier columns: {sorted(leaked_columns)}"
+        )
+
+    for column in frame.select_dtypes(include=["object", "string"]).columns:
+        values = frame[column].astype(str)
+        if values.str.contains(r"[^\s@]+@[^\s@]+", regex=True, na=False).any():
+            raise ValueError(
+                f"prediction artifact column {column!r} contains an email-like identifier"
+            )
+
+
+def _assert_checkpoint_metrics(block: dict[str, Any], frame: pd.DataFrame) -> None:
+    """Round-trip checkpoint scores so a valid CSV hash cannot mask a stale block."""
+    expected = block.get("sequence_level") or {}
+    threshold = float(expected.get("threshold", block.get("threshold", 0.5)))
+    actual = metrics.binary_metrics(
+        frame["y_true"].to_numpy(), frame["y_score"].to_numpy(), threshold=threshold
+    )
+    for name in (
+        "n", "n_positive", "n_negative", "roc_auc", "pr_auc", "balanced_accuracy",
+        "sensitivity", "specificity", "f1", "brier", "accuracy", "precision",
+    ):
+        left, right = expected.get(name), actual.get(name)
+        if left is None and (
+            right is None
+            or isinstance(right, (int, float)) and not np.isfinite(float(right))
+        ):
+            continue
+        if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+            if np.isclose(float(left), float(right), rtol=1e-10, atol=1e-12, equal_nan=True):
+                continue
+        elif left == right:
+            continue
+        raise ValueError(
+            f"checkpoint metric {name!r} does not round-trip from predictions: "
+            f"stored={left}, recomputed={right}"
+        )
+
+
+def _method_fidelity(
+    model_name: str, fit_meta: dict[str, Any], config: Config
+) -> dict[str, Any]:
+    """Record method matches separately from numerical similarity."""
+    if model_name == "lstm":
+        training = fit_meta.get("training") or {}
+        params = fit_meta.get("params") or {}
+        applied = bool(params.get("early_stopping") and training.get("used_validation"))
+        return {
+            "paper_backend": "not_reported",
+            "actual_backend": fit_meta.get("backend"),
+            "paper_reports_early_stopping": True,
+            "early_stopping_requested": bool(params.get("early_stopping")),
+            "early_stopping_applied": applied,
+            "early_stopping_matches_reported_method": applied,
+            "paper_validation_source_reported": False,
+            "actual_validation_source": fit_meta.get("validation_split_name"),
+            "actual_validation_days": int(config.get("split.validation_days", 0)),
+            "validation_assumption_id": "A-06",
+            "note": (
+                "논문은 early-stopping validation의 출처를 보고하지 않았다. "
+                "수치 유사성과 방법 충실도를 별도로 판정한다."
+            ),
+        }
+
+    backend = fit_meta.get("backend")
+    version = fit_meta.get("h2o_version")
+    return {
+        "paper_backend": "h2o_automl_3.46.0.1",
+        "actual_backend": backend,
+        "actual_h2o_version": version,
+        "backend_matches_reported_method": bool(
+            backend == "h2o" and version == "3.46.0.1"
+        ),
+        "hyperparameters_reported_by_paper": False,
+        "note": (
+            "논문은 baseline 최종 hyperparameter와 window representation을 보고하지 않았다."
+        ),
+    }
 
 
 def _fit_and_score(
@@ -135,7 +281,7 @@ def _fit_and_score(
     device: str,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     representation = str(config.get("models.representation", "flatten"))
-    backend = str(config.get("models.baseline_backend", "sklearn"))
+    backend = config.baseline_backend_for(model_name)
     model, fit_meta = registry.fit(
         model_name,
         train,
@@ -176,7 +322,10 @@ def run_paper_temporal(
     seed_everything(config.seed)
     checkpoints = CheckpointStore(output_dir / "checkpoints")
     results: dict[str, Any] = {}
-    audits: list[dict[str, Any]] = []
+    dataset_audit = leakage.audit_dataset(data)
+    dataset_audit.raise_if_failed()
+    audits: list[dict[str, Any]] = [dataset_audit.summary()]
+    run_signature = _run_signature(data, config, device=device)
     predictions: list[pd.DataFrame] = []
     lengths = [only_length] if only_length else list(config.sequence_lengths)
 
@@ -196,30 +345,66 @@ def run_paper_temporal(
         audits.append(split_audit.summary())
 
         stride = int(config.get("sequence.stride", 1))
+        require_consecutive = bool(config.get("sequence.require_consecutive", True))
         train = build_sequences(
             split.train_days, data.feature_columns, sequence_length=length,
-            stride=stride, split_name="train",
+            stride=stride, split_name="train", require_consecutive=require_consecutive,
         )
         test = build_sequences(
             split.test_days, data.feature_columns, sequence_length=length,
-            stride=stride, split_name="test",
+            stride=stride, split_name="test", require_consecutive=require_consecutive,
         )
         validation = None
         if split.validation_days is not None and len(split.validation_days):
             validation = build_sequences(
                 split.validation_days, data.feature_columns, sequence_length=length,
                 stride=stride, split_name="validation",
+                require_consecutive=require_consecutive,
             )
 
         for model_name in config.models:
             key = f"{model_name}_L{length}"
             if resume and checkpoints.is_complete(model_name, length, 0, 0):
-                results[key] = checkpoints.load(model_name, length, 0, 0)
+                loaded = checkpoints.load(model_name, length, 0, 0)
+                if loaded.get("checkpoint_signature") != run_signature:
+                    raise ValueError(
+                        f"checkpoint {key} was created from different code/config/data"
+                    )
+                loaded_audit = loaded.get("leakage_audit")
+                if not loaded_audit:
+                    raise ValueError(
+                        f"checkpoint {key} has no leakage_audit; refusing an incomplete resume"
+                    )
+                results[key] = loaded
+                audits.append(loaded_audit)
+                resumed_frame = checkpoints.load_predictions(
+                    model_name,
+                    length,
+                    0,
+                    0,
+                    expected_metadata=loaded["checkpoint_predictions"],
+                )
+                _assert_checkpoint_metrics(loaded, resumed_frame)
+                predictions.append(resumed_frame)
                 continue
 
             seed = fold_seed(config.seed, length, 0)
             scaled_train, scaled_test, scaled_validation, scaler, sampling = _prepare(
                 train, test, config, validation=validation, model_name=model_name, seed=seed
+            )
+            hyperparameter_source = (
+                "paper_reported"
+                if model_name == "lstm"
+                else "train_internal_cv"
+                if config.baseline_backend_for(model_name) == "h2o"
+                else "config_fixed_unreported"
+            )
+            early_stopping_source = (
+                "validation_period"
+                if model_name == "lstm"
+                and bool(config.get("lstm.early_stopping", True))
+                and scaled_validation is not None
+                else "not_applicable" if model_name != "lstm" else "none"
             )
             audit = leakage.audit_sequence_split(
                 scaled_train, scaled_test,
@@ -230,8 +415,8 @@ def run_paper_temporal(
                 scaler_fit_source=scaled_train,
                 sampling_report=sampling,
                 sequence_length_source="config_fixed",
-                hyperparameter_source="paper_reported",
-                early_stopping_source="validation_period" if scaled_validation else "none",
+                hyperparameter_source=hyperparameter_source,
+                early_stopping_source=early_stopping_source,
                 expect_subject_overlap=True,
             )
             audit.raise_if_failed()
@@ -258,15 +443,34 @@ def run_paper_temporal(
                 "sampling": sampling,
                 "scaler": scaler.describe(),
                 "fit": fit_meta,
-                **_score_block(scaled_test, scores, threshold=threshold),
+                "method_fidelity": _method_fidelity(model_name, fit_meta, config),
+                "validation": (
+                    scaled_validation.describe() if scaled_validation is not None else None
+                ),
+                "leakage_audit": audit.summary(),
+                "checkpoint_signature": run_signature,
+                **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
             }
             results[key] = block
-            checkpoints.save(model_name, length, 0, 0, block)
-            predictions.append(
-                _predictions_frame(scaled_test, scores, model=model_name)
+            frame = _predictions_frame(scaled_test, scores, model=model_name)
+            checkpoints.save_predictions(model_name, length, 0, 0, frame)
+            block["checkpoint_predictions"] = checkpoints.predictions_metadata(
+                model_name, length, 0, 0, frame
             )
+            checkpoints.save(model_name, length, 0, 0, block)
+            predictions.append(frame)
 
-    return _finalise(config, results, audits, predictions, output_dir, estimand="A")
+    return _finalise(
+        config,
+        results,
+        audits,
+        predictions,
+        output_dir,
+        data=data,
+        estimand="A",
+        device=device,
+        evaluated_lengths=lengths,
+    )
 
 
 def run_paper_literal(
@@ -285,7 +489,9 @@ def run_paper_literal(
     """
     seed_everything(config.seed)
     results: dict[str, Any] = {}
-    audits: list[dict[str, Any]] = []
+    dataset_audit = leakage.audit_dataset(data)
+    dataset_audit.raise_if_failed()
+    audits: list[dict[str, Any]] = [dataset_audit.summary()]
     predictions: list[pd.DataFrame] = []
     lengths = [only_length] if only_length else list(config.sequence_lengths)
 
@@ -315,6 +521,9 @@ def run_paper_literal(
             )
             # Boundary crossing is the point of this arm, so those checks are
             # downgraded to warnings -- but everything else still fails closed.
+            hyperparameter_source = (
+                "paper_reported" if model_name == "lstm" else "config_fixed_unreported"
+            )
             audit = leakage.audit_sequence_split(
                 scaled_train, scaled_test,
                 context=f"{config.experiment}/{key}",
@@ -323,11 +532,13 @@ def run_paper_literal(
                 scaler_fit_source=scaled_train,
                 sampling_report=sampling,
                 sequence_length_source="config_fixed",
-                hyperparameter_source="paper_reported",
-                early_stopping_source="none",
+                hyperparameter_source=hyperparameter_source,
+                early_stopping_source="not_applicable" if model_name != "lstm" else "none",
                 expect_subject_overlap=True,
                 allow_boundary_crossing=True,
+                allow_literal_overlap_diagnostic=True,
             )
+            audit.raise_if_failed()
             audits.append(audit.summary())
 
             params = registry.search_space(model_name, enabled=False)[0]
@@ -350,11 +561,23 @@ def run_paper_literal(
                 "test": scaled_test.describe(),
                 "sampling": sampling,
                 "fit": fit_meta,
-                **_score_block(scaled_test, scores, threshold=threshold),
+                "method_fidelity": _method_fidelity(model_name, fit_meta, config),
+                "leakage_audit": audit.summary(),
+                **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
             }
             predictions.append(_predictions_frame(scaled_test, scores, model=model_name))
 
-    report = _finalise(config, results, audits, predictions, output_dir, estimand="A")
+    report = _finalise(
+        config,
+        results,
+        audits,
+        predictions,
+        output_dir,
+        data=data,
+        estimand="A",
+        device=device,
+        evaluated_lengths=lengths,
+    )
     report["result_kind"] = "leakage_diagnostic"
     return report
 
@@ -408,7 +631,10 @@ def _run_group_cv(
 ) -> dict[str, Any]:
     seed_everything(config.seed)
     checkpoints = CheckpointStore(output_dir / "checkpoints")
-    audits: list[dict[str, Any]] = []
+    dataset_audit = leakage.audit_dataset(data)
+    dataset_audit.raise_if_failed()
+    audits: list[dict[str, Any]] = [dataset_audit.summary()]
+    run_signature = _run_signature(data, config, device=device)
     predictions: list[pd.DataFrame] = []
 
     outer = group_splits.stratified_group_splits(
@@ -429,6 +655,7 @@ def _run_group_cv(
 
     lengths = [only_length] if only_length else list(config.sequence_lengths)
     stride = int(config.get("sequence.stride", 1))
+    require_consecutive = bool(config.get("sequence.require_consecutive", True))
     threshold_policy = str(config.get("threshold.policy", "fixed"))
     fixed_threshold = float(config.get("threshold.value", 0.5))
 
@@ -449,13 +676,52 @@ def _run_group_cv(
                 if resume and checkpoints.is_complete(
                     model_name, reported_length or 0, split.repeat, split.fold
                 ):
-                    per_model_folds[model_name].append(
-                        checkpoints.load(model_name, reported_length or 0, split.repeat, split.fold)
+                    loaded = checkpoints.load(
+                        model_name, reported_length or 0, split.repeat, split.fold
                     )
+                    if loaded.get("checkpoint_signature") != run_signature:
+                        raise ValueError(
+                            "checkpoint was created from different code/config/data"
+                        )
+                    loaded_audit = loaded.get("leakage_audit")
+                    if not loaded_audit:
+                        raise ValueError(
+                            "checkpoint has no leakage_audit; refusing an incomplete resume"
+                        )
+                    audits.append(loaded_audit)
+                    if nested:
+                        loaded_isolation = loaded.get("inner_isolation_audit")
+                        if not loaded_isolation:
+                            raise ValueError(
+                                "nested checkpoint has no inner_isolation_audit; "
+                                "refusing an incomplete resume"
+                            )
+                        audits.append(loaded_isolation)
+                        selections.append(
+                            {
+                                "model": model_name,
+                                "repeat": split.repeat,
+                                "fold": split.fold,
+                                "sequence_length": loaded["sequence_length"],
+                            }
+                        )
+                    frame = checkpoints.load_predictions(
+                        model_name,
+                        reported_length or 0,
+                        split.repeat,
+                        split.fold,
+                        expected_metadata=loaded["checkpoint_predictions"],
+                    )
+                    _assert_predictions_deidentified(frame)
+                    _assert_checkpoint_metrics(loaded, frame)
+                    per_model_folds[model_name].append(loaded)
+                    per_model_scores[model_name].append(frame)
+                    predictions.append(frame)
                     continue
 
                 seed = fold_seed(config.seed, split.repeat, split.fold, reported_length or 0)
 
+                isolation_summary = None
                 if nested:
                     choice = _inner_selection(
                         data, config, split, model_name,
@@ -474,7 +740,8 @@ def _run_group_cv(
                         context=f"nested/{model_name}/r{split.repeat}f{split.fold}",
                     )
                     isolation.raise_if_failed()
-                    audits.append(isolation.summary())
+                    isolation_summary = isolation.summary()
+                    audits.append(isolation_summary)
                 else:
                     length = reported_length
                     params = registry.search_space(model_name, enabled=False)[0]
@@ -484,11 +751,13 @@ def _run_group_cv(
                 train = build_sequences(
                     outer_train_days, data.feature_columns, sequence_length=length,
                     stride=stride, split_name="outer_train",
+                    require_consecutive=require_consecutive,
                     outer_fold=split.fold,
                 )
                 test = build_sequences(
                     outer_test_days, data.feature_columns, sequence_length=length,
                     stride=stride, split_name="outer_test",
+                    require_consecutive=require_consecutive,
                     outer_fold=split.fold,
                 )
                 if not len(train) or not len(test):
@@ -496,6 +765,16 @@ def _run_group_cv(
 
                 scaled_train, scaled_test, _, scaler, sampling = _prepare(
                     train, test, config, validation=None, model_name=model_name, seed=seed
+                )
+                hyperparameter_source = (
+                    "inner_cv"
+                    if nested
+                    else "paper_reported"
+                    if model_name == "lstm"
+                    else "config_fixed_unreported"
+                )
+                early_stopping_source = (
+                    "none" if model_name == "lstm" else "not_applicable"
                 )
                 audit = leakage.audit_sequence_split(
                     scaled_train, scaled_test,
@@ -505,8 +784,8 @@ def _run_group_cv(
                     scaler_fit_source=scaled_train,
                     sampling_report=sampling,
                     sequence_length_source="inner_cv" if nested else "config_fixed",
-                    hyperparameter_source="inner_cv" if nested else "paper_reported",
-                    early_stopping_source="inner_cv" if nested else "none",
+                    hyperparameter_source=hyperparameter_source,
+                    early_stopping_source=early_stopping_source,
                     expect_subject_overlap=False,
                 )
                 audit.raise_if_failed()
@@ -532,14 +811,28 @@ def _run_group_cv(
                     "threshold_report": inner_threshold_report,
                     "sampling": sampling,
                     "fit": fit_meta,
-                    **_score_block(scaled_test, scores, threshold=threshold),
+                    "method_fidelity": _method_fidelity(model_name, fit_meta, config),
+                    "leakage_audit": audit.summary(),
+                    "inner_isolation_audit": isolation_summary,
+                    "checkpoint_signature": run_signature,
+                    **_score_block(scaled_test, scores, threshold=threshold, seed=seed),
                 }
                 per_model_folds[model_name].append(fold_block)
+                frame = _predictions_frame(scaled_test, scores, model=model_name)
+                frame["repeat"] = split.repeat
+                checkpoints.save_predictions(
+                    model_name, reported_length or 0, split.repeat, split.fold, frame
+                )
+                fold_block["checkpoint_predictions"] = checkpoints.predictions_metadata(
+                    model_name,
+                    reported_length or 0,
+                    split.repeat,
+                    split.fold,
+                    frame,
+                )
                 checkpoints.save(
                     model_name, reported_length or 0, split.repeat, split.fold, fold_block
                 )
-                frame = _predictions_frame(scaled_test, scores, model=model_name)
-                frame["repeat"] = split.repeat
                 per_model_scores[model_name].append(frame)
                 predictions.append(frame)
 
@@ -571,7 +864,17 @@ def _run_group_cv(
                         partial=True,
                     )
 
-    report = _finalise(config, results, audits, predictions, output_dir, estimand="B")
+    report = _finalise(
+        config,
+        results,
+        audits,
+        predictions,
+        output_dir,
+        data=data,
+        estimand="B",
+        device=device,
+        evaluated_lengths=lengths,
+    )
     report["outer_split_viability"] = viability
     return report
 
@@ -624,11 +927,17 @@ def _inner_selection(
                 train = build_sequences(
                     train_days, data.feature_columns, sequence_length=length,
                     stride=stride, split_name="inner_train",
+                    require_consecutive=bool(
+                        config.get("sequence.require_consecutive", True)
+                    ),
                     outer_fold=outer.fold, inner_fold=inner_split.fold,
                 )
                 valid = build_sequences(
                     valid_days, data.feature_columns, sequence_length=length,
                     stride=stride, split_name="inner_valid",
+                    require_consecutive=bool(
+                        config.get("sequence.require_consecutive", True)
+                    ),
                     outer_fold=outer.fold, inner_fold=inner_split.fold,
                 )
                 if not len(train) or not len(valid):
@@ -766,6 +1075,14 @@ def _pool_folds(
         block["precision_at_k"] = metrics.precision_at_k(
             pooled["y_true"].to_numpy(), pooled["y_score"].to_numpy(), k=100
         )
+        block["subject_precision_at_k"] = metrics.subject_precision_at_k(
+            pooled["subject_hash"],
+            pooled["y_true"].to_numpy(),
+            pooled["y_score"].to_numpy(),
+            k=100,
+            method="mean",
+            threshold=threshold,
+        )
     return block
 
 
@@ -778,26 +1095,132 @@ def _finalise(
     predictions: list[pd.DataFrame],
     output_dir: Path,
     *,
+    data: LifelogData,
     estimand: str,
+    device: str,
+    evaluated_lengths: list[int],
 ) -> dict[str, Any]:
-    if predictions:
-        frame = pd.concat(predictions, ignore_index=True)
-        path = output_dir / "predictions_hashed.csv"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        frame.to_csv(path, index=False)
+    if not results:
+        raise ValueError("no result blocks were produced; refusing to mark the run complete")
+    if not audits:
+        raise ValueError("no audit records were produced; refusing to mark the run complete")
+    if not predictions:
+        raise ValueError(
+            "result blocks exist without prediction records; refusing an unverifiable report"
+        )
 
-    all_passed = all(a.get("all_passed", True) for a in audits)
+    frame = pd.concat(predictions, ignore_index=True)
+    _assert_predictions_deidentified(frame)
+    key_columns = ["model", "sequence_hash"]
+    if "repeat" in frame.columns:
+        key_columns.append("repeat")
+    if frame.duplicated(key_columns).any():
+        n_duplicate = int(frame.duplicated(key_columns).sum())
+        raise ValueError(
+            f"prediction artifact has {n_duplicate} duplicate rows by {key_columns}"
+        )
+
+    path = output_dir / "predictions_hashed.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    try:
+        frame.to_csv(temporary, index=False)
+        temporary.replace(path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+    prediction_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+    all_passed = bool(audits) and all(a.get("all_passed", False) for a in audits)
+    warning_records = [
+        {"context": audit.get("context"), **check}
+        for audit in audits
+        for check in audit.get("checks", [])
+        if not check.get("passed", False) and check.get("severity") == "warning"
+    ]
+    if not all_passed and config.experiment != "paper_literal_variant":
+        raise ValueError(
+            "one or more audit records did not pass; refusing a formal performance report"
+        )
     write_json(output_dir / "audit" / "audit_log.json", {"audits": audits})
+
+    executed_lengths: set[int] = set()
+    for block in results.values():
+        value = block.get("sequence_length")
+        values = value if isinstance(value, list) else [value]
+        executed_lengths.update(int(item) for item in values if item is not None)
+    configured_lengths = set(config.sequence_lengths)
+    evaluated_length_set = {int(length) for length in evaluated_lengths}
+    configured_models = set(config.models)
+    executed_models = {
+        str(block.get("model"))
+        for block in results.values()
+        if block.get("model") is not None
+    }
+    expected_outer = int(config.get("split.outer_k", 1)) * int(
+        config.get("split.n_repeats", 1)
+    )
+    if config.experiment == "nested_subject_independent":
+        expected_result_keys = {f"{model}_Lnested" for model in configured_models}
+    else:
+        expected_result_keys = {
+            f"{model}_L{length}"
+            for model in configured_models
+            for length in evaluated_length_set
+        }
+    missing_result_keys = sorted(expected_result_keys - set(results))
+    formal_coverage = {
+        key: int(results[key].get("n_folds", expected_outer))
+        for key in sorted(expected_result_keys & set(results))
+    }
+    observed_outer = min(formal_coverage.values(), default=0)
+    is_partial_run = (
+        evaluated_length_set != configured_lengths
+        or executed_models != configured_models
+        or bool(missing_result_keys)
+        or observed_outer < expected_outer
+    )
+
     return {
         "experiment": config.experiment,
         "config_path": str(config.path),
+        "resolved_config": config.raw,
+        "data": {**data.describe(), "notes": data.notes},
         "estimand": estimand,
         "seed": config.seed,
+        "run_signature": _run_signature(data, config, device=device),
+        "runtime_signature_context": {
+            "device": device,
+            "dependencies": _dependency_versions(),
+        },
         "models": list(config.models),
-        "sequence_lengths": list(config.sequence_lengths),
+        "sequence_lengths": sorted(executed_lengths),
+        "run_scope": {
+            "configured_models": sorted(configured_models),
+            "executed_models": sorted(executed_models),
+            "configured_sequence_lengths": sorted(configured_lengths),
+            "evaluated_sequence_lengths": sorted(evaluated_length_set),
+            "reported_sequence_lengths": sorted(executed_lengths),
+            "expected_outer_splits": expected_outer,
+            "minimum_observed_outer_splits": observed_outer,
+            "outer_coverage_by_result": formal_coverage,
+            "expected_result_keys": sorted(expected_result_keys),
+            "missing_result_keys": missing_result_keys,
+            "is_partial_run": bool(is_partial_run),
+        },
         "results": results,
         "all_audits_passed": bool(all_passed),
         "n_audit_records": len(audits),
+        "n_audit_warnings": len(warning_records),
+        "audit_warnings": warning_records,
+        "artifacts": {
+            "predictions": {
+                "path": str(path),
+                "n_rows": int(len(frame)),
+                "sha256": prediction_sha256,
+                "identifier_columns": ["subject_hash", "sequence_hash"],
+            }
+        },
     }
 
 
@@ -833,4 +1256,14 @@ def run_experiment(
     }
     if config.experiment in ("fixed_subject_independent", "nested_subject_independent"):
         kwargs["only_fold"] = only_fold
-    return runner(data, config, **kwargs)
+    if not config.uses_h2o:
+        return runner(data, config, **kwargs)
+
+    # H2O owns a JVM process.  Keep it alive across every model/fold in this run,
+    # then release it even when fitting or report finalisation fails.
+    from .models import h2o_backend
+
+    try:
+        return runner(data, config, **kwargs)
+    finally:
+        h2o_backend.shutdown()

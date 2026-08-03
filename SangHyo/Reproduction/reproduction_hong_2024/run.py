@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -43,10 +44,68 @@ EXPERIMENT_NAME = "reproduction_hong_2024"
 EXPERIMENT_ROOT = Path(__file__).resolve().parent
 REPOSITORY_ROOT = EXPERIMENT_ROOT.parents[2]
 REQUIREMENTS_FILE = EXPERIMENT_ROOT / "requirements_colab.txt"
+DEFAULT_COLAB_RESULTS_ROOT = Path(
+    f"/content/drive/MyDrive/{EXPERIMENT_NAME}_result"
+)
+COMPLETION_MARKERS = (
+    "TRAINING_COMPLETE.json",
+    "PARTIAL_RUN_COMPLETE.json",
+    "DIAGNOSTIC_COMPLETE.json",
+)
 
 for path in (str(EXPERIMENT_ROOT), str(REPOSITORY_ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
+
+
+def _archive_stale_completion_markers(output_dir: Path, attempt_id: str) -> list[str]:
+    """Recoverably invalidate terminal markers left by an earlier attempt."""
+    stale = [output_dir / name for name in COMPLETION_MARKERS if (output_dir / name).is_file()]
+    if not stale:
+        return []
+
+    archive_dir = output_dir / "stale_completion_markers" / attempt_id
+    archive_dir.mkdir(parents=True, exist_ok=False)
+    archived: list[str] = []
+    for marker in stale:
+        destination = archive_dir / marker.name
+        marker.replace(destination)
+        archived.append(str(destination.relative_to(output_dir)))
+    return archived
+
+
+def _write_bootstrap_status(output_dir: Path, payload: dict[str, Any]) -> None:
+    """Atomically write minimal status without importing project dependencies."""
+    path = output_dir / "LAUNCHER_STATUS.json"
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(temporary, path)
+
+
+def _resolve_output_dir_before_dependencies(
+    explicit: str | Path | None, *, allow_local: bool
+) -> Path:
+    """Resolve the run directory using only the standard library.
+
+    Completion markers must be invalidated before dependency setup can fail, so
+    this small bootstrap equivalent of ``src.utils.io.resolve_output_dir`` cannot
+    import NumPy or any other project dependency.
+    """
+    if explicit:
+        return Path(explicit).expanduser().resolve()
+    if DEFAULT_COLAB_RESULTS_ROOT.parent.is_dir():
+        run_id = time.strftime("%Y%m%d_%H%M%S_utc", time.gmtime())
+        return (DEFAULT_COLAB_RESULTS_ROOT / run_id).resolve()
+    if allow_local:
+        run_id = time.strftime("%Y%m%d_%H%M%S_utc", time.gmtime())
+        return (EXPERIMENT_ROOT / "outputs" / run_id).resolve()
+    raise FileNotFoundError(
+        "Google Drive is not mounted at /content/drive/MyDrive. Run base.ipynb Cell 1 "
+        "first, or pass --output-dir explicitly for a local test."
+    )
 
 
 def _resolve_data_root(namespace: dict[str, Any], explicit: str | None) -> Path:
@@ -68,7 +127,13 @@ def _resolve_data_root(namespace: dict[str, Any], explicit: str | None) -> Path:
     return resolve_data_root(candidates)
 
 
-def _ensure_dependencies(skip_install: bool, *, need_torch: bool, need_xgboost: bool) -> dict[str, bool]:
+def _ensure_dependencies(
+    skip_install: bool,
+    *,
+    need_torch: bool,
+    need_xgboost: bool,
+    need_h2o: bool = False,
+) -> dict[str, bool]:
     required = {"numpy": "numpy", "pandas": "pandas", "scikit-learn": "sklearn",
                 "scipy": "scipy", "pyyaml": "yaml"}
     missing = [pkg for pkg, mod in required.items() if importlib.util.find_spec(mod) is None]
@@ -76,6 +141,8 @@ def _ensure_dependencies(skip_install: bool, *, need_torch: bool, need_xgboost: 
         missing.append("torch")
     if need_xgboost and importlib.util.find_spec("xgboost") is None:
         missing.append("xgboost")
+    if need_h2o and importlib.util.find_spec("h2o") is None:
+        missing.append("h2o==3.46.0.1")
 
     if missing and not skip_install:
         print(f"[run] installing: {', '.join(missing)}", flush=True)
@@ -91,6 +158,7 @@ def _ensure_dependencies(skip_install: bool, *, need_torch: bool, need_xgboost: 
     return {
         "torch": importlib.util.find_spec("torch") is not None,
         "xgboost": importlib.util.find_spec("xgboost") is not None,
+        "h2o": importlib.util.find_spec("h2o") is not None,
     }
 
 
@@ -181,6 +249,8 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
 
     for length in lengths:
         entry: dict[str, Any] = {"sequence_length": length}
+        validation = None
+        require_consecutive = bool(config.get("sequence.require_consecutive", True))
 
         if config.split_mode in ("final_week_temporal", "final_week_temporal_literal"):
             strict = config.experiment == "strict_same_subject_temporal"
@@ -216,10 +286,21 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
             else:
                 train = build_sequences(split.train_days, data.feature_columns,
                                         sequence_length=length, stride=stride,
-                                        split_name="train")
+                                        split_name="train",
+                                        require_consecutive=require_consecutive)
                 test = build_sequences(split.test_days, data.feature_columns,
                                        sequence_length=length, stride=stride,
-                                       split_name="test")
+                                       split_name="test",
+                                       require_consecutive=require_consecutive)
+                if split.validation_days is not None and len(split.validation_days):
+                    validation = build_sequences(
+                        split.validation_days,
+                        data.feature_columns,
+                        sequence_length=length,
+                        stride=stride,
+                        split_name="validation",
+                        require_consecutive=require_consecutive,
+                    )
             expect_overlap = True
             estimand = "A"
         else:
@@ -240,11 +321,13 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
                 group_splits.iter_days(data.daily, probe.train_subjects),
                 data.feature_columns, sequence_length=length, stride=stride,
                 split_name="outer_train", outer_fold=probe.fold,
+                require_consecutive=require_consecutive,
             )
             test = build_sequences(
                 group_splits.iter_days(data.daily, probe.test_subjects),
                 data.feature_columns, sequence_length=length, stride=stride,
                 split_name="outer_test", outer_fold=probe.fold,
+                require_consecutive=require_consecutive,
             )
             if config.experiment == "nested_subject_independent":
                 inner = group_splits.inner_splits(
@@ -275,13 +358,17 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
         scaler = SequenceScaler(
             method="standard" if registry.needs_scaling(probe_model) else "none"
         )
-        scaled_train, scaled_test = scaler.fit_transform_pair(sampled, test)
+        to_scale = [test] + ([validation] if validation is not None else [])
+        scaled = scaler.fit_transform_pair(sampled, *to_scale)
+        scaled_train, scaled_test = scaled[0], scaled[1]
+        scaled_validation = scaled[2] if validation is not None else None
         entry["scaler"] = scaler.describe()
 
         audit = leakage.audit_sequence_split(
             scaled_train, scaled_test,
             context=f"dry_run/{config.experiment}/L{length}",
             estimand=estimand,
+            validation=scaled_validation,
             scaler=scaler, scaler_fit_source=scaled_train,
             sampling_report=sampling,
             sequence_length_source=(
@@ -289,9 +376,21 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
                 else "config_fixed"
             ),
             hyperparameter_source=(
-                "inner_cv" if config.tuning_enabled else "paper_reported"
+                "inner_cv"
+                if config.tuning_enabled
+                else "paper_reported"
+                if probe_model == "lstm"
+                else "train_internal_cv"
+                if config.baseline_backend_for(probe_model) == "h2o"
+                else "config_fixed_unreported"
             ),
-            early_stopping_source="none",
+            early_stopping_source=(
+                "validation_period"
+                if probe_model == "lstm"
+                and bool(config.get("lstm.early_stopping", False))
+                and scaled_validation is not None
+                else "none" if probe_model == "lstm" else "not_applicable"
+            ),
             expect_subject_overlap=expect_overlap,
             allow_boundary_crossing=config.experiment == "paper_literal_variant",
         )
@@ -305,10 +404,19 @@ def mode_dry_run(data, config, output_dir: Path, device: str, deps: dict[str, bo
                 representation=str(config.get("models.representation", "flatten")),
             )
             limit = config.get("tuning.max_candidates")
+            model_backend = (
+                "torch" if model_name == "lstm" else config.baseline_backend_for(model_name)
+            )
+            runnable_here = (
+                bool(deps.get("h2o")) and model_name != "svm"
+                if model_backend == "h2o"
+                else model_name in registry.dependency_report()["runnable_models"]
+            )
             entry["model_input_shapes"][model_name] = {
                 "train_X_shape": list(np.asarray(X).shape),
                 "finite": bool(np.isfinite(np.asarray(X)).all()),
-                "runnable_here": model_name in registry.dependency_report()["runnable_models"],
+                "resolved_backend": model_backend,
+                "runnable_here": runnable_here,
                 "n_candidates": len(
                     registry.search_space(
                         model_name,
@@ -456,7 +564,10 @@ def _print_dry_run(report: dict[str, Any], config, output_dir: Path) -> None:
     print("\n  학습은 수행하지 않았다.")
 
 
-def mode_compare(output_dir: Path, report_paths: dict[str, str]) -> dict[str, Any]:
+def mode_compare(
+    output_dir: Path,
+    report_paths: dict[str, str | list[str]],
+) -> dict[str, Any]:
     from src.evaluation.compare import (
         build_comparison, load_reports, render_comparison_markdown,
     )
@@ -496,25 +607,76 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_pipeline(*, namespace: dict[str, Any] | None = None,
-                 argv: list[str] | None = None) -> dict[str, Any]:
+def _run_pipeline_impl(
+    *,
+    namespace: dict[str, Any] | None = None,
+    argv: list[str] | None = None,
+    attempt_state: dict[str, Any],
+) -> dict[str, Any]:
     namespace = globals() if namespace is None else namespace
     args = build_parser().parse_args(argv)
 
     no_training = args.dry_run or args.audit_only or args.inspect_data or args.compare
-    _ensure_dependencies(args.skip_install, need_torch=False, need_xgboost=False)
-
-    from src.utils.io import resolve_output_dir, write_json, write_status
-
-    output_dir = Path(resolve_output_dir(args.output_dir, allow_local=no_training))
+    output_dir = _resolve_output_dir_before_dependencies(
+        args.output_dir, allow_local=no_training
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    attempt_id: str | None = None
+    archived_completion_markers: list[str] = []
+    started: float | None = None
+    if not no_training:
+        started = time.monotonic()
+        attempt_id = f"{time.time_ns()}-{os.getpid()}"
+        attempt_state.update({
+            "output_dir": output_dir,
+            "attempt_id": attempt_id,
+            "started": started,
+            "archived_completion_markers": archived_completion_markers,
+        })
+        archived_completion_markers = _archive_stale_completion_markers(
+            output_dir, attempt_id
+        )
+        attempt_state["archived_completion_markers"] = archived_completion_markers
+        _write_bootstrap_status(output_dir, {
+            "status": "starting",
+            "attempt_id": attempt_id,
+            "output_dir": str(output_dir),
+            "archived_completion_markers": archived_completion_markers,
+        })
+
+    _ensure_dependencies(
+        args.skip_install, need_torch=False, need_xgboost=False, need_h2o=False
+    )
+
+    from src.utils.io import write_json, write_status
+
+    if not no_training:
+        # Invalidate a previous terminal state before dependency/config/data work
+        # begins.  Once the JSON utility is importable, record the new attempt.
+        write_status(output_dir, {
+            "status": "starting",
+            "attempt_id": attempt_id,
+            "output_dir": str(output_dir),
+            "archived_completion_markers": archived_completion_markers,
+        })
+
     if args.compare:
+        paper_per_length = [
+            value
+            for value in (
+                os.environ.get("HONG2024_REPORT_A3"),
+                os.environ.get("HONG2024_REPORT_A4"),
+                os.environ.get("HONG2024_REPORT_A5"),
+            )
+            if value
+        ]
         return mode_compare(
             output_dir,
             {
                 "paper_temporal_reconstruction":
-                    os.environ.get("HONG2024_REPORT_A", "outputs/A/FINAL_REPORT.json"),
+                    paper_per_length
+                    or [os.environ.get("HONG2024_REPORT_A", "outputs/A/FINAL_REPORT.json")],
                 "paper_literal_variant":
                     os.environ.get("HONG2024_REPORT_A_LITERAL", "outputs/A_literal/FINAL_REPORT.json"),
                 "strict_same_subject_temporal":
@@ -526,17 +688,25 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
             },
         )
 
-    data_root = _resolve_data_root(namespace, args.data_root)
-
     if args.inspect_data:
+        data_root = _resolve_data_root(namespace, args.data_root)
         return mode_inspect_data(data_root, output_dir)
 
     if not args.config:
         raise SystemExit("--config is required (or use --inspect-data / --compare)")
 
+    data_root = _resolve_data_root(namespace, args.data_root)
+
     from src.utils.config import load_config
 
     config = load_config(args.config)
+    configured_models = tuple(config.models)
+    configured_lengths = tuple(config.sequence_lengths)
+    if args.sequence_length is not None and args.sequence_length not in configured_lengths:
+        raise SystemExit(
+            f"--sequence-length {args.sequence_length} is not declared by config "
+            f"{list(configured_lengths)}"
+        )
     if args.seed is not None:
         config.raw["seed"] = int(args.seed)
     if args.model:
@@ -551,11 +721,15 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
         )
 
     needs_torch = "lstm" in config.models
-    needs_xgboost = "xgboost" in config.models
+    needs_xgboost = (
+        "xgboost" in config.models
+        and config.baseline_backend_for("xgboost") == "sklearn"
+    )
     deps = _ensure_dependencies(
         args.skip_install or no_training,
         need_torch=needs_torch and not no_training,
         need_xgboost=needs_xgboost and not no_training,
+        need_h2o=config.uses_h2o and not no_training,
     )
 
     from src.data.loader import load_lifelog
@@ -582,12 +756,14 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
     from src.evaluation.compare import build_comparison, render_comparison_markdown
     from src.utils.io import write_text
 
-    started = time.monotonic()
+    assert started is not None and attempt_id is not None
     write_status(output_dir, {
         "status": "starting", "experiment": config.experiment,
         "estimand": config.estimand, "config": str(config.path),
         "data_root": str(data_root), "output_dir": str(output_dir),
         "device": device, "seed": config.seed,
+        "attempt_id": attempt_id,
+        "archived_completion_markers": archived_completion_markers,
     })
 
     try:
@@ -595,64 +771,179 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
             data, config, output_dir=output_dir, device=device,
             only_fold=args.fold, only_length=args.sequence_length, resume=args.resume,
         )
+        cli_partial = bool(
+            args.fold is not None
+            or (args.sequence_length is not None and len(configured_lengths) > 1)
+            or (args.model and set(args.model) != set(configured_models))
+        )
+        report.setdefault("run_scope", {})["cli_filters"] = {
+            "models": list(args.model or []),
+            "sequence_length": args.sequence_length,
+            "fold": args.fold,
+        }
+        report["run_scope"]["is_partial_run"] = bool(
+            report["run_scope"].get("is_partial_run", False) or cli_partial
+        )
+        report["runtime"] = {
+            "device": device,
+            "dependencies": deps,
+        }
+        report["elapsed_seconds"] = time.monotonic() - started
+        write_json(output_dir / "FINAL_REPORT.json", report)
+
+        comparison = build_comparison({config.experiment: report})
+        write_text(
+            output_dir / "comparison_partial.md",
+            render_comparison_markdown(comparison),
+        )
+
+        unit = "subject_level" if config.estimand == "B" else "sequence_level"
+        is_diagnostic = report.get("result_kind") == "leakage_diagnostic"
+        # Partial per-length subsets from the nested arm are kept out of the headline.
+        headline = {
+            key: block.get(unit, {}).get("roc_auc")
+            for key, block in report["results"].items()
+            if not block.get("is_partial_subset")
+        }
+        partial_headline = {
+            key: {
+                "roc_auc": block.get(unit, {}).get("roc_auc"),
+                "n_folds": block.get("n_folds"),
+                "n_subjects": (block.get("subject_level") or {}).get("n_subjects"),
+            }
+            for key, block in report["results"].items()
+            if block.get("is_partial_subset")
+        }
+        if report["run_scope"]["is_partial_run"]:
+            partial_headline.update(
+                {
+                    key: {
+                        "roc_auc": block.get(unit, {}).get("roc_auc"),
+                        "reason": "CLI-filtered partial run; not a formal headline",
+                    }
+                    for key, block in report["results"].items()
+                    if not block.get("is_partial_subset")
+                }
+            )
+            headline = {}
+        if is_diagnostic:
+            partial_headline.update(
+                {
+                    key: {
+                        "roc_auc": block.get(unit, {}).get("roc_auc"),
+                        "reason": "leakage diagnostic; not a performance headline",
+                    }
+                    for key, block in report["results"].items()
+                }
+            )
+            headline = {}
+
+        completion_payload = {
+            "attempt_id": attempt_id,
+            "experiment": config.experiment,
+            "estimand": report["estimand"],
+            "result_keys": list(report["results"]),
+            "all_audits_passed": report["all_audits_passed"],
+            "n_audit_warnings": report.get("n_audit_warnings", 0),
+            "elapsed_seconds": report["elapsed_seconds"],
+            "is_partial_run": report["run_scope"]["is_partial_run"],
+            "result_kind": report.get("result_kind", "performance_estimate"),
+            "artifacts": report.get("artifacts", {}),
+        }
+        completion_name = (
+            "DIAGNOSTIC_COMPLETE.json"
+            if is_diagnostic
+            else "PARTIAL_RUN_COMPLETE.json"
+            if report["run_scope"]["is_partial_run"]
+            else "TRAINING_COMPLETE.json"
+        )
+        status_payload = {
+            "attempt_id": attempt_id,
+            "status": (
+                "diagnostic_complete"
+                if is_diagnostic
+                else "partial_complete"
+                if report["run_scope"]["is_partial_run"]
+                else "complete"
+            ),
+            "experiment": config.experiment,
+            "estimand": report["estimand"],
+            "elapsed_seconds": report["elapsed_seconds"],
+            "all_audits_passed": report["all_audits_passed"],
+            "n_audit_warnings": report.get("n_audit_warnings", 0),
+            "headline_roc_auc": headline,
+            "headline_unit": unit,
+            "partial_subsets_not_headline": partial_headline,
+            "run_scope": report["run_scope"],
+            "result_kind": report.get("result_kind", "performance_estimate"),
+            "final_report": str(output_dir / "FINAL_REPORT.json"),
+        }
+
+        print(f"\n완료 ({config.experiment}, estimand {report['estimand']}) — "
+              f"{report['elapsed_seconds'] / 60:.1f}분")
+        print(f"  {unit} ROC-AUC: {headline}")
+        if partial_headline:
+            print(f"  (부분집합 {len(partial_headline)}개는 headline에서 제외했다. "
+                  "표 5 참조 — 성능 주장에 사용할 수 없다.)")
+        print(f"  보고서: {output_dir / 'FINAL_REPORT.json'}")
+
+        # These are the terminal transaction records.  They are written only
+        # after report + comparison + console rendering all succeeded, and the
+        # completion marker is deliberately last.
+        write_status(output_dir, status_payload)
+        write_json(output_dir / completion_name, completion_payload)
+        return report
     except Exception as error:
         write_status(output_dir, {
             "status": "failed", "experiment": config.experiment,
+            "attempt_id": attempt_id,
             "error_type": type(error).__name__, "error": str(error),
             "traceback": traceback.format_exc(),
             "elapsed_seconds": time.monotonic() - started,
         })
+        attempt_state["terminal_status_written"] = True
         raise
 
-    report["elapsed_seconds"] = time.monotonic() - started
-    write_json(output_dir / "FINAL_REPORT.json", report)
-    write_json(output_dir / "TRAINING_COMPLETE.json", {
-        "experiment": config.experiment,
-        "estimand": report["estimand"],
-        "result_keys": list(report["results"]),
-        "all_audits_passed": report["all_audits_passed"],
-        "elapsed_seconds": report["elapsed_seconds"],
-    })
 
-    comparison = build_comparison({config.experiment: report})
-    write_text(output_dir / "comparison_partial.md", render_comparison_markdown(comparison))
-
-    unit = "subject_level" if config.estimand == "B" else "sequence_level"
-    # Partial per-length subsets from the nested arm are kept out of the headline.
-    # They cover a fraction of the folds, so listing them beside the real estimate
-    # invites reporting the highest of them as "the" nested result.
-    headline = {
-        key: block.get(unit, {}).get("roc_auc")
-        for key, block in report["results"].items()
-        if not block.get("is_partial_subset")
-    }
-    partial_headline = {
-        key: {
-            "roc_auc": block.get(unit, {}).get("roc_auc"),
-            "n_folds": block.get("n_folds"),
-            "n_subjects": (block.get("subject_level") or {}).get("n_subjects"),
-        }
-        for key, block in report["results"].items()
-        if block.get("is_partial_subset")
-    }
-    write_status(output_dir, {
-        "status": "complete", "experiment": config.experiment,
-        "estimand": report["estimand"],
-        "elapsed_seconds": report["elapsed_seconds"],
-        "all_audits_passed": report["all_audits_passed"],
-        "headline_roc_auc": headline, "headline_unit": unit,
-        "partial_subsets_not_headline": partial_headline,
-        "final_report": str(output_dir / "FINAL_REPORT.json"),
-    })
-
-    print(f"\n완료 ({config.experiment}, estimand {report['estimand']}) — "
-          f"{report['elapsed_seconds'] / 60:.1f}분")
-    print(f"  {unit} ROC-AUC: {headline}")
-    if partial_headline:
-        print(f"  (부분집합 {len(partial_headline)}개는 headline에서 제외했다. "
-              "표 5 참조 — 성능 주장에 사용할 수 없다.)")
-    print(f"  보고서: {output_dir / 'FINAL_REPORT.json'}")
-    return report
+def run_pipeline(
+    *, namespace: dict[str, Any] | None = None, argv: list[str] | None = None
+) -> dict[str, Any]:
+    """Run one command and close every started training attempt terminally."""
+    attempt_state: dict[str, Any] = {}
+    try:
+        return _run_pipeline_impl(
+            namespace=namespace,
+            argv=argv,
+            attempt_state=attempt_state,
+        )
+    except BaseException as error:
+        output_dir = attempt_state.get("output_dir")
+        attempt_id = attempt_state.get("attempt_id")
+        if (
+            output_dir is not None
+            and attempt_id is not None
+            and not attempt_state.get("terminal_status_written", False)
+        ):
+            started = attempt_state.get("started")
+            status = "interrupted" if isinstance(error, KeyboardInterrupt) else "failed"
+            payload = {
+                "status": status,
+                "attempt_id": attempt_id,
+                "error_type": type(error).__name__,
+                "elapsed_seconds": (
+                    time.monotonic() - started if isinstance(started, float) else None
+                ),
+                "archived_completion_markers": attempt_state.get(
+                    "archived_completion_markers", []
+                ),
+            }
+            try:
+                _write_bootstrap_status(Path(output_dir), payload)
+            except BaseException:
+                # The original exception is always more informative.  Marker
+                # invalidation has already made the failed attempt non-complete.
+                pass
+        raise
 
 
 def main() -> None:
