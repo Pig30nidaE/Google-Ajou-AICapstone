@@ -618,9 +618,22 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
     write_text(output_dir / "comparison_partial.md", render_comparison_markdown(comparison))
 
     unit = "subject_level" if config.estimand == "B" else "sequence_level"
+    # Partial per-length subsets from the nested arm are kept out of the headline.
+    # They cover a fraction of the folds, so listing them beside the real estimate
+    # invites reporting the highest of them as "the" nested result.
     headline = {
         key: block.get(unit, {}).get("roc_auc")
         for key, block in report["results"].items()
+        if not block.get("is_partial_subset")
+    }
+    partial_headline = {
+        key: {
+            "roc_auc": block.get(unit, {}).get("roc_auc"),
+            "n_folds": block.get("n_folds"),
+            "n_subjects": (block.get("subject_level") or {}).get("n_subjects"),
+        }
+        for key, block in report["results"].items()
+        if block.get("is_partial_subset")
     }
     write_status(output_dir, {
         "status": "complete", "experiment": config.experiment,
@@ -628,12 +641,16 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None,
         "elapsed_seconds": report["elapsed_seconds"],
         "all_audits_passed": report["all_audits_passed"],
         "headline_roc_auc": headline, "headline_unit": unit,
+        "partial_subsets_not_headline": partial_headline,
         "final_report": str(output_dir / "FINAL_REPORT.json"),
     })
 
     print(f"\n완료 ({config.experiment}, estimand {report['estimand']}) — "
           f"{report['elapsed_seconds'] / 60:.1f}분")
     print(f"  {unit} ROC-AUC: {headline}")
+    if partial_headline:
+        print(f"  (부분집합 {len(partial_headline)}개는 headline에서 제외했다. "
+              "표 5 참조 — 성능 주장에 사용할 수 없다.)")
     print(f"  보고서: {output_dir / 'FINAL_REPORT.json'}")
     return report
 

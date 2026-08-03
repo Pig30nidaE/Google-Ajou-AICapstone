@@ -490,6 +490,7 @@ def run_experiment(
                 "selection": _strip_arrays(result.selection),
                 "audit_passed": result.audit.get("all_passed"),
                 "audit_failures": result.audit.get("failures"),
+                "training_diagnostics": result.model_summary.get("training_diagnostics"),
             }
             fold_records.append(record)
 
@@ -538,12 +539,24 @@ def run_experiment(
             output_dir / "subject_predictions_hashed.csv", index=False
         )
 
+    # A model whose early stopping restored the epoch-0 weights is untrained; its
+    # metrics must never be read as a performance result.
+    degenerate = sorted({
+        record["model"] for record in fold_records
+        if (record.get("training_diagnostics") or {}).get("degenerate_training")
+    })
+
     return {
         "experiment": config.experiment,
         "reproduction_class": (
             "reported-method reconstruction"
             if config.experiment == "paper_reported_reconstruction" else "extension"
         ),
+        "degenerate_training_models": degenerate,
+        "degenerate_training_note": (
+            "이 모델들은 early stopping이 epoch 0 가중치를 복원했다. 사실상 학습되지 "
+            "않은 상태이므로 성능 결과로 인용하지 않는다."
+        ) if degenerate else None,
         "config": config.raw,
         "config_path": str(config.path) if config.path else None,
         "seed": config.seed,

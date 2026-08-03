@@ -139,6 +139,65 @@ train 쪽으로 끌고 간다. 결과적으로 **5일에서는 test 날짜의 62
    여부는 이 저장소에서 확인할 수 없다(`unresolved_questions.md` Q-02).
 4. **동일 피험자의 시간적 자기상관.** embargo는 완화할 뿐 제거하지 못한다.
 
+## 5-1. 실제 실행에서 드러난 보고 결함 (2026-08-02 수정 완료)
+
+첫 nested 정식 실행(`20260802_150524_utc`)에서 **누수 검사는 30건 전부 통과**했지만,
+누수가 아닌 **보고 단계의 결함 세 가지**가 드러났다. 전부 수정했고
+`tests/test_reporting_integrity.py`가 회귀를 막는다.
+
+### 결함 1 — 부분집합이 nested 열을 채웠다 (치명적)
+
+nested 실험은 `{model}_Lnested`(정식) 외에 `{model}_L{길이}`(진단용 부분집합)도
+만든다. 후자는 inner CV가 그 길이를 고른 fold만 모은 것이다.
+`compare.py::_lookup`이 이를 구분하지 않아 표 1의 Nested 열에 들어갔다.
+
+실제로 생성된 표에는 이렇게 찍혔다.
+
+| 표시된 값 | 실제 정체 |
+| --- | --- |
+| Nested LSTM 3일 = 0.492 | 3 fold / 104명 |
+| Nested LSTM 4일 = 0.579 | 1 fold / 35명 |
+| **Nested LSTM 5일 = 0.782** | **1 fold / 35명** |
+| (표에 없음) | **진짜 nested 추정치 0.533 / 5 fold / 174명** |
+
+읽는 사람이 "nested에서 5일이 0.78"이라고 보고하게 되는 구조였고, 이는 스펙이
+금지한 "3·4·5일 중 최고를 test에서 선택"과 결과적으로 같다. RF에서는 더 극단적으로
+`random_forest_L3 = 0.806`(1 fold, 35명)이 나왔지만 정식값은 0.519다.
+
+**수정:** `_lookup`이 `is_partial_subset` 블록을 건너뛴다. 정식 nested 값은 표 4로
+분리했고, 부분집합은 fold 수·피험자 수와 경고를 붙여 표 5로 격리했다.
+`LAUNCHER_STATUS.json`의 `headline_roc_auc`에서도 제외하고
+`partial_subsets_not_headline`으로 옮겼다.
+
+### 결함 2 — 퇴화 threshold가 기본으로 선택되었다
+
+15개 fold 중 **6개**가 sensitivity 1.00 / specificity 0.00, 즉 모든 피험자를 양성으로
+예측하는 operating point를 썼다.
+
+원인: 모든 점수보다 낮은 threshold는 Youden 지수가 정확히 0이다. chance 수준
+모델에서는 실제 후보들이 전부 0보다 낮으므로, 이 퇴화 해가 기본값으로 이긴다.
+
+**수정:** 한 클래스로만 예측하는 후보를 건너뛰고, 남는 후보가 없으면 논문의 고정
+0.5로 되돌리며 그 사실을 `threshold_report.fallback_to_fixed`에 기록한다.
+ROC-AUC는 threshold와 무관하므로 영향이 없지만, 논문이 보고하는
+sensitivity/specificity/F1은 이 수정 전까지 해석할 수 없는 값이었다.
+
+### 결함 3 — threshold를 다른 단위에서 골랐다
+
+threshold를 **시퀀스 단위** inner 점수에서 고른 뒤 **피험자 단위** 평균 확률에
+적용했다. LSTM 시퀀스 점수는 45%가 0.001 미만, 25%가 0.999 초과로 심하게 포화되어
+있어 극단값이 선택되는데, 피험자 평균은 중앙에 몰리므로 전원이 한 클래스로 간다.
+결함 2의 직접적 원인이기도 하다.
+
+**수정:** inner fold의 예측을 피험자 단위로 먼저 집계한 뒤 그 분포에서 threshold를
+고른다(`selected_on: inner_cv_subject_level`).
+
+### 부수 수정
+
+pooled 블록은 fold별로 다른 threshold를 하나의 confusion matrix로 합칠 수 없으므로
+고정 0.5를 쓰는데, 이 사실이 기록되지 않았다. 이제 `threshold_source`,
+`per_fold_thresholds`, `n_degenerate_fold_operating_points`를 함께 남긴다.
+
 ## 6. 재현 명령
 
 ```bash

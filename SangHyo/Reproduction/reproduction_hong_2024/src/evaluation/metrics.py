@@ -202,42 +202,82 @@ def bootstrap_ci(
     }
 
 
-def choose_threshold(
+def choose_threshold_with_report(
     y_true: np.ndarray, y_score: np.ndarray, *, policy: str = "fixed", fixed: float = 0.5
-) -> float:
+) -> tuple[float, dict[str, Any]]:
     """Pick an operating point from *training or inner-fold* scores only.
 
     The paper uses 0.5 (§4.2, Table 6), which is ``policy='fixed'``.  The other
     policies exist for experiment C, where the threshold is one more thing the
     inner CV is allowed to choose.
+
+    **Degenerate operating points are rejected.**  A threshold below every score
+    predicts the positive class for everything: sensitivity 1, specificity 0, and
+    a Youden index of exactly 0.  On a chance-level model every real candidate
+    scores below 0, so that degenerate point would win by default -- which is how
+    the 2026-08-02 nested run ended up with 6 of 15 folds reporting
+    "sensitivity 1.00 / specificity 0.00".  Candidates that put every subject in
+    one class are therefore skipped, and if nothing else qualifies the fixed
+    threshold is used and the fallback is recorded.
     """
+    info: dict[str, Any] = {"policy": policy, "fallback_to_fixed": False,
+                            "n_candidates": 0, "n_degenerate_skipped": 0}
     if policy == "fixed":
-        return float(fixed)
+        info["threshold"] = float(fixed)
+        return float(fixed), info
+
     y_true = np.asarray(y_true).astype(int)
     y_score = np.asarray(y_score, dtype=float)
-    if len(np.unique(y_true)) < 2:
-        return float(fixed)
+    if len(np.unique(y_true)) < 2 or len(y_true) == 0:
+        info.update(fallback_to_fixed=True, reason="single class or empty",
+                    threshold=float(fixed))
+        return float(fixed), info
 
     candidates = np.unique(np.round(y_score, 4))
     if len(candidates) > 512:
-        candidates = np.quantile(y_score, np.linspace(0.01, 0.99, 512))
+        candidates = np.unique(np.quantile(y_score, np.linspace(0.01, 0.99, 512)))
+    info["n_candidates"] = int(len(candidates))
 
     if policy == "youden":
-        best, best_value = float(fixed), -np.inf
-        for t in candidates:
-            m = binary_metrics(y_true, y_score, threshold=float(t))
-            value = m["sensitivity"] + m["specificity"] - 1
-            if np.isfinite(value) and value > best_value:
-                best, best_value = float(t), value
-        return best
-    if policy == "balanced_accuracy":
-        best, best_value = float(fixed), -np.inf
-        for t in candidates:
-            value = binary_metrics(y_true, y_score, threshold=float(t))["balanced_accuracy"]
-            if np.isfinite(value) and value > best_value:
-                best, best_value = float(t), value
-        return best
-    raise ValueError("policy must be 'fixed', 'youden' or 'balanced_accuracy'")
+        score_of = lambda m: m["sensitivity"] + m["specificity"] - 1  # noqa: E731
+    elif policy == "balanced_accuracy":
+        score_of = lambda m: m["balanced_accuracy"]  # noqa: E731
+    else:
+        raise ValueError("policy must be 'fixed', 'youden' or 'balanced_accuracy'")
+
+    best, best_value, degenerate = None, -np.inf, 0
+    for t in candidates:
+        m = binary_metrics(y_true, y_score, threshold=float(t))
+        matrix = m["confusion_matrix"]
+        predicts_one_class = (matrix["tp"] + matrix["fp"] == 0) or (
+            matrix["tn"] + matrix["fn"] == 0
+        )
+        if predicts_one_class:
+            degenerate += 1
+            continue
+        value = score_of(m)
+        if np.isfinite(value) and value > best_value:
+            best, best_value = float(t), value
+
+    info["n_degenerate_skipped"] = degenerate
+    if best is None:
+        info.update(fallback_to_fixed=True,
+                    reason="every candidate collapses to a single predicted class",
+                    threshold=float(fixed))
+        return float(fixed), info
+
+    info.update(threshold=best, selected_value=float(best_value))
+    return best, info
+
+
+def choose_threshold(
+    y_true: np.ndarray, y_score: np.ndarray, *, policy: str = "fixed", fixed: float = 0.5
+) -> float:
+    """Threshold only; see :func:`choose_threshold_with_report` for the diagnostics."""
+    threshold, _ = choose_threshold_with_report(
+        y_true, y_score, policy=policy, fixed=fixed
+    )
+    return threshold
 
 
 def calibration_curve_points(

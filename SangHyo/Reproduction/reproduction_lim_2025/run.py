@@ -420,16 +420,22 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         for model, block in report["models"].items()
         if block.get("subject_level")
     }
+    degenerate = report.get("degenerate_training_models") or []
     write_status(output_dir, {
         "status": "complete", "experiment": config.experiment,
         "elapsed_seconds": report["elapsed_seconds"],
         "all_audits_passed": report["all_audits_passed"],
         "headline_subject_roc_auc": headline,
+        "degenerate_training_models": degenerate,
         "final_report": str(output_dir / "FINAL_REPORT.json"),
     })
 
     print(f"\n완료 ({config.experiment}) — {report['elapsed_seconds'] / 60:.1f}분")
     print(f"  피험자 단위 ROC-AUC: {headline}")
+    if degenerate:
+        print(f"\n  ⚠️  학습 실패 모델: {degenerate}")
+        print("     early stopping이 epoch 0 가중치를 복원했다. 사실상 학습되지 않은")
+        print("     상태이므로 이 모델들의 수치를 성능으로 인용하지 않는다.")
     print(f"  보고서: {output_dir / 'FINAL_REPORT.json'}")
     return report
 

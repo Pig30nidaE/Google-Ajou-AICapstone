@@ -37,10 +37,51 @@ TRAINING_DEFAULTS = {
     "batch_size": 16,
     "max_epochs": 100,
     "early_stopping_patience": 10,
+    "early_stopping_metric": "auc",   # matches the reported primary metric
     "validation_fraction": 0.2,
     "pos_weight": None,   # the paper applies no imbalance correction
     "grad_clip": 1.0,
 }
+
+
+def _safe_auc(y_true: np.ndarray, scores: np.ndarray) -> float:
+    """ROC-AUC that returns 0.5 rather than raising on a single-class slice."""
+    from sklearn.metrics import roc_auc_score
+
+    y_true = np.asarray(y_true).astype(int)
+    if len(np.unique(y_true)) < 2:
+        return 0.5
+    return float(roc_auc_score(y_true, np.asarray(scores, dtype=np.float64)))
+
+
+def _stratified_monitor_split(
+    y: np.ndarray, *, fraction: float, seed: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Split training rows into (monitor, fit) indices, preserving class balance.
+
+    Returns empty monitor indices when either side would end up single-class; the
+    caller then falls back to monitoring the training loss.
+    """
+    y = np.asarray(y).astype(int)
+    rng = np.random.default_rng(seed)
+    monitor: list[int] = []
+    for label in (0, 1):
+        members = np.flatnonzero(y == label)
+        rng.shuffle(members)
+        take = int(round(len(members) * float(fraction)))
+        monitor.extend(members[:take].tolist())
+
+    monitor_idx = np.asarray(sorted(monitor), dtype=int)
+    fit_idx = np.setdiff1d(np.arange(len(y)), monitor_idx)
+    both_sides_have_two_classes = (
+        len(monitor_idx) >= 2
+        and len(np.unique(y[monitor_idx])) == 2
+        and len(fit_idx) >= 2
+        and len(np.unique(y[fit_idx])) == 2
+    )
+    if not both_sides_have_two_classes:
+        return np.array([], dtype=int), np.arange(len(y))
+    return monitor_idx, fit_idx
 
 
 class ModelDependencyError(ImportError):
@@ -226,8 +267,20 @@ class SequenceModel:
         )
         optimizer = torch.optim.Adam(self.module.parameters(), lr=float(cfg["learning_rate"]))
 
+        # The project's primary metric is ROC-AUC, and BCE loss on ~28 monitored
+        # subjects rises as soon as the net grows confident even while its ranking
+        # keeps improving -- which stopped training at epoch 0 and restored an
+        # essentially untrained model.  Monitor what we actually report.
+        metric = str(cfg.get("early_stopping_metric", "auc")).lower()
+        if metric not in ("auc", "loss"):
+            raise ValueError(f"early_stopping_metric must be auc/loss, got {metric!r}")
+        higher_is_better = metric == "auc"
+
         best_state = {k: v.detach().clone() for k, v in self.module.state_dict().items()}
-        best_loss, patience_left = float("inf"), int(cfg["early_stopping_patience"])
+        best_score = -np.inf if higher_is_better else np.inf
+        best_tiebreak = np.inf   # monitor loss, used only when the metric ties
+        best_epoch = 0
+        patience_left = int(cfg["early_stopping_patience"])
         losses: list[float] = []
         monitored: list[float] = []
         batch_size = int(cfg["batch_size"])
@@ -258,13 +311,32 @@ class SequenceModel:
                 self.module.eval()
                 with torch.no_grad():
                     logits = self.module(tensors["X"][val_idx], tensors["len"][val_idx])
-                    current = float(criterion(logits, tensors["y"][val_idx]).item())
+                    current_loss = float(criterion(logits, tensors["y"][val_idx]).item())
+                    current = (
+                        _safe_auc(y[val_idx], torch.sigmoid(logits).cpu().numpy())
+                        if higher_is_better else current_loss
+                    )
             else:
-                current = losses[-1]
+                # No usable monitor split: fall back to training loss, which always
+                # improves, so this degenerates to "train for max_epochs".
+                current_loss = losses[-1]
+                current = -losses[-1] if higher_is_better else losses[-1]
             monitored.append(current)
 
-            if current < best_loss - 1e-5:
-                best_loss = current
+            if higher_is_better:
+                # AUC saturates: on a small monitor split it can hit 1.0 at epoch 0
+                # and never "improve" again, which would restore untrained weights.
+                # Break ties on the monitor loss so training keeps progressing.
+                improved = current > best_score + 1e-5 or (
+                    abs(current - best_score) <= 1e-5 and current_loss < best_tiebreak - 1e-5
+                )
+            else:
+                improved = current < best_score - 1e-5
+
+            if improved:
+                best_score = current
+                best_tiebreak = current_loss
+                best_epoch = epoch
                 best_state = {k: v.detach().clone() for k, v in self.module.state_dict().items()}
                 patience_left = int(cfg["early_stopping_patience"])
             else:
@@ -273,13 +345,20 @@ class SequenceModel:
                     break
 
         self.module.load_state_dict(best_state)
+        # Restoring epoch 0 means we report a barely-trained network. That is a
+        # training failure, not a finding, so make it impossible to miss.
+        train_loss_improved = bool(losses and (losses[0] - min(losses)) > 0.05)
         self.history = {
             "epochs_run": len(losses),
             "train_loss": losses,
-            "monitor_loss": monitored,
-            "best_monitor_loss": best_loss,
+            "monitor_metric": metric,
+            "monitor_score": monitored,
+            "best_monitor_score": float(best_score),
+            "best_epoch": int(best_epoch),
             "early_stopped": len(losses) < int(cfg["max_epochs"]),
             "monitor_split_size": int(len(val_idx)),
+            "monitor_split_positives": int(y[val_idx].sum()) if len(val_idx) else 0,
+            "degenerate_training": bool(best_epoch == 0 and train_loss_improved),
         }
         return self
 
@@ -357,6 +436,22 @@ class SequenceModel:
                 sum(p.numel() for p in self.module.parameters())
             )
             summary["module_repr"] = repr(self.module)
+        if self.history:
+            summary["training_diagnostics"] = {
+                key: self.history[key]
+                for key in (
+                    "epochs_run", "best_epoch", "monitor_metric", "best_monitor_score",
+                    "early_stopped", "monitor_split_size", "monitor_split_positives",
+                    "degenerate_training",
+                )
+                if key in self.history
+            }
+            if self.history.get("degenerate_training"):
+                summary["training_diagnostics"]["warning"] = (
+                    "Early stopping restored the epoch-0 weights while the training "
+                    "loss was still improving: this model is essentially untrained "
+                    "and its metrics are not a performance result."
+                )
         return summary
 
     def summary(self) -> dict[str, Any]:

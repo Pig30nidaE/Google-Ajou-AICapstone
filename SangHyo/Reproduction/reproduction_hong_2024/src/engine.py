@@ -464,6 +464,7 @@ def _run_group_cv(
                     length = choice["sequence_length"]
                     params = choice["params"]
                     inner_threshold = choice["threshold"]
+                    inner_threshold_report = choice.get("threshold_report", {})
                     selections.append({"model": model_name, "repeat": split.repeat,
                                        "fold": split.fold, **choice})
                     isolation = leakage.audit_outer_test_isolation(
@@ -478,6 +479,7 @@ def _run_group_cv(
                     length = reported_length
                     params = registry.search_space(model_name, enabled=False)[0]
                     inner_threshold = fixed_threshold
+                    inner_threshold_report = {"policy": "fixed", "fallback_to_fixed": False}
 
                 train = build_sequences(
                     outer_train_days, data.feature_columns, sequence_length=length,
@@ -523,6 +525,11 @@ def _run_group_cv(
                     "n_test_subjects": len(split.test_subjects),
                     "params": params,
                     "threshold": threshold,
+                    "threshold_source": (
+                        "inner_cv_subject_level" if (nested and threshold_policy != "fixed")
+                        else "paper_fixed_0.5"
+                    ),
+                    "threshold_report": inner_threshold_report,
                     "sampling": sampling,
                     "fit": fit_meta,
                     **_score_block(scaled_test, scores, threshold=threshold),
@@ -599,12 +606,18 @@ def _inner_selection(
     threshold_policy = str(config.get("threshold.policy", "fixed"))
 
     best = {"score": -np.inf, "params": candidates[0], "sequence_length": lengths[0],
-            "threshold": float(config.get("threshold.value", 0.5))}
+            "threshold": float(config.get("threshold.value", 0.5)),
+            "threshold_report": {"policy": "fixed", "fallback_to_fixed": False}}
     trace: list[dict[str, Any]] = []
 
     for length in lengths:
         for params in candidates:
             fold_scores, pooled_true, pooled_score = [], [], []
+            # The threshold has to be chosen on the unit it will be applied to.
+            # Subject scores are means of sequence scores, so they are far less
+            # saturated than the sequence scores; a threshold tuned on sequences
+            # and applied to subjects sends every subject to one class.
+            subject_true, subject_score = [], []
             for inner_split in inner:
                 train_days = group_splits.iter_days(data.daily, inner_split.train_subjects)
                 valid_days = group_splits.iter_days(data.daily, inner_split.test_subjects)
@@ -635,18 +648,28 @@ def _inner_selection(
                 pooled_true.append(scaled_valid.y)
                 pooled_score.append(scores)
 
+                aggregated = metrics.aggregate_to_subject(
+                    scaled_valid.subjects, scaled_valid.y, scores, method="mean"
+                )
+                subject_true.append(aggregated["y_true"].to_numpy())
+                subject_score.append(aggregated["y_score"].to_numpy())
+
             mean_score = float(np.nanmean(fold_scores)) if fold_scores else float("nan")
             trace.append({"sequence_length": length, "params": params,
                           "inner_score": mean_score})
             if np.isfinite(mean_score) and mean_score > best["score"]:
                 threshold = float(config.get("threshold.value", 0.5))
-                if threshold_policy != "fixed" and pooled_true:
-                    threshold = metrics.choose_threshold(
-                        np.concatenate(pooled_true), np.concatenate(pooled_score),
+                report = {"policy": "fixed", "fallback_to_fixed": False,
+                          "selected_on": "n/a"}
+                if threshold_policy != "fixed" and subject_true:
+                    threshold, report = metrics.choose_threshold_with_report(
+                        np.concatenate(subject_true), np.concatenate(subject_score),
                         policy=threshold_policy, fixed=threshold,
                     )
+                    report["selected_on"] = "inner_cv_subject_level"
                 best = {"score": mean_score, "params": params,
-                        "sequence_length": length, "threshold": threshold}
+                        "sequence_length": length, "threshold": threshold,
+                        "threshold_report": report}
 
     return {**best, "inner_splits": inner, "n_candidates_evaluated": len(trace),
             "selection_metric": selection_metric, "trace": trace}
@@ -663,7 +686,22 @@ def _pool_folds(
     nested: bool,
     partial: bool = False,
 ) -> dict[str, Any]:
-    """Pool out-of-fold predictions into one subject-level estimate."""
+    """Pool out-of-fold predictions into one subject-level estimate.
+
+    The pooled threshold is the fixed 0.5, **not** the per-fold inner-CV choice:
+    each fold selected its own operating point, and averaging different operating
+    points into one confusion matrix would describe no classifier that exists.
+    The per-fold thresholds stay in ``per_fold`` and are summarised here, so the
+    difference is visible rather than silent.  ROC-AUC and PR-AUC are
+    threshold-free and unaffected.
+    """
+    fold_thresholds = [f.get("threshold") for f in folds if f.get("threshold") is not None]
+    degenerate_folds = [
+        {"repeat": f.get("repeat"), "fold": f.get("fold"), "threshold": f.get("threshold")}
+        for f in folds
+        if (f.get("subject_level") or {}).get("specificity") == 0.0
+        or (f.get("subject_level") or {}).get("sensitivity") == 0.0
+    ]
     block: dict[str, Any] = {
         "model": model_name,
         "estimand": "B",
@@ -674,6 +712,15 @@ def _pool_folds(
         "n_folds": len(folds),
         "per_fold": folds,
         "sequence_length": sorted({f["sequence_length"] for f in folds}),
+        "threshold_source": "paper_fixed_0.5",
+        "threshold_note": (
+            "pooled 지표는 논문의 고정 0.5를 쓴다. fold별로 선택된 threshold는 "
+            "per_fold에 남아 있으며 서로 다르므로 하나의 confusion matrix로 "
+            "합치지 않는다. ROC-AUC와 PR-AUC는 threshold와 무관하다."
+        ),
+        "per_fold_thresholds": fold_thresholds,
+        "n_degenerate_fold_operating_points": len(degenerate_folds),
+        "degenerate_fold_operating_points": degenerate_folds,
         "fold_variability": {
             unit: metrics.fold_variability(
                 [f[unit] for f in folds if unit in f], metric="roc_auc"
@@ -682,6 +729,12 @@ def _pool_folds(
         },
         "is_partial_subset": partial,
     }
+    if degenerate_folds:
+        block["warnings"] = [
+            f"{len(degenerate_folds)}개 fold가 모든 피험자를 한 클래스로 예측하는 "
+            "operating point를 사용했다. 해당 fold의 sensitivity/specificity/F1은 "
+            "해석하지 않는다."
+        ]
     if nested:
         block["selection"] = {
             "n_selections": len(selections),

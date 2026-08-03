@@ -145,11 +145,16 @@ def _partial_diagnostics(report: dict[str, Any]) -> list[dict[str, Any]]:
         if not block.get("is_partial_subset"):
             continue
         subject = block.get("subject_level") or {}
+        # A partial block covers exactly one length; the engine stores it as a
+        # one-element list, so unwrap it for display.
+        length = block.get("sequence_length")
+        if isinstance(length, list) and len(length) == 1:
+            length = length[0]
         out.append(
             {
                 "key": key,
                 "model": block.get("model"),
-                "sequence_length": block.get("sequence_length"),
+                "sequence_length": length,
                 "n_folds": block.get("n_folds"),
                 "n_subjects": subject.get("n_subjects"),
                 "roc_auc": _value(block, "subject_level", "roc_auc"),
@@ -352,11 +357,69 @@ def render_comparison_markdown(comparison: dict[str, Any]) -> str:
             f"{row['model_selection_independent']} | {row['estimand']} |"
         )
 
+    nested = comparison.get("table4_nested_selected") or []
+    lines += [
+        "",
+        "## 표 4. Nested Group CV (길이를 inner CV에서 선택한 단일 추정치)",
+        "",
+        "이 표가 실험 C의 **정식 결과**다. 모델마다 값이 하나뿐인 이유는 시퀀스 길이가 "
+        "결과가 아니라 inner CV가 고른 선택이기 때문이다.",
+        "",
+    ]
+    if nested:
+        lines += [
+            "| 모델 | 피험자 AUC | 95% CI | PR-AUC | Balanced Acc. | 피험자 수 | fold | 선택된 길이 |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | --- |",
+        ]
+        for row in nested:
+            ci = (
+                f"[{row['ci_lower']:.3f}, {row['ci_upper']:.3f}]"
+                if row.get("ci_lower") is not None else "–"
+            )
+            chosen = ", ".join(
+                f"{k}일×{v}" for k, v in sorted((row.get("chosen_sequence_lengths") or {}).items())
+            ) or "–"
+            lines.append(
+                f"| {row['model']} | {cell(row['roc_auc'])} | {ci} | {cell(row['pr_auc'])} | "
+                f"{cell(row['balanced_accuracy'])} | {row.get('n_subjects')} | "
+                f"{row.get('n_folds')} | {chosen} |"
+            )
+    else:
+        lines.append("아직 nested 실험 결과가 없다.")
+
+    partials = comparison.get("table5_nested_partial_subsets") or []
+    if partials:
+        lines += [
+            "",
+            "## 표 5. Nested 부분집합 진단 (성능 주장 불가)",
+            "",
+            "> **경고.** 아래 값은 inner CV가 그 길이를 고른 **일부 fold의 일부 피험자**에서만 "
+            "계산된 것이다. 174명 전체 추정치가 아니며, 이 중 가장 높은 값을 골라 "
+            "\"nested에서 N일이 가장 좋았다\"고 보고하는 것은 실험 C가 막으려는 바로 그 "
+            "선택 편향이다. 길이별 비교가 필요하면 `fixed_subject_independent`(실험 B2)를 "
+            "쓴다. 그쪽은 세 길이를 모두 전체 피험자에서 평가한다.",
+            "",
+            "| 모델 | 길이 | fold 수 | 피험자 수 | 피험자 AUC |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        ]
+        for row in partials:
+            lines.append(
+                f"| {row['model']} | {row['sequence_length']}일 | {row['n_folds']} | "
+                f"{row['n_subjects']} | {cell(row['roc_auc'])} |"
+            )
+
     lines += ["", "## 차이값과 그 해석", ""]
     for row in comparison["deltas"]["per_sequence_length"]:
         lines.append(f"- **{row['sequence_length']}일**: " + ", ".join(
             f"{k} = {cell(v)}" for k, v in row.items() if k != "sequence_length"
         ))
+    for row in comparison["deltas"].get("nested_vs_nonnested", []):
+        if row.get("nested_minus_nonnested") is not None:
+            lines.append(
+                f"- **nested(선택) vs non-nested {row['sequence_length']}일**: "
+                f"{cell(row['nested_selected'])} − {cell(row['nonnested_fixed_subject'])} = "
+                f"{cell(row['nested_minus_nonnested'])}"
+            )
     lines += [""]
     for key, text in comparison["deltas"]["interpretation"].items():
         lines.append(f"- `{key}`: {text}")
