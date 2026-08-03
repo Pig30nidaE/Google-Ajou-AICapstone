@@ -107,12 +107,26 @@ LSTM/Bi-LSTM의 AUC 분모도 182 = 7×26으로 떨어져 이를 독립적으로
 
 ### 2-1. Colab (정식 실행)
 
-저장소 루트 `base.ipynb`의 셀 2만 수정한다.
+저장소 루트 `base.ipynb`의 경로 설정 셀을 수정한다.
 
 ```python
 USER_FOLDER = "SangHyo"
 RUN_FILE    = "Reproduction/reproduction_lim_2025/run.py"
 ```
+
+실행 셀(Cell 5)을 누르기 전에 별도 코드 셀에서 실행할 config를 지정한다.
+
+```python
+import sys
+sys.argv = [
+    "run.py",
+    "--config", "configs/paper_reproduction.yaml",
+    "--device", "cuda",
+]
+```
+
+학습 없이 배선만 확인하려면 위 목록 끝에 `"--dry-run"`을 추가한다. config를
+지정하지 않고 Cell 5를 실행하면 의도적으로 중단된다.
 
 `base.ipynb`는 `origin/main`을 새로 clone하므로 **커밋·푸시하지 않은 로컬 수정은
 반영되지 않는다.**
