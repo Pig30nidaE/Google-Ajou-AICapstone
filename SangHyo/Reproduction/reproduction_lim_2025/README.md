@@ -9,6 +9,21 @@
 
 **현재 상태: `reported-method reconstruction`** (exact reproduction 아님 — §6 참조)
 
+> ## ⚠️ 실행 이력: `20260802_151456_utc` 결과는 딥러닝 부분이 무효다
+>
+> 첫 실험 A 실행에서 **패딩 방향 버그**로 LSTM·Bi-LSTM·1D-CNN이 실제 관측의 64.3%를
+> 잃은 채 학습했다. Training 141명 중 44명은 자기 데이터를 100% 잃었다.
+> 남은 신호의 상당 부분이 관측일수뿐이었고(단독 AUC 0.4615), 그래서 세 모델의
+> AUC가 0.41~0.45에 몰렸다. 상세는 `leakage_audit.md` §1-2-1.
+>
+> | 부분 | 상태 |
+> | --- | --- |
+> | RF · XGBoost | **유효.** 표 입력이라 패딩과 무관 (RF 0.673 / XGB 0.615) |
+> | LSTM · Bi-LSTM · 1D-CNN | **무효. 재실행 필요** |
+>
+> 수정 완료(`Representation.valid_mask()` / `left_aligned()`)이며 회귀 테스트
+> 13개로 고정했다. **실험 A를 다시 실행해야 딥러닝 수치를 쓸 수 있다.**
+
 ---
 
 ## 1. 30초 요약: 이번 분석에서 밝혀낸 것
@@ -216,7 +231,7 @@ reproduction_lim_2025/
 │   ├── evaluation/ metrics.py compare.py
 │   ├── audit/      leakage.py
 │   └── utils/      config.py seeding.py io.py
-└── tests/                        # 86개 계약 테스트
+└── tests/                        # 99개 계약 테스트
 ```
 
 ---
@@ -267,7 +282,7 @@ reproduction_lim_2025/
    달라졌다면 **데이터 판본이 바뀐 것**이므로 문서부터 갱신한다.
 2. `python run.py --config <config> --dry-run` — 모델 입력 shape과 누수 검사 통과 여부.
    실험 A는 train `[141, 49]` / test `[33, 49]`, 시퀀스는 `[141, 120, 49]` / `[33, 120, 49]`.
-3. `python -m pytest tests/ -q` — 86개 통과.
+3. `python -m pytest tests/ -q` — 99개 통과.
 4. 실험 C의 fit 예산(570회)이 시간 내에 들어오는지. 안 되면 `repeats`나 `models`를 줄인다.
 5. Colab이면 Drive 마운트 확인. 결과는
    `/content/drive/MyDrive/reproduction_lim_2025_result/<UTC_RUN_ID>/`에 저장된다.

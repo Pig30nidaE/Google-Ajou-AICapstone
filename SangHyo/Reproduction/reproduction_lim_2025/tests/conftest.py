@@ -37,7 +37,7 @@ def _make_daily(n_subjects: int = 24, seed: int = 0) -> tuple[pd.DataFrame, pd.D
             rows.append(
                 {
                     schema.SUBJECT_ID: subject,
-                    schema.DATE_COL: start + pd.Timedelta(days=day),
+                    schema.DATE_COL: start + pd.Timedelta(int(day), "D"),
                     schema.LABEL_COL: label,
                     "split_origin": "train" if i < int(n_subjects * 0.8) else "validation",
                     **{f: float(rng.normal(label, 1.0)) for f in FEATURES},

@@ -34,7 +34,7 @@ def _daily(day_counts=(3, 5, 8)) -> pd.DataFrame:
             rows.append(
                 {
                     "subject_id": f"s{i}",
-                    "date": pd.Timestamp("2020-10-17") + pd.Timedelta(days=int(day)),
+                    "date": pd.Timestamp("2020-10-17") + pd.Timedelta(int(day), "D"),
                     "label": i % 2,
                     FEATURE: BASE_VALUE + 10 * i + day,
                     "row_id": len(rows),

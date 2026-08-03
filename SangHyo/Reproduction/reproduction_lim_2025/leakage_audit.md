@@ -62,12 +62,46 @@
 
 패딩 처리도 여기에 포함된다.
 
-- **fit**: 패딩 시점을 통계에서 제외한다(`lengths` 인자). 시퀀스의 60% 이상이 패딩일 수
+- **fit**: 패딩 시점을 통계에서 제외한다(`mask` 인자). 시퀀스의 60% 이상이 패딩일 수
   있으므로, 포함하면 모든 평균이 0 쪽으로 끌려간다. 논문의 서술 순서
   ("정규화 후 3차원 텐서")와도 이쪽이 일치한다.
 - **transform 후**: 패딩 시점을 다시 0으로 되돌린다. 표준화하면 패딩 0이
   `-mean/scale`이 되는데, Conv1d는 이를 실제 관측처럼 합성곱한다. LSTM 계열은
   `pack_padded_sequence`로 어차피 무시하지만 1D-CNN은 그렇지 않다.
+
+### 1-2-1. 패딩 방향 버그 (2026-08-02 수정)
+
+첫 실험 A 실행에서 **딥러닝 3종이 전부 무너진 원인**이 여기 있었다. 기록을 남긴다.
+
+빌더는 `padding: "pre"`가 기본이라 실제 관측을 시퀀스 **뒤쪽**에 놓는다
+(`X[i, T-valid:, :] = values`). 그런데 하위 소비자 4곳이 전부 마스크를
+`arange(T) < lengths`, 즉 **앞쪽**이 유효라고 계산했다.
+
+| 위치 | 증상 |
+| --- | --- |
+| `FoldPreprocessor.fit` | 스케일러 통계를 패딩 구간에서 적합 |
+| `zero_padding()` | 실제 관측을 0으로 지움 |
+| `RecurrentClassifier.forward` | `pack_padded_sequence`가 앞쪽 패딩만 읽음 |
+| `Conv1dClassifier.forward` | 풀링 마스크가 패딩 구간을 평균 |
+
+실제 데이터 피해 규모 (Training 141명, T=120):
+
+- 실제 관측 9,705 timestep 중 **6,239개(64.3%) 소실**
+- **141명 중 44명은 자기 데이터를 100% 잃음**
+- 피험자별 보존율 중앙값 **18.2%**
+
+살아남은 정보의 상당 부분이 **관측일수 자체**였고, 관측일수 단독 AUC는 0.4615다.
+실행 결과의 LSTM 0.429 / Bi-LSTM 0.407 / 1D-CNN 0.451이 정확히 그 노이즈 수준에
+몰려 있던 이유다.
+
+**수정**: 마스크의 단일 소스를 `Representation.valid_mask()`로 통일하고,
+모델에는 `Representation.left_aligned()`가 좌측 정렬한 텐서를 넘긴다. 그 결과
+`padding: pre`와 `post`가 **동일한 결과**를 낸다 — 마스킹이 제대로 되면 패딩
+방향은 결과에 영향을 주지 않아야 하고, 이제 그 성질이 테스트로 고정돼 있다
+(`tests/test_sequence_padding.py`, 13개).
+
+**교훈**: `lengths`만으로 마스크를 재유도하지 말 것. 길이는 유효 구간이 앞에
+있다고 암묵적으로 가정한다. 마스크는 boolean 배열로 명시적으로 넘긴다.
 
 ### 1-3. 피험자 ID는 group이지 feature가 아니다
 
@@ -196,6 +230,7 @@ python -m pytest tests/ -q
 | `test_forbidden_features.py` | 타깃·식별자·인지검사 컬럼 차단 |
 | `test_outer_test_isolation.py` | inner CV가 outer test를 보지 않음, 임계값 출처 |
 | `test_paper_arithmetic.py` | 33명·양성 7명 복원이 실제 데이터와 일치 |
+| `test_sequence_padding.py` | 패딩이 실제 관측을 덮지 않음, pre/post 결과 동일 |
 
 주목할 만한 테스트 두 개:
 
