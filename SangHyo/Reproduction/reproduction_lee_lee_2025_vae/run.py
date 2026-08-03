@@ -36,6 +36,14 @@ Cell 1이 주입한 ``PROJECT_ROOT``/``DATA_ROOT``도 자동으로 사용한다.
     from run import run_pipeline
     run_pipeline(namespace=globals(), argv=["--config", "configs/base.yaml", "--dry-run"])
 
+산출물 저장 위치
+----------------
+``/content``는 런타임이 끊기면 사라지므로, Drive가 마운트되어 있으면 산출물을
+``/content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/``
+아래 **타임스탬프 폴더**에 저장한다. 전체 실행은 모든 단계가 한 폴더를 공유하며,
+이전 실행 결과를 덮어쓰지 않는다. ``--out-root`` 또는 ``VAE2025_OUT_ROOT``로 변경 가능하다.
+자세한 우선순위는 :func:`_resolve_output_root` 참조.
+
 GPU / 런타임
 ------------
 데이터·모델 규모가 작다(최대 학습 행 9,746개, 46 feature, 은닉층 최대 512).
@@ -78,6 +86,82 @@ COLAB_SHARED_DATA_ROOT = Path("/content/drive/Shareddrives/GoogleAI_contest/Data
 DATA_ROOT_ENV_VAR = "SANGHYO_DATA_ROOT"
 #: 노트북에서 CLI 인자를 넘기고 싶을 때 쓰는 환경변수.
 ARGS_ENV_VAR = "VAE2025_ARGS"
+#: 산출물 저장 위치를 바꾸고 싶을 때 쓰는 환경변수.
+OUTPUT_ROOT_ENV_VAR = "VAE2025_OUT_ROOT"
+
+#: Colab에서 Google Drive가 마운트되는 위치 (base.ipynb Cell 1이 drive.mount("/content/drive")).
+COLAB_MYDRIVE = Path("/content/drive/MyDrive")
+#: MyDrive 안에 만들 산출물 폴더. 런타임이 죽어도 여기 있는 결과는 남는다.
+DRIVE_OUTPUT_SUBDIR = "GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae"
+
+
+def _is_writable_dir(path: Path) -> bool:
+    """디렉터리를 만들고 실제로 쓸 수 있는지 확인한다 (Drive FUSE는 마운트만 되고
+    쓰기가 안 되는 경우가 있어 touch까지 해본다)."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".write_probe"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+        return True
+    except Exception:  # noqa: BLE001 - 어떤 이유로든 못 쓰면 폴백한다
+        return False
+
+
+def _resolve_output_root(namespace: dict[str, Any], explicit: str | None, cfg=None) -> Path:
+    """산출물 **기준** 디렉터리를 정한다.
+
+    우선순위:
+
+    1. ``--out-root``
+    2. ``VAE2025_OUT_ROOT`` 환경변수
+    3. config ``output.root``가 절대경로인 경우
+    4. **Colab에서 Drive가 마운트되어 있으면 MyDrive 안의 전용 폴더** ← 기본 동작
+    5. 저장소 로컬 ``outputs/``
+
+    4번이 핵심이다. base.ipynb는 저장소를 ``/content/Google-Ajou-AICapstone``에 clone하는데
+    ``/content``는 **런타임이 끊기면 사라진다.** 기본값을 저장소 안(``REPO_ROOT/outputs``)으로
+    두면 몇 시간짜리 실험 결과가 통째로 날아간다. 그래서 Drive를 우선한다.
+    """
+    for candidate in (explicit, os.environ.get(OUTPUT_ROOT_ENV_VAR)):
+        if candidate:
+            p = Path(candidate).expanduser()
+            if not p.is_absolute():
+                p = (REPO_ROOT / p).resolve()
+            return p
+
+    if cfg is not None:
+        configured = cfg.get_path("output.root")
+        if configured and Path(configured).is_absolute():
+            return Path(configured)
+
+    # Colab: Drive가 마운트되어 쓰기 가능하면 MyDrive에 저장한다.
+    mydrive = COLAB_MYDRIVE
+    project = namespace.get("PROJECT_ROOT")
+    ephemeral = project is not None and str(project).startswith("/content/")
+    if mydrive.exists() and _is_writable_dir(mydrive / DRIVE_OUTPUT_SUBDIR):
+        return mydrive / DRIVE_OUTPUT_SUBDIR
+    if ephemeral:
+        log.warning(
+            "PROJECT_ROOT가 /content 아래(런타임 임시 저장소)인데 Google Drive를 쓸 수 없다. "
+            "결과가 런타임 종료 시 사라진다. base.ipynb Cell 1의 drive.mount가 "
+            "성공했는지 확인하거나 --out-root로 영구 경로를 지정하라."
+        )
+
+    fallback = cfg.get_path("output.root", "outputs") if cfg is not None else "outputs"
+    p = Path(fallback)
+    return p if p.is_absolute() else (REPO_ROOT / p).resolve()
+
+
+def _make_session_dir(base: Path, tag: str = "run") -> Path:
+    """전체 실행(run_all)용 타임스탬프 디렉터리. 이전 스윕 결과를 덮어쓰지 않는다."""
+    session = base / f"{time.strftime('%Y%m%d_%H%M%S')}_{tag}"
+    session.mkdir(parents=True, exist_ok=True)
+    try:
+        (base / "LATEST.txt").write_text(session.name + "\n", encoding="utf-8")
+    except Exception:  # noqa: BLE001 - 편의 기능일 뿐이다
+        pass
+    return session
 
 #: 한 번에 실행(run_all)할 때 쓰는 실험 A config.
 #: A1(percentile)은 Dem이 6행만 남아 8:1:1 분할이 불가능하므로(I-1 증거 F)
@@ -292,14 +376,15 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         return 2
 
     data_root = _resolve_data_root(namespace, args.data_root)
-    out_root = args.out_root or cfg.get_path("output.root", "outputs")
-    if not Path(out_root).is_absolute():
-        out_root = (REPO_ROOT / out_root).resolve()
+    out_root = _resolve_output_root(namespace, args.out_root, cfg)
+    Path(out_root).mkdir(parents=True, exist_ok=True)
     seed = args.seed if args.seed is not None else int(cfg.get_path("seed", 42))
     set_global_seed(seed)
 
     label = cfg.get_path("label", Path(args.config).stem if args.config else "base")
-    log.info("config=%s label=%s seed=%d data_root=%s", cfg.get_path("_meta.config_path"), label, seed, data_root)
+    log.info("config=%s label=%s seed=%d", cfg.get_path("_meta.config_path"), label, seed)
+    log.info("data_root=%s", data_root)
+    log.info("out_root =%s", out_root)
 
     # ---------------- data
     data = load_lifelog(
@@ -536,7 +621,22 @@ def run_all(
     """
     namespace = globals() if namespace is None else namespace
     started = time.monotonic()
-    common: list[str] = []
+
+    # 산출물 위치를 **한 번만** 정하고 모든 단계에 --out-root로 넘긴다.
+    # 단계마다 따로 정하면 타임스탬프가 어긋나 결과가 여러 폴더로 흩어진다.
+    base_root = _resolve_output_root(namespace, None, None)
+    session = _make_session_dir(base_root, tag="full")
+    out_root = str(session)
+
+    print("=" * 78, flush=True)
+    print(f"산출물 저장 위치: {out_root}", flush=True)
+    if str(session).startswith("/content/") and "/drive/" not in str(session):
+        print("⚠️  경고: 런타임 임시 저장소다. 세션이 끊기면 결과가 사라진다.", flush=True)
+    else:
+        print("   (런타임이 끊겨도 유지된다)", flush=True)
+    print("=" * 78, flush=True)
+
+    common: list[str] = ["--out-root", out_root]
     if seed is not None:
         common += ["--seed", str(seed)]
     if skip_install:
@@ -587,7 +687,6 @@ def run_all(
 
     # ---- 비교표
     _stage("교차 실험 비교표 생성", total, total)
-    out_root = str(REPO_ROOT / "outputs")
     summary: dict = {}
     try:
         from src.experiments.compare import assemble_comparison
@@ -612,6 +711,10 @@ def run_all(
         mark = {"ok": "✅", "nonzero_exit": "⚠️", "failed": "❌"}.get(o["status"], "?")
         print(f"  {mark} {o['stage']}  ({o['seconds']}s)", flush=True)
     print(f"\n산출물: {out_root}", flush=True)
+    if COLAB_MYDRIVE.exists() and str(out_root).startswith(str(COLAB_MYDRIVE)):
+        rel = Path(out_root).relative_to(COLAB_MYDRIVE)
+        print(f"  → Google Drive > 내 드라이브 > {rel}", flush=True)
+        print("  런타임이 끊겨도 유지된다.", flush=True)
     print("=" * 78, flush=True)
     return 0
 

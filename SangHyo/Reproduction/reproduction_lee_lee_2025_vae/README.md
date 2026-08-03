@@ -250,6 +250,49 @@ from run import run_pipeline
 run_pipeline(namespace=globals(), argv=["--inspect-data"])
 ```
 
+### 산출물은 Google Drive(MyDrive)에 저장된다
+
+base.ipynb는 저장소를 `/content/Google-Ajou-AICapstone`에 clone하는데
+**`/content`는 런타임이 끊기면 통째로 사라진다.** 실험 C만 몇 시간이 걸리므로
+결과를 거기 두면 안 된다. 그래서 산출물 기본 위치를 Drive로 잡는다.
+
+```
+내 드라이브/
+  GoogleAI_Capstone_Results/
+    reproduction_lee_lee_2025_vae/
+      LATEST.txt                        ← 가장 최근 실행 폴더 이름
+      20260803_102655_full/             ← 실행할 때마다 새 폴더 (이전 결과를 덮어쓰지 않는다)
+        inspection/
+        A_A3_isoforest_latent500/
+        B_B_leakage_controlled/
+        C_C_nested/
+        COMPARISON/                     ← 교차 실험 비교표
+        RUN_ALL_SUMMARY.json            ← 단계별 성공/실패·소요 시간
+```
+
+전체 실행(`run_all`)은 **모든 단계가 하나의 타임스탬프 폴더**를 공유한다.
+실행 시작 시 저장 위치가 콘솔 맨 위에 출력되고, 끝날 때 다시 안내된다.
+
+경로 결정 우선순위:
+
+| 순위 | 방법 |
+| ---: | --- |
+| 1 | `--out-root /경로` |
+| 2 | `VAE2025_OUT_ROOT` 환경변수 |
+| 3 | config `output.root`가 절대경로인 경우 |
+| 4 | **Drive가 마운트되어 있으면 MyDrive 안의 위 폴더** (Colab 기본) |
+| 5 | 저장소 `outputs/` (로컬 실행) |
+
+다른 곳에 저장하려면 Cell 5 앞에:
+
+```python
+import os
+os.environ["VAE2025_OUT_ROOT"] = "/content/drive/MyDrive/내가_원하는_폴더"
+```
+
+Drive가 마운트되지 않았거나 쓰기가 안 되면 경고를 출력하고 저장소 `outputs/`로 폴백한다
+(이 경우 런타임 종료 시 사라지므로 경고를 반드시 확인할 것).
+
 ### 의존성
 
 `run.py`가 스스로 설치한다(`requirements_colab.txt`). torch는 Colab이 CUDA와 맞물려

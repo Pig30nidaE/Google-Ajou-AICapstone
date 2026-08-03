@@ -207,15 +207,11 @@ class SequenceModel:
         )
 
         # Early stopping needs a held-out slice, carved from the training rows only.
-        n = len(X)
-        rng = np.random.default_rng(seed)
-        order = rng.permutation(n)
-        n_val = int(round(n * float(cfg["validation_fraction"])))
-        # Keep at least one of each class in the monitor split, else fall back to
-        # monitoring training loss.
-        val_idx, tr_idx = order[:n_val], order[n_val:]
-        if n_val < 2 or len(np.unique(y[val_idx])) < 2 or len(np.unique(y[tr_idx])) < 2:
-            val_idx, tr_idx = np.array([], dtype=int), order
+        # It is stratified: an unstratified draw of ~28 subjects from a 40%-positive
+        # pool swings the monitored class balance enough to make the signal noise.
+        val_idx, tr_idx = _stratified_monitor_split(
+            y, fraction=float(cfg["validation_fraction"]), seed=seed
+        )
 
         tensors = {
             "X": torch.from_numpy(X).to(device),

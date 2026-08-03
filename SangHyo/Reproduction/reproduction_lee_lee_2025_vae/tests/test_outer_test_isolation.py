@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -207,3 +208,55 @@ def test_shell_argv_still_parsed_normally(monkeypatch):
     monkeypatch.delenv(R.ARGS_ENV_VAR, raising=False)
     monkeypatch.setattr(R, "_running_under_kernel", lambda: False)
     assert R._resolve_argv(None) == ["--dry-run", "--seed", "7"]
+
+
+# ── 산출물 영속성 회귀 테스트 ─────────────────────────────────────────────────
+def test_output_root_prefers_mydrive_when_mounted(tmp_path, monkeypatch):
+    """Colab 런타임(/content)은 세션 종료 시 삭제되므로 Drive를 우선해야 한다."""
+    import run as R
+
+    fake_drive = tmp_path / "MyDrive"
+    fake_drive.mkdir()
+    monkeypatch.setattr(R, "COLAB_MYDRIVE", fake_drive)
+    monkeypatch.delenv(R.OUTPUT_ROOT_ENV_VAR, raising=False)
+
+    out = R._resolve_output_root({"PROJECT_ROOT": "/content/Google-Ajou-AICapstone"}, None, None)
+    assert out == fake_drive / R.DRIVE_OUTPUT_SUBDIR
+    assert str(out).startswith(str(fake_drive))
+
+
+def test_output_root_falls_back_to_repo_when_no_drive(tmp_path, monkeypatch):
+    import run as R
+
+    monkeypatch.setattr(R, "COLAB_MYDRIVE", tmp_path / "nonexistent_drive")
+    monkeypatch.delenv(R.OUTPUT_ROOT_ENV_VAR, raising=False)
+    out = R._resolve_output_root({}, None, None)
+    assert out == (Path(R.REPO_ROOT) / "outputs").resolve()
+
+
+def test_output_root_explicit_and_env_take_priority(tmp_path, monkeypatch):
+    import run as R
+
+    fake_drive = tmp_path / "MyDrive"
+    fake_drive.mkdir()
+    monkeypatch.setattr(R, "COLAB_MYDRIVE", fake_drive)
+
+    monkeypatch.setenv(R.OUTPUT_ROOT_ENV_VAR, str(tmp_path / "from_env"))
+    assert R._resolve_output_root({}, None, None) == tmp_path / "from_env"
+    # --out-root가 환경변수보다 우선
+    assert R._resolve_output_root({}, str(tmp_path / "explicit"), None) == tmp_path / "explicit"
+
+
+def test_session_dirs_never_overwrite_each_other(tmp_path, monkeypatch):
+    """전체 실행을 두 번 해도 이전 스윕 결과가 남아 있어야 한다."""
+    import run as R
+
+    base = tmp_path / "base"
+    seen = iter(["20260101_000000", "20260101_000001"])
+    monkeypatch.setattr(R.time, "strftime", lambda *_a, **_k: next(seen))
+
+    first = R._make_session_dir(base, tag="full")
+    second = R._make_session_dir(base, tag="full")
+    assert first != second
+    assert first.exists() and second.exists()
+    assert (base / "LATEST.txt").read_text().strip() == second.name

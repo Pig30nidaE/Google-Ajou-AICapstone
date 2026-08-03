@@ -91,15 +91,71 @@ def load_reports(paths: dict[str, str | Path]) -> dict[str, dict[str, Any]]:
     return out
 
 
-def _lookup(report: dict[str, Any], model: str, length: int, unit: str, metric: str) -> Any:
-    block = report.get("results", {}).get(f"{model}_L{length}")
-    if not block:
-        return None
+def _value(block: dict[str, Any], unit: str, metric: str) -> Any:
     unit_block = block.get(unit)
     if not unit_block:
         return None
     value = unit_block.get(metric)
     return None if value is None or (isinstance(value, float) and not np.isfinite(value)) else value
+
+
+def _lookup(report: dict[str, Any], model: str, length: int, unit: str, metric: str) -> Any:
+    """Read a *full* per-length estimate, never a partial subset.
+
+    The nested experiment also emits ``{model}_L{length}`` blocks, but those are
+    the subsets of outer folds whose inner CV happened to pick that length -- in
+    the 2026-08-02 run, ``lstm_L5`` was one fold and 35 subjects.  Filling the
+    per-length rows from them would put "nested LSTM 5-day = 0.78" next to the
+    paper's 0.92, which is exactly the pick-the-best-length bias experiment C
+    exists to avoid.  Partial blocks are reported separately, in table 5.
+    """
+    block = report.get("results", {}).get(f"{model}_L{length}")
+    if not block or block.get("is_partial_subset"):
+        return None
+    return _value(block, unit, metric)
+
+
+def _nested_estimate(report: dict[str, Any], model: str) -> dict[str, Any] | None:
+    """The one honest nested number per model: all outer folds, length chosen inside."""
+    block = report.get("results", {}).get(f"{model}_Lnested")
+    if not block:
+        return None
+    subject = block.get("subject_level") or {}
+    ci = block.get("subject_bootstrap_ci") or {}
+    selection = block.get("selection") or {}
+    return {
+        "model": model,
+        "roc_auc": _value(block, "subject_level", "roc_auc"),
+        "pr_auc": _value(block, "subject_level", "pr_auc"),
+        "balanced_accuracy": _value(block, "subject_level", "balanced_accuracy"),
+        "n_subjects": subject.get("n_subjects"),
+        "n_folds": block.get("n_folds"),
+        "ci_lower": ci.get("ci_lower"),
+        "ci_upper": ci.get("ci_upper"),
+        "chosen_sequence_lengths": selection.get("chosen_sequence_lengths", {}),
+        "sequence_roc_auc": _value(block, "sequence_level", "roc_auc"),
+        "threshold_source": block.get("threshold_source"),
+    }
+
+
+def _partial_diagnostics(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """Per-length subsets from the nested run, labelled as the fragments they are."""
+    out = []
+    for key, block in (report.get("results") or {}).items():
+        if not block.get("is_partial_subset"):
+            continue
+        subject = block.get("subject_level") or {}
+        out.append(
+            {
+                "key": key,
+                "model": block.get("model"),
+                "sequence_length": block.get("sequence_length"),
+                "n_folds": block.get("n_folds"),
+                "n_subjects": subject.get("n_subjects"),
+                "roc_auc": _value(block, "subject_level", "roc_auc"),
+            }
+        )
+    return sorted(out, key=lambda r: (str(r["model"]), str(r["sequence_length"])))
 
 
 def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -125,18 +181,36 @@ def build_comparison(reports: dict[str, dict[str, Any]]) -> dict[str, Any]:
         table1.append(row)
         table2.append(row2)
 
-    deltas = _deltas(table1)
+    nested_report = reports.get("nested_subject_independent") or {}
+    nested_models = sorted(
+        {
+            key[: -len("_Lnested")]
+            for key in (nested_report.get("results") or {})
+            if key.endswith("_Lnested")
+        }
+    )
+    nested_estimates = [
+        estimate
+        for estimate in (_nested_estimate(nested_report, m) for m in nested_models)
+        if estimate is not None
+    ]
+
+    deltas = _deltas(table1, nested_estimates)
     return {
         "table1_by_sequence_length": table1,
         "table2_auc_summary": table2,
         "table3_validation_properties": VALIDATION_PROPERTIES,
+        "table4_nested_selected": nested_estimates,
+        "table5_nested_partial_subsets": _partial_diagnostics(nested_report),
         "paper_results": PAPER_RESULTS,
         "deltas": deltas,
         "available_reports": sorted(reports),
     }
 
 
-def _deltas(table1: list[dict[str, Any]]) -> dict[str, Any]:
+def _deltas(
+    table1: list[dict[str, Any]], nested_estimates: list[dict[str, Any]]
+) -> dict[str, Any]:
     """The comparisons the spec asks for, each labelled with what it means."""
     def diff(row: dict[str, Any], left: str, right: str) -> float | None:
         a, b = row.get(left), row.get(right)
@@ -150,9 +224,28 @@ def _deltas(table1: list[dict[str, Any]]) -> dict[str, Any]:
                 "reconstruction_minus_paper": diff(row, "paper_temporal_reconstruction", "paper_roc_auc"),
                 "strict_minus_reconstruction": diff(row, "strict_same_subject_temporal", "paper_temporal_reconstruction"),
                 "subjectwise_minus_strict": diff(row, "fixed_subject_independent", "strict_same_subject_temporal"),
-                "nested_minus_nonnested": diff(row, "nested_subject_independent", "fixed_subject_independent"),
             }
         )
+
+    # The nested arm produces one estimate per model, not one per length -- the
+    # length is what it selected.  Comparing it against the non-nested value at a
+    # fixed length is therefore a comparison across different granularities, and
+    # it is written out that way rather than folded into the per-length rows.
+    lstm_nested = next((e for e in nested_estimates if e["model"] == "lstm"), None)
+    out["nested_vs_nonnested"] = [
+        {
+            "sequence_length": row["sequence_length"],
+            "nonnested_fixed_subject": row.get("fixed_subject_independent"),
+            "nested_selected": lstm_nested["roc_auc"] if lstm_nested else None,
+            "nested_minus_nonnested": (
+                None
+                if lstm_nested is None or row.get("fixed_subject_independent") is None
+                else float(lstm_nested["roc_auc"] - row["fixed_subject_independent"])
+            ),
+        }
+        for row in table1
+    ]
+
     out["interpretation"] = {
         "reconstruction_minus_paper": "구현 차이. 같은 estimand 안에서의 재현 오차다.",
         "strict_minus_reconstruction": "경계 시퀀스와 전처리 누수를 제거한 효과. estimand는 A로 동일하다.",
@@ -160,7 +253,11 @@ def _deltas(table1: list[dict[str, Any]]) -> dict[str, Any]:
             "estimand A에서 B로 바뀐 차이다. 누수 제거 효과와 질문 자체가 바뀐 효과가 "
             "함께 들어 있으므로 이 값을 '누수 크기'라고 부르면 안 된다."
         ),
-        "nested_minus_nonnested": "모델 선택 비용. 음수면 non-nested 값이 낙관적이었다는 뜻이다.",
+        "nested_minus_nonnested": (
+            "모델 선택 비용. 음수면 non-nested 값이 낙관적이었다는 뜻이다. "
+            "nested 쪽은 길이를 inner CV에서 고른 단일 추정치이므로, 고정 길이 "
+            "non-nested 값과는 입도가 다르다는 점을 함께 적어야 한다."
+        ),
     }
     return out
 
@@ -225,6 +322,9 @@ def render_comparison_markdown(comparison: dict[str, Any]) -> str:
         "",
         "앞의 두 열은 **시퀀스 단위**, 뒤의 두 열은 **피험자 단위** 지표다 "
         "(각 행의 `__unit` 필드에 기록된다).",
+        "",
+        "**Nested 열이 비어 있는 것은 정상이다.** Nested 실험은 길이를 inner CV에서 "
+        "고르므로 고정 길이별 추정치를 만들지 않는다. 그 결과는 표 4에 있다.",
         "",
         "## 표 2. AUC 요약",
         "",

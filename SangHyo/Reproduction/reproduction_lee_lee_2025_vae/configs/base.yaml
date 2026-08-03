@@ -18,6 +18,10 @@ features:
   extra_sleep_features: []     # 예: [sleep_total] → unresolved_questions.md Q6 민감도
 
 output:
+  # 로컬 실행용 폴백 경로(저장소 상대). Colab에서는 이 값을 쓰지 않고
+  # /content/drive/MyDrive/GoogleAI_Capstone_Results/reproduction_lee_lee_2025_vae/ 에 저장한다.
+  # /content 는 런타임이 끊기면 사라지므로 Drive를 우선한다 (run.py::_resolve_output_root).
+  # 절대경로를 적으면 그 경로가 그대로 쓰인다. --out-root / VAE2025_OUT_ROOT 가 최우선.
   root: outputs
 
 run:
