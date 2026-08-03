@@ -1,0 +1,91 @@
+# [진단 전용] Q-10 검증: 비교모델에 마지막 날짜 한 행만 준다면?
+#
+# paper_temporal_5day.yaml의 정확한 사본이며 딱 한 줄만 다르다:
+#   models.representation: flatten -> last_day
+#
+# 배경: 논문 §4.2는 SVM/LR/RF/XGBoost가 "do not reflect time-series
+# characteristics"라고만 적었을 뿐, 5일 윈도우를 어떻게 한 행으로 만들었는지
+# 밝히지 않았다(unresolved_questions.md Q-10). 정식 재현(paper_temporal_5day.yaml)은
+# flatten(5일치 32변수 = 160열)을 쓰는데, 이는 LSTM이 보는 것과 완전히 같은
+# 정보량이다. 그 결과 재현에서는 LSTM과 XGBoost의 AUC 격차가 논문 +0.11에서
+# +0.016으로 거의 사라졌다(README.md "재현 판정" 참조).
+#
+# "do not reflect time-series characteristics"라는 문구를 가장 강하게 읽으면,
+# 저자들은 비교모델에 시계열 정보를 아예 주지 않고 마지막 날짜 한 행(32열)만
+# 줬을 수 있다. 이 config는 그 가설을 시험한다: last_day로 바꿨을 때 비교모델
+# AUC가 논문값(SVM .64, LR .63, RF .81, XGBoost .81)에 가까워지면, 논문의
+# LSTM 우위 주장은 모델 구조 차이가 아니라 입력 정보량 차이에서 왔다는 뜻이다.
+#
+# 이 config의 결과는 그 자체로 "정식 재현값"이 아니라 진단값이다. 표 1/2에는
+# 실리지 않고 별도로 읽어야 한다. LSTM 행은 참고용으로 남기되(입력이 바뀌지
+# 않으므로 paper_temporal_5day.yaml과 동일한 값이 나와야 한다), 관심 대상은
+# 비교모델 4개다.
+
+experiment: paper_temporal_reconstruction
+estimand: A
+seed: 42
+
+data:
+  sleep_date_source: bedtime_end
+  duplicate_policy: longest_duration
+  rmssd_source: intraday_mean
+
+features:
+  include_cognitive_tests: false
+  include_subject_id: false
+
+sequence:
+  lengths: [5]
+  stride: 1
+  require_consecutive: true
+
+split:
+  mode: final_week_temporal
+  final_week_mode: calendar_days
+  final_week_length: 7
+  embargo_days: 0
+  validation_days: 14
+
+preprocessing:
+  scaler_scope: train_only
+
+sampling:
+  strategy: random_sequence
+  target_ratio: 1.0
+  class_weight: false
+
+threshold:
+  policy: fixed
+  value: 0.5
+
+lstm:
+  max_epochs: 100
+  patience: 10
+  early_stopping: true
+  recurrent_dropout: 0.0
+
+tuning:
+  enabled: false
+
+models:
+  enabled: [lstm, logistic_regression, svm, random_forest, xgboost]
+  representation: last_day             # <-- Q-10 진단: flatten 대신 마지막 날짜 1행만
+  baseline_backend: sklearn
+  backend_by_model:
+    logistic_regression: h2o
+    random_forest: h2o
+    xgboost: h2o
+    svm: sklearn
+  h2o:
+    require_exact_version: true
+    max_models: 20
+    max_runtime_secs: 600
+
+explainability:
+  enabled: false
+
+evaluation:
+  prevalence_diagnostic:
+    enabled: true
+    target_prevalence: 0.5
+    n_repeats: 200

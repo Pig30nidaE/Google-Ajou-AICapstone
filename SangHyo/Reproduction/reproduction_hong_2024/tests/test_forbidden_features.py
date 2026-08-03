@@ -92,8 +92,14 @@ def test_config_cannot_enable_subject_id():
 
 
 def test_every_shipped_config_forbids_cognitive_tests(config_dir):
+    """Every config in configs/, including diagnostic variants, must fail closed.
+
+    The count is a floor, not a pin: the 7 primary experiment configs plus any
+    number of diagnostic variants (e.g. paper_temporal_5day_repr_lastday.yaml)
+    are all checked, so this only breaks if a genuinely unsafe config ships.
+    """
     paths = sorted(config_dir.glob("*.yaml"))
-    assert len(paths) == 7
+    assert len(paths) >= 7
     for path in paths:
         config = load_config(path)
         assert config.get("features.include_cognitive_tests") is False, path.name
