@@ -69,6 +69,48 @@ sleep의 `bedtime_end` 날짜 중복(train 11, val 1) 때문에 손실이 발생
 
 ---
 
+### A-3-1. `paper_table16_lifelog` — 논문이 말한 "최종 분석 변수군"의 재구성
+
+**논문 §3.2 마지막 문장**:
+
+> "변수 선택에 있어서는 다중공선성을 제거하고 통계적 유의성과 임상적 중요성을 모두
+> 고려하여 최종 분석 변수군을 구성하였다."
+
+이 문장은 전처리 절(§3.2)에 있으므로 **두 경로(트리·딥러닝) 모두에 적용**된다.
+그런데 **그 변수군이 무엇인지 논문은 ML 모델에 대해 밝히지 않는다.**
+
+기존 `paper_code_verbatim`(49개)은 이 문장을 **전혀 구현하지 않는다.** 즉 논문이
+"변수 선택을 했다"고 쓴 단계를 통째로 건너뛴 것이며, 이것이 재현 실패의 유력한
+원인이다. 141명에 49개 특징은 과적합이 심하다.
+
+**가정**: 논문이 인쇄한 유일한 구체적 라이프로그 변수 목록인 **표 16(학술지 표 13)의
+12개**를 그 "최종 분석 변수군"으로 읽는다.
+
+```
+sleep_breath_average, sleep_hr_average, sleep_hr_lowest, sleep_efficiency,
+sleep_midpoint_time, sleep_restless, sleep_score_disturbances,
+activity_cal_active, activity_cal_total, activity_daily_movement,
+activity_inactive, activity_met_min_medium
+```
+
+**이 가정의 약점(정직하게 기록)**: 표 16은 §3.4 로지스틱 회귀의 결과표이고, 논문이
+이 12개를 §3.3의 ML 모델에 썼다고 **명시하지 않았다.** 따라서 이것은 재구성 가설이며
+논문 진술이 아니다. config 이름과 결과 파일에 그렇게 표시된다.
+
+**이 가정을 지지하는 정황**:
+
+- 표 16은 "완전 선형 종속성을 제거한 뒤" 남은 목록이라고 서술된다 —
+  §3.2의 "다중공선성을 제거"와 같은 절차다.
+- 표 16에는 `sleep_efficiency`(p=0.756)처럼 **유의하지 않은 변수도 포함**돼 있다.
+  즉 유의성 필터링 결과가 아니라 **최종 모형에 남은 변수 목록**이다.
+  (그래서 p-value로 재유도하면 논문 목록과 달라진다.)
+- 초록이 꼽은 유의 예측변수 `수면 중 호흡률`, `수면 중 뒤척임`이 이 목록에 있다.
+
+**사용법**: `configs/paper_literal_table16.yaml`. `paper_reproduction.yaml`(49개)과
+같은 seed로 돌려 비교하면 변수 선택이 격차를 얼마나 설명하는지 분리해서 볼 수 있다.
+
+---
+
 ### A-4. 결측치 처리
 
 **논문**: 미보고.
@@ -200,6 +242,26 @@ random_state: <config.seed>
 ### C-3. LSTM / Bi-LSTM / 1D-CNN — **전부 미보고**
 
 논문에는 세 신경망의 구조가 **단 하나도** 기재되어 있지 않다. 개념 설명만 있다.
+
+**놓쳤다가 뒤늦게 찾은 단서 — 논문은 Keras를 썼다**
+
+§3.3.2가 쓴 층 이름이 `Conv1D`, `MaxPooling1D`, `AveragePooling1D`다. 이것은
+**Keras/TensorFlow 표기**이며 PyTorch는 `Conv1d`, `MaxPool1d`로 쓴다. 따라서 미보고
+항목은 **임의의 보수적 값이 아니라 Keras 기본값**으로 두는 것이 덜 발명적이다.
+
+| 항목 | Keras 기본값 | 본 재현 반영 |
+| --- | --- | --- |
+| `Conv1D(padding=...)` | `'valid'` | `conv_padding: valid` (paper-literal arm) |
+| `model.fit(batch_size=...)` | `32` | `batch_size: 32` (기존 16에서 변경) |
+| `Adam(learning_rate=...)` | `0.001` | 동일 |
+| `pad_sequences(padding=...)` | `'pre'` | `padding: pre` (일치) |
+| `LSTM(return_sequences=False)` | 마지막 시점 출력 | `readout: last_hidden` |
+| `Dense(1, activation='sigmoid')` | — | 동일 |
+
+**CNN 구조도 논문 서술을 넘어서 있었다**: §3.3.2는 1D-CNN을 정확히 3단계로 적는다 —
+"1) Conv1D 계층 → 2) Pooling 계층 → 3) Fully Connected 계층(평탄화)". 즉 conv 블록은
+**하나**다. 기존 기본값 `filters: (64, 64)`는 2블록으로 논문 서술을 넘어선 것이었다.
+paper-literal arm은 `filters: [64]`를 쓴다.
 
 **가정** (`assumption_variant_minimal_architecture`). 작은 표본(141명)에 맞춘 최소 구조:
 

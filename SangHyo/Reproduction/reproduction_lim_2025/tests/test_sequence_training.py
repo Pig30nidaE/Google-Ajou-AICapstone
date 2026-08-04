@@ -158,14 +158,45 @@ def test_fixed_epoch_mode_uses_every_outer_training_subject() -> None:
     assert model.padding_side == "pre"
 
 
-def test_cnn_uses_the_paper_described_flatten_readout() -> None:
+def test_cnn_matches_the_paper_described_single_block() -> None:
+    """Section 3.3.2 lists exactly three stages: Conv1D, Pooling, Flatten+FC.
+
+    So one conv block, not a stack.  And the papers name Keras layers
+    (`Conv1D`, `MaxPooling1D`), whose Conv1D defaults to padding='valid'.
+    """
     pytest.importorskip("torch")
     from src.models.registry import build_model
 
     model = build_model("cnn1d", seed=0, device="cpu")
     model.build(n_features=3, n_timesteps=12)
 
-    # Two pool-size-2 stages reduce T=12 to 3; Flatten therefore feeds 64*3.
     assert model.params["readout"] == "flatten"
+    assert tuple(model.params["filters"]) == (64,), "the paper describes one Conv1D"
+    assert model.params["conv_padding"] == "valid", "Keras Conv1D default"
+    # valid conv (k=3): 12 -> 10, then MaxPool1d(2): 10 -> 5. Flatten feeds 64*5.
+    assert model.module.output_timesteps == 5
+    assert model.module.head.in_features == 64 * 5
+
+
+def test_cnn_same_padding_variant_preserves_length() -> None:
+    """Extension arms may keep 'same' so short folds stay usable."""
+    pytest.importorskip("torch")
+    from src.models.registry import build_model
+
+    model = build_model(
+        "cnn1d", seed=0, device="cpu",
+        overrides={"filters": (64, 64), "conv_padding": "same"},
+    )
+    model.build(n_features=3, n_timesteps=12)
+    # same padding keeps T through each conv; two pools halve it twice: 12 -> 3.
     assert model.module.output_timesteps == 3
     assert model.module.head.in_features == 64 * 3
+
+
+def test_cnn_rejects_a_sequence_too_short_for_the_stack() -> None:
+    pytest.importorskip("torch")
+    from src.models.registry import build_model
+
+    model = build_model("cnn1d", seed=0, device="cpu")
+    with pytest.raises(ValueError, match="too short"):
+        model.build(n_features=3, n_timesteps=2)

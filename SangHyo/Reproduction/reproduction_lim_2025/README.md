@@ -37,6 +37,47 @@
 
 ---
 
+## 0. 재현 격차의 남은 원인 두 가지 (2026-08-03 논문 재검토)
+
+세 번째 실행까지도 논문 수치가 재현되지 않아 논문을 다시 정독한 결과, **구현이
+논문 서술을 따르지 않은 지점 두 곳**을 찾았다.
+
+### 0-1. 논문이 한 변수 선택을 우리는 하지 않았다
+
+논문 §3.2 마지막 문장:
+
+> "변수 선택에 있어서는 **다중공선성을 제거하고** 통계적 유의성과 임상적 중요성을
+> 모두 고려하여 **최종 분석 변수군**을 구성하였다."
+
+이 문장은 전처리 절에 있으므로 트리·딥러닝 **양쪽 모두**에 적용된다. 그런데 기존
+`paper_reproduction.yaml`은 이 단계를 **통째로 건너뛰고 49개를 전부** 썼다.
+141명에 49개 특징은 과적합이 심하며, 이것이 격차의 유력한 원인이다.
+
+논문이 인쇄한 유일한 구체적 라이프로그 변수 목록은 **표 16의 12개**다.
+→ `configs/paper_literal_table16.yaml` (`assumptions.md` §A-3-1)
+
+### 0-2. 논문은 Keras를 썼고, CNN은 conv 블록이 하나다
+
+§3.3.2가 쓴 층 이름 `Conv1D`, `MaxPooling1D`, `AveragePooling1D`는 **Keras 표기**다
+(PyTorch는 `Conv1d`/`MaxPool1d`). 그리고 CNN 구조를 정확히 3단계로 적는다 —
+"1) Conv1D → 2) Pooling → 3) Fully Connected(평탄화)". **conv 블록은 하나**다.
+
+| 항목 | 기존 구현 | 교정 |
+| --- | --- | --- |
+| conv 블록 수 | 2 (`filters: (64,64)`) | **1** (`filters: [64]`) |
+| Conv1D padding | `same` | **`valid`** (Keras 기본) |
+| batch_size | 16 | **32** (Keras `fit` 기본) |
+
+### 0-3. 그리고 단일 seed로는 애초에 판정할 수 없다
+
+평가집단은 33명·**양성 7명**이다. 한 명이 바뀌면 Recall이 14.3%p, AUC가 rank pair당
+1/182 움직인다. "소수점 둘째 자리까지 일치"를 단일 seed로 묻는 것은 답이 없는 질문이다.
+
+`--seeds` 옵션을 추가했다. 답할 수 있는 질문은 **"논문값이 우리 재현 분포 안에
+들어오는가"**이며, 이것이 `seed_sweep.md`로 출력된다.
+
+---
+
 ## 1. 30초 요약: 이번 분석에서 밝혀낸 것
 
 ### 1-1. 논문의 평가집단은 33명이며, 산술적으로 완전히 복원된다
@@ -137,6 +178,18 @@ sys.argv = [
 python run.py --config configs/paper_reproduction.yaml
 ```
 
+논문 §3.2의 변수 선택과 §3.3.2의 CNN 구조를 반영한 교정 arm (§0):
+
+```bash
+python run.py --config configs/paper_literal_table16.yaml
+```
+
+seed 분포로 재현 여부를 판정 (양성 7명이라 단일 seed는 판정 불가):
+
+```bash
+python run.py --config configs/paper_literal_table16.yaml --seeds 10
+```
+
 ```bash
 python run.py --config configs/leakage_controlled_non_nested.yaml
 ```
@@ -171,6 +224,7 @@ python run.py --compare
 | `--compare` | 세 실험의 `FINAL_REPORT.json`으로 비교표 재생성 |
 | `--fold N` | outer fold 하나만 |
 | `--seed N` | config seed 덮어쓰기 |
+| `--seeds N\|a,b,c` | seed 분포 실행. `seed_sweep.md`에 논문값 포함 여부 출력 |
 | `--resume` | 완료된 (model, repeat, fold) 체크포인트 재사용 |
 | `--device auto\|cpu\|cuda` | 기본 auto |
 | `--output-dir PATH` | 결과 경로 지정 |
@@ -249,6 +303,7 @@ reproduction_lim_2025/
 ├── requirements_colab.txt
 ├── configs/
 │   ├── paper_reproduction.yaml
+│   ├── paper_literal_table16.yaml
 │   ├── leakage_controlled_non_nested.yaml
 │   └── nested_subject_independent.yaml
 ├── src/
@@ -257,7 +312,7 @@ reproduction_lim_2025/
 │   ├── features/   representations.py
 │   ├── splits/     splitters.py
 │   ├── models/     tabular.py sequence.py registry.py
-│   ├── evaluation/ metrics.py compare.py
+│   ├── evaluation/ metrics.py compare.py seed_sweep.py
 │   ├── audit/      leakage.py
 │   └── utils/      config.py seeding.py io.py
 └── tests/                        # 누수·산술·시퀀스·산출물 계약 테스트

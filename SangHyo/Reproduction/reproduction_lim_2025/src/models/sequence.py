@@ -37,8 +37,12 @@ DEFAULTS: dict[str, dict[str, Any]] = {
         "bidirectional": True, "readout": "last_hidden_concat",
     },
     "cnn1d": {
-        "filters": (64, 64), "kernel_size": 3, "pool_size": 2,
-        "dropout": 0.2, "readout": "flatten",
+        # Section 3.3.2 describes exactly three stages -- "1) Conv1D 계층,
+        # 2) Pooling 계층, 3) Fully Connected 계층" -- i.e. a single conv block,
+        # not a stack.  conv_padding='valid' matches the Keras Conv1D default,
+        # and the papers name Keras layers throughout.
+        "filters": (64,), "kernel_size": 3, "pool_size": 2,
+        "conv_padding": "valid", "dropout": 0.2, "readout": "flatten",
     },
 }
 
@@ -46,7 +50,10 @@ TRAINING_DEFAULTS = {
     "loss": "bce",
     "optimizer": "adam",
     "learning_rate": 1e-3,
-    "batch_size": 16,
+    # Keras `model.fit` defaults to 32, and Adam to lr=1e-3.  The papers name
+    # Keras layers but report no training settings, so the framework defaults are
+    # the least-invented choice available.
+    "batch_size": 32,
     "max_epochs": 100,
     "early_stopping": True,
     "early_stopping_patience": 10,
@@ -172,36 +179,57 @@ def _build_module(
             pool_size = int(params["pool_size"])
             if not filters or any(value <= 0 for value in filters):
                 raise ValueError("cnn1d filters must be a non-empty sequence of positives")
-            if kernel < 1 or kernel % 2 == 0:
+            if kernel < 1:
+                raise ValueError("cnn1d kernel_size must be a positive integer")
+            conv_padding = str(params.get("conv_padding", "same")).lower()
+            if conv_padding not in ("same", "valid"):
                 raise ValueError(
-                    "cnn1d kernel_size must be a positive odd integer so same-padding "
-                    "preserves the configured sequence length"
+                    f"cnn1d conv_padding must be same/valid, got {conv_padding!r}"
+                )
+            if conv_padding == "same" and kernel % 2 == 0:
+                raise ValueError(
+                    "cnn1d kernel_size must be odd when conv_padding='same' so the "
+                    "configured sequence length is preserved"
                 )
             if pool_size < 1:
                 raise ValueError("cnn1d pool_size must be a positive integer")
+
+            # Keras Conv1D defaults to padding='valid'; the papers name Keras
+            # layers (Conv1D / MaxPooling1D), so 'valid' is the faithful default
+            # for the paper-literal arm.  'same' stays available for the
+            # extension arms, where preserving T keeps short folds usable.
+            pad = kernel // 2 if conv_padding == "same" else 0
+
             layers: list[Any] = []
             in_channels = n_features
+            timesteps = int(n_timesteps)
             for out_channels in filters:
                 layers += [
-                    nn.Conv1d(in_channels, out_channels, kernel_size=kernel, padding=kernel // 2),
+                    nn.Conv1d(in_channels, out_channels, kernel_size=kernel, padding=pad),
                     nn.ReLU(),
                     nn.MaxPool1d(pool_size),
                 ]
                 in_channels = out_channels
+                timesteps = timesteps + 2 * pad - (kernel - 1)   # conv
+                if timesteps < 1:
+                    raise ValueError(
+                        f"cnn1d sequence length {n_timesteps} is too short for "
+                        f"{len(filters)} conv layers of kernel {kernel} "
+                        f"with conv_padding={conv_padding!r}"
+                    )
+                timesteps //= pool_size                          # pool
+                if timesteps < 1:
+                    raise ValueError(
+                        f"cnn1d sequence length {n_timesteps} is too short for "
+                        f"{len(filters)} pool layers of size {pool_size}"
+                    )
             self.features = nn.Sequential(*layers)
             self.dropout = nn.Dropout(float(params["dropout"]))
             self.n_pools = len(filters)
             self.pool_size = pool_size
-            output_timesteps = int(n_timesteps)
-            for _ in range(self.n_pools):
-                output_timesteps //= self.pool_size
-            if output_timesteps < 1:
-                raise ValueError(
-                    f"cnn1d sequence length {n_timesteps} is too short for "
-                    f"{self.n_pools} pool layers of size {self.pool_size}"
-                )
-            self.output_timesteps = output_timesteps
-            self.head = nn.Linear(in_channels * output_timesteps, 1)
+            self.conv_padding = conv_padding
+            self.output_timesteps = timesteps
+            self.head = nn.Linear(in_channels * timesteps, 1)
 
         def forward(self, x, lengths=None, padding_side="post"):
             # (B, T, F) -> (B, F, T) for Conv1d.

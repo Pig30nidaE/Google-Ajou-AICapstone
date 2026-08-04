@@ -1,0 +1,111 @@
+# 실험 A 변형 — paper_literal_table16
+#
+# 목적: 지금까지 재현되지 않은 원인 후보 두 가지를 논문 근거로 동시에 교정한다.
+#
+# ── 근거 1. 변수 선택을 실제로 수행한다 ────────────────────────────────────
+# 논문 §3.2: "변수 선택에 있어서는 다중공선성을 제거하고 통계적 유의성과 임상적
+# 중요성을 모두 고려하여 최종 분석 변수군을 구성하였다."
+#
+# 기본 config(`paper_reproduction.yaml`)는 이 문장을 구현하지 않고 49개를 전부
+# 쓴다. 141명에 49개 특징은 과적합이 심하고, 이것이 재현 실패의 유력한 원인이다.
+# 논문이 인쇄한 유일한 구체적 라이프로그 변수 목록은 표 16(학술지 표 13)의 12개다.
+# 이를 "최종 분석 변수군"으로 읽는 것이 본 변형의 가설이다.
+#
+#   sleep_breath_average, sleep_hr_average, sleep_hr_lowest, sleep_efficiency,
+#   sleep_midpoint_time, sleep_restless, sleep_score_disturbances,
+#   activity_cal_active, activity_cal_total, activity_daily_movement,
+#   activity_inactive, activity_met_min_medium
+#
+# 주의: 표 16은 §3.4 로지스틱 회귀의 결과표다. 논문이 이 12개를 ML 모델에 썼다고
+# 명시하지는 않았다. 따라서 이것은 **재구성 가설**이며 논문 진술이 아니다.
+# (`assumptions.md` §A-3-1)
+#
+# ── 근거 2. 논문이 서술한 CNN 구조를 그대로 만든다 ──────────────────────────
+# 논문 §3.3.2는 1D-CNN을 정확히 3단계로 서술한다.
+#   "1) Conv1D 계층 → 2) Pooling 계층 → 3) Fully Connected 계층(평탄화)"
+# 즉 conv 블록은 **하나**다. 기본 config의 2블록은 논문 서술을 넘어선 것이다.
+#
+# 또한 논문이 쓴 층 이름 `Conv1D`, `MaxPooling1D`, `AveragePooling1D`는
+# **Keras 표기**다(PyTorch는 Conv1d/MaxPool1d). 따라서 Keras 기본값을 따른다.
+#   - Conv1D padding='valid'  (Keras 기본)
+#   - batch_size=32           (Keras model.fit 기본)
+#   - Adam lr=0.001           (Keras 기본)
+#   - pad_sequences padding='pre' (Keras 기본) → 시퀀스 pre-padding 유지
+#
+# 나머지는 `paper_reproduction.yaml`과 동일하다. 두 config를 같은 seed로 돌려
+# 비교하면 "변수 선택 + 구조"가 격차를 얼마나 설명하는지 분리해서 볼 수 있다.
+
+experiment: paper_reported_reconstruction
+analysis: main_lifelog_only
+seed: 42
+
+data:
+  join_mode: positional
+  sleep_date_source: bedtime_end
+
+features:
+  feature_set: paper_table16_lifelog   # 49개 → 논문 표 16의 12개
+  include_cognitive_tests: false
+  drop_zero_variance: false
+  drop_administrative: false
+
+split:
+  mode: official_partition
+
+models:
+  - random_forest
+  - xgboost
+  - lstm
+  - bilstm
+  - cnn1d
+
+representations:
+  random_forest: tabular_subject_aggregate
+  xgboost: tabular_subject_aggregate
+  lstm: temporal_sequence
+  bilstm: temporal_sequence
+  cnn1d: temporal_sequence
+
+representation_options:
+  sequence_length: 122
+  padding: pre                # Keras pad_sequences 기본
+  truncation: last
+  gap_handling: compress
+  min_observations: 1
+
+preprocessing:
+  scaler_scope: train_only
+  standardize_tree_models: false
+
+tuning:
+  enabled: false
+
+threshold:
+  policy: fixed
+  value: 0.5
+
+training:
+  loss: bce
+  optimizer: adam
+  learning_rate: 0.001        # Keras Adam 기본
+  batch_size: 32              # Keras model.fit 기본
+  max_epochs: 100
+  early_stopping: false       # 논문 미보고 → 141명 전체로 고정 epoch
+  early_stopping_metric: loss
+  early_stopping_patience: 10
+  validation_fraction: 0.0
+  pos_weight: null
+
+model_overrides:
+  cnn1d:
+    filters: [64]             # 논문 서술대로 conv 블록 1개
+    kernel_size: 3
+    pool_size: 2
+    conv_padding: valid       # Keras Conv1D 기본
+
+evaluation:
+  pooling: mean
+  sensitivity_pooling: true
+
+checkpointing:
+  save_models: true

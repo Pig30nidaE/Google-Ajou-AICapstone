@@ -315,18 +315,26 @@ def _select_features(
     notes: dict[str, Any],
 ) -> tuple[str, ...]:
     """Apply the paper's drop list and pick the numeric feature columns."""
-    if feature_set != "paper_code_verbatim":
+    if feature_set not in schema.FEATURE_SETS:
         raise NotImplementedError(
-            f"feature_set={feature_set!r} is declared in assumptions.md as an explicit "
-            "assumption_variant but is not implemented; use 'paper_code_verbatim'."
+            f"feature_set={feature_set!r} is unknown; expected one of "
+            f"{sorted(schema.FEATURE_SETS)}"
         )
+    wanted = schema.FEATURE_SETS[feature_set]
 
-    candidates = [c for c in schema.PAPER_CODE_FEATURES if c in daily.columns]
-    missing = [c for c in schema.PAPER_CODE_FEATURES if c not in daily.columns]
+    candidates = [c for c in wanted if c in daily.columns]
+    missing = [c for c in wanted if c not in daily.columns]
     if missing:
         raise DataContractError(
-            "features expected from the paper's own code are absent from the data: "
-            f"{missing}"
+            f"features expected by feature_set={feature_set!r} are absent from the "
+            f"data: {missing}"
+        )
+    notes["feature_set_size"] = len(candidates)
+    if feature_set == "paper_table16_lifelog":
+        notes["feature_set_source"] = (
+            "Table 16 (thesis) / Table 13 (journal): the only concrete lifelog "
+            "variable list either paper prints. Reconstruction hypothesis for the "
+            "unstated 'final analysis variable set' of Section 3.2."
         )
 
     # The paper's drop list, applied verbatim. Three of its five entries are no-ops.

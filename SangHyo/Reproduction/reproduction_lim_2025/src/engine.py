@@ -301,7 +301,12 @@ def run_fold(
     seed_everything(seed)
 
     selection: dict[str, Any] | None = None
-    overrides: dict[str, Any] | None = None
+    # Architecture/hyperparameter overrides declared in the config, e.g. the
+    # single-conv-block CNN the paper actually describes.  The nested experiment
+    # replaces these with its inner-CV choice below.
+    overrides: dict[str, Any] | None = dict(
+        config.get(f"model_overrides.{model_name}", {}) or {}
+    ) or None
     threshold = float(config.get("threshold.value", 0.5))
     threshold_source = str(config.get("threshold.policy", "fixed"))
     inner_splits: Sequence[Any] | None = None

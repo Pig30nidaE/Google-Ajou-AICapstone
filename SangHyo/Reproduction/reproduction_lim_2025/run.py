@@ -16,6 +16,7 @@ Options::
     --inspect-data   paper-vs-data discrepancy report only
     --fold N         restrict to one outer fold
     --seed N         override config.seed
+    --seeds N|a,b,c  repeat the run over several seeds and summarise the spread
     --resume         reuse completed (model, repeat, fold) checkpoints
     --compare        rebuild the cross-experiment comparison table from reports
 
@@ -374,6 +375,48 @@ def mode_compare(output_dir: Path, report_paths: dict[str, str]) -> dict[str, An
 
 # --- main ---------------------------------------------------------------------
 
+def _run_seed_sweep(
+    data, config, seeds: list[int], *, output_dir: Path, device: str, first_report: dict
+) -> dict[str, Any]:
+    """Re-run the same configuration across seeds and summarise the spread.
+
+    With 7 positives in the evaluation set a single seed is a lottery, so the
+    answerable question is whether the paper's value falls inside the range this
+    reconstruction produces.  Every seed is reported; none is selected on score.
+    """
+    import copy
+
+    from src.engine import run_experiment
+    from src.evaluation.seed_sweep import summarise_seed_sweep, write_seed_sweep
+
+    def _subject_level(report: dict) -> dict[str, dict[str, Any]]:
+        return {
+            model: block["subject_level"]
+            for model, block in report["models"].items()
+            if block.get("subject_level")
+        }
+
+    per_seed = {int(config.seed): _subject_level(first_report)}
+    for seed in seeds:
+        if int(seed) == int(config.seed):
+            continue
+        print(f"\n[seed sweep] seed={seed}", flush=True)
+        seed_config = copy.deepcopy(config)
+        seed_config.raw["seed"] = int(seed)
+        seed_report = run_experiment(
+            data, seed_config,
+            output_dir=output_dir / "seed_sweep" / f"seed_{seed}",
+            device=device,
+        )
+        per_seed[int(seed)] = _subject_level(seed_report)
+
+    summary = summarise_seed_sweep(per_seed)
+    write_seed_sweep(output_dir, summary)
+    print(f"\n  seed sweep: 논문값이 AUC 분포 안 = {summary['roc_auc_paper_inside_range']}")
+    print(f"              논문값이 AUC 분포 밖 = {summary['roc_auc_paper_outside_range']}")
+    return summary
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Lim (2025) reproduction runner")
     parser.add_argument("--config", type=str, help="path to a YAML config")
@@ -386,6 +429,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--compare", action="store_true")
     parser.add_argument("--fold", type=int, default=None)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--seeds", type=str, default=None,
+                        help="seed sweep: a count (e.g. 5) or a list (e.g. 42,43,44). Reports whether the paper value falls inside the observed range.")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--device", type=str, default="auto", choices=("auto", "cpu", "cuda"))
     parser.add_argument("--skip-install", action="store_true")
@@ -474,6 +519,7 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
     # --- full run -------------------------------------------------------------
     from src.engine import run_experiment
     from src.evaluation.compare import render_comparison_markdown, build_comparison
+    from src.evaluation.seed_sweep import parse_seed_list
     from src.utils.io import write_text
 
     started = time.monotonic()
@@ -487,11 +533,17 @@ def run_pipeline(*, namespace: dict[str, Any] | None = None, argv: list[str] | N
         runtime_provenance = _collect_runtime_provenance(
             data_root, config.raw, device
         )
+        seeds = parse_seed_list(args.seeds, default_seed=config.seed)
         report = run_experiment(
             data, config, output_dir=output_dir, device=device,
             only_fold=args.fold, resume=args.resume,
             run_fingerprint=runtime_provenance["run_fingerprint"],
         )
+        if len(seeds) > 1:
+            report["seed_sweep"] = _run_seed_sweep(
+                data, config, seeds, output_dir=output_dir, device=device,
+                first_report=report,
+            )
     except Exception as error:
         write_status(output_dir, {
             "status": "failed", "experiment": config.experiment,

@@ -96,6 +96,55 @@ PAPER_CODE_SLEEP_FEATURES = (
 #: 49 features -- what the paper's code actually yields, against its claim of 58.
 PAPER_CODE_FEATURES = PAPER_CODE_ACTIVITY_FEATURES + PAPER_CODE_SLEEP_FEATURES
 
+#: The 12 lifelog variables the paper itself names, from Table 16 (thesis) /
+#: Table 13 (journal), in the paper's own row order.
+#:
+#: Section 3.2 states that variable selection "removed multicollinearity and
+#: considered both statistical significance and clinical importance to form the
+#: final analysis variable set" -- but never lists that set for the ML models.
+#: These 12 are the only concrete lifelog variable list either paper prints, and
+#: they are described as what survived removing complete linear dependency.
+#: Using them for the ML models is therefore a reconstruction hypothesis, not a
+#: paper statement: see assumptions.md §A-3-1.
+PAPER_TABLE16_LIFELOG_FEATURES = (
+    "sleep_breath_average",
+    "sleep_hr_average",
+    "sleep_hr_lowest",
+    "sleep_efficiency",
+    "sleep_midpoint_time",
+    "sleep_restless",
+    "sleep_score_disturbances",
+    "activity_cal_active",
+    "activity_cal_total",
+    "activity_daily_movement",
+    "activity_inactive",
+    "activity_met_min_medium",
+)
+
+#: Wald p-values as printed in Table 16, kept so the reconstruction can be shown
+#: to use the paper's own list rather than a re-derived one.  Note that
+#: `sleep_efficiency` (p=0.756) is *not* significant, so the table is the final
+#: model's variable list, not a significance filter.
+PAPER_TABLE16_WALD_P = {
+    "sleep_breath_average": 0.0,
+    "sleep_hr_average": 0.0,
+    "sleep_hr_lowest": 0.003,
+    "sleep_efficiency": 0.756,
+    "sleep_midpoint_time": 0.021,
+    "sleep_restless": 0.0,
+    "sleep_score_disturbances": 0.037,
+    "activity_cal_active": 0.0,
+    "activity_cal_total": 0.0,
+    "activity_daily_movement": 0.001,
+    "activity_inactive": 0.006,
+    "activity_met_min_medium": 0.0,
+}
+
+FEATURE_SETS = {
+    "paper_code_verbatim": PAPER_CODE_FEATURES,
+    "paper_table16_lifelog": PAPER_TABLE16_LIFELOG_FEATURES,
+}
+
 #: Names the paper lists that do not exist in the distributed CSVs.
 PAPER_NAMES_ABSENT_FROM_DATA = {
     "active_low": "activity_low",              # spelling error in the paper
