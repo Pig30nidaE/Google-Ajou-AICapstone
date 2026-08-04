@@ -214,6 +214,25 @@ python run.py --config configs/paper_reproduction.yaml --dry-run
 python run.py --compare
 ```
 
+### 2-2-1. 중간에 실패했을 때 이어서 실행
+
+fold는 (model, repeat, fold) 단위로 체크포인트를 남기므로, 완료된 모델은 다시 학습하지
+않는다. **같은 출력 디렉터리를 지정하고** `--resume`을 붙이면 된다.
+
+```python
+import sys
+sys.argv = [
+    "run.py",
+    "--config", "configs/paper_literal_table16.yaml",
+    "--device", "cuda",
+    "--output-dir", "/content/drive/MyDrive/reproduction_lim_2025_result/<앞선_RUN_ID>",
+    "--resume",
+]
+```
+
+`--output-dir`를 생략하면 매번 새 `<UTC_RUN_ID>` 디렉터리가 생겨 `--resume`이 아무것도
+찾지 못한다.
+
 ### 2-3. 옵션
 
 | 옵션 | 동작 |

@@ -29,6 +29,14 @@ from .utils.io import CheckpointStore, sha256_file, write_json
 from .utils.seeding import fold_seed, seed_everything
 
 PRIMARY_METRIC = "roc_auc"
+
+#: How far a CPU-reloaded checkpoint's probabilities may drift from the ones the
+#: training accelerator produced.  cuDNN and CPU kernels do not agree bit for bit
+#: in float32 -- an LSTM over 122 timesteps accumulates ~1e-4 -- so a tighter bar
+#: would fail on arithmetic rather than on a broken checkpoint.  Restore bugs are
+#: caught by the same-device check, which stays near-exact, and by requiring that
+#: the CPU reload reproduce every thresholded decision.
+CROSS_DEVICE_PROBABILITY_TOLERANCE = 1e-3
 ARTIFACT_SCHEMA_VERSION = 2
 
 
@@ -386,45 +394,88 @@ def run_fold(
             model_name, split.repeat, split.fold, suffix
         )
         roundtrip_error: Exception | None = None
-        same = False
-        max_abs: float | None = None
+        results: dict[str, dict[str, Any]] = {}
         try:
             model.save(model_path)
-            reloaded = registry.load_model(model_name, model_path, device="cpu")
             restored_preprocessor = FoldPreprocessor.from_state_record(
                 preprocessor.state_record(),
                 expected_feature_names=test_rep.feature_names,
             )
-            roundtrip_rep = test_rep.subset(
-                np.ones(test_rep.n_units, dtype=bool)
-            )
-            roundtrip_rep.X = restored_preprocessor.transform(raw_test_X)
-            zero_padding(roundtrip_rep)
-            roundtrip = _predict_fitted(model_name, reloaded, roundtrip_rep)
-            same = bool(
-                roundtrip.shape == probabilities.shape
-                and np.isfinite(roundtrip).all()
-                and np.allclose(roundtrip, probabilities, rtol=1e-5, atol=1e-7)
-            )
-            max_abs = (
-                float(np.max(np.abs(roundtrip - probabilities)))
-                if roundtrip.shape == probabilities.shape and len(roundtrip) else None
-            )
+
+            def _reload_and_score(target_device: str) -> np.ndarray:
+                reloaded = registry.load_model(
+                    model_name, model_path, device=target_device
+                )
+                roundtrip_rep = test_rep.subset(np.ones(test_rep.n_units, dtype=bool))
+                roundtrip_rep.X = restored_preprocessor.transform(raw_test_X)
+                zero_padding(roundtrip_rep)
+                return _predict_fitted(model_name, reloaded, roundtrip_rep)
+
+            # Two different questions, so two different bars.
+            #
+            # same device: did the checkpoint actually restore every piece of
+            #   state?  A real restore bug (the TabNet group-matrix / classes_
+            #   class of failure AGENTS.md 2-10 was written for) shows up here
+            #   as a large difference, so this stays near-exact.
+            # cpu: is the checkpoint portable off the training accelerator?
+            #   cuDNN and CPU kernels do not produce bit-identical float32, so
+            #   demanding 1e-7 here fails on arithmetic, not on correctness.
+            #   What must hold is that nothing we report changes: the decisions
+            #   at the operating threshold and the ranking metric.
+            for target in dict.fromkeys((device, "cpu")):
+                scores = _reload_and_score(target)
+                comparable = bool(
+                    scores.shape == probabilities.shape and np.isfinite(scores).all()
+                )
+                entry: dict[str, Any] = {
+                    "device": target,
+                    "cross_device": target != device,
+                    "comparable": comparable,
+                }
+                if comparable:
+                    entry["max_abs_probability_difference"] = float(
+                        np.max(np.abs(scores - probabilities))
+                    ) if len(scores) else 0.0
+                    entry["decisions_identical"] = bool(
+                        np.array_equal(
+                            scores >= threshold, probabilities >= threshold
+                        )
+                    )
+                    entry["exact"] = bool(
+                        np.allclose(scores, probabilities, rtol=1e-5, atol=1e-7)
+                    )
+                results[target] = entry
         except Exception as error:
             # Do not put ``enforce`` inside the try block: its own LeakageError
             # would otherwise be caught and mislabeled as a save/load exception.
             roundtrip_error = error
+
+        same_device = results.get(device, {})
+        cpu_device = results.get("cpu", {})
+        same_device_ok = bool(same_device.get("comparable") and same_device.get("exact"))
+        # A cross-device reload only has to preserve what the report contains.
+        cpu_ok = bool(
+            cpu_device.get("comparable")
+            and cpu_device.get("decisions_identical")
+            and float(cpu_device.get("max_abs_probability_difference", 1.0))
+            <= CROSS_DEVICE_PROBABILITY_TOLERANCE
+        )
+
         audit_log.enforce(
             "checkpoint_roundtrip",
-            same and roundtrip_error is None,
+            bool(roundtrip_error is None and same_device_ok and cpu_ok),
             (
                 "model checkpoint could not be saved and reloaded"
                 if roundtrip_error is not None
-                else "a freshly reloaded CPU checkpoint changed the evaluation scores"
+                else "a reloaded checkpoint changed the evaluation scores"
             ),
             {
                 "path": str(model_path),
-                "max_abs_probability_difference": max_abs,
+                "training_device": device,
+                "same_device_exact": same_device_ok,
+                "cpu_portable": cpu_ok,
+                "cross_device_tolerance": CROSS_DEVICE_PROBABILITY_TOLERANCE,
+                "per_device": results,
                 "n_predictions": int(len(probabilities)),
                 "error": None if roundtrip_error is None else str(roundtrip_error),
             },
