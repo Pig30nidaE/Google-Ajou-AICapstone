@@ -374,3 +374,101 @@ def test_session_dirs_never_overwrite_each_other(tmp_path, monkeypatch):
     assert first != second
     assert first.exists() and second.exists()
     assert (base / "LATEST.txt").read_text().strip() == second.name
+
+
+# ── 2026-08-03 3차 감사 회귀 테스트 ───────────────────────────────────────────
+def test_internal_validation_keeps_every_class_present():
+    """early stopping용 내부 validation에서 클래스가 통째로 빠지면 안 된다.
+
+    빠지면 (a) early stopping이 없는 클래스를 무시한 채 이뤄지고,
+    (b) 클래스 수를 확인하는 metric이 예외로 죽는다 — 실행 20260803_063643_full에서
+    B·C가 전멸한 원인이다. 층화 이전에는 20개 seed 중 3건에서 Dem이 사라졌다.
+    """
+    from src.models.base import make_internal_validation
+
+    # 실험 B의 실제 train fold 구성: CN 74명 / MCI 34명 / Dem 8명
+    subs, ys = [], []
+    for cls, n_sub, n_rec in ((0, 74, 70), (1, 34, 72), (2, 8, 65)):
+        for i in range(n_sub):
+            subs += [f"c{cls}_s{i}"] * n_rec
+            ys += [cls] * n_rec
+    subject = np.array(subs, dtype=object)
+    y = np.array(ys)
+    syn = np.zeros(len(y), bool)
+
+    for seed in range(30):
+        iv = make_internal_validation(y, subject, syn, fraction=0.2,
+                                      split_by="subject", seed=seed)
+        assert set(y[iv.val_idx].tolist()) == {0, 1, 2}, f"seed={seed}: val에 클래스 누락"
+        assert set(y[iv.train_idx].tolist()) == {0, 1, 2}, f"seed={seed}: train에 클래스 누락"
+        # 피험자 분리는 유지되어야 한다
+        assert not (set(subject[iv.train_idx]) & set(subject[iv.val_idx]))
+
+
+def test_internal_validation_survives_tstr_missing_class():
+    """TSTR은 정의상 실제 소수 클래스를 전부 제거한다. 그래도 죽으면 안 된다."""
+    from src.models.base import make_internal_validation
+
+    subs, ys = [], []
+    for cls, n_sub in ((0, 74), (1, 34)):          # Dem 없음 = TSTR 상황
+        for i in range(n_sub):
+            subs += [f"c{cls}_s{i}"] * 70
+            ys += [cls] * 70
+    subject = np.array(subs, dtype=object)
+    y = np.array(ys)
+    iv = make_internal_validation(y, subject, np.zeros(len(y), bool), fraction=0.2, seed=0)
+    assert set(y[iv.val_idx].tolist()) == {0, 1}
+    assert len(iv.val_idx) > 0 and len(iv.train_idx) > 0
+
+
+def test_tabnet_logloss_metric_passes_labels():
+    """pytorch-tabnet 내장 'logloss'는 sklearn log_loss를 labels 없이 호출해
+    validation에 클래스가 빠지면 죽는다. 우리 metric은 labels를 넘겨야 한다."""
+    pytest.importorskip("pytorch_tabnet")
+    import numpy as np
+
+    from src.models.classifiers import _register_tabnet_logloss
+
+    metric_cls = _register_tabnet_logloss(3)
+    assert metric_cls is not None
+    metric = metric_cls()
+
+    # y_true에 클래스 2가 없어도(=TSTR) 3열 확률로 정상 계산되어야 한다
+    y_true = np.array([0, 1, 0, 1])
+    y_score = np.full((4, 3), 1 / 3)
+    value = metric(y_true, y_score)
+    assert np.isfinite(value)
+
+
+def test_vae_reports_optimizer_steps_and_calibration():
+    """VAE가 몇 step 학습했는지 기록해야 '155 step만 돌고 끝난' 사고가 드러난다."""
+    from src.augmentation.vae import VAETrainingLog
+
+    log = VAETrainingLog()
+    d = log.to_dict()
+    assert "n_optimizer_steps" in d
+    assert "reconstruction_error_ratio_vs_paper" in d
+
+
+def test_shipped_configs_have_adequate_vae_training_budget():
+    """train Dem ~390행·batch 64면 5 step/epoch다. epochs가 작으면 VAE가 학습되지 않는다.
+
+    실측: epochs=300 → 1,455 step, 재구성 MSE 0.26 (논문 보고 0.0002의 1,306배).
+    """
+    from pathlib import Path
+
+    from src.utils.config import load_config
+
+    cfg_dir = Path(__file__).resolve().parents[1] / "configs"
+    for path in sorted(cfg_dir.glob("*.yaml")):
+        cfg = load_config(path)
+        if cfg.get_path("augmentation.method") != "vae":
+            continue
+        epochs = int(cfg.get_path("augmentation.vae.epochs", 0))
+        assert epochs >= 2000, (
+            f"{path.name}: epochs={epochs}는 VAE 수렴에 부족하다 "
+            "(lr=1e-4, ~5 step/epoch)"
+        )
+        assert cfg.get_path("augmentation.vae.target_reconstruction_error") is not None, (
+            f"{path.name}: 논문 보고 재구성오차와 대조할 목표값이 없다"
+        )

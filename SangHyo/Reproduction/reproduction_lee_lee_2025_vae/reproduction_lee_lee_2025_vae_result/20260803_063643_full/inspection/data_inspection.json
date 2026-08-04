@@ -1,0 +1,510 @@
+{
+  "n_rows": 12183,
+  "n_subjects": 174,
+  "n_features": 46,
+  "feature_names": [
+    "activity_average_met",
+    "activity_cal_active",
+    "activity_cal_total",
+    "activity_daily_movement",
+    "activity_high",
+    "activity_inactive",
+    "activity_low",
+    "activity_medium",
+    "activity_met_min_high",
+    "activity_met_min_inactive",
+    "activity_met_min_low",
+    "activity_met_min_medium",
+    "activity_rest",
+    "activity_score",
+    "activity_score_meet_daily_targets",
+    "activity_score_move_every_hour",
+    "activity_score_recovery_time",
+    "activity_score_stay_active",
+    "activity_score_training_frequency",
+    "activity_score_training_volume",
+    "activity_steps",
+    "activity_total",
+    "sleep_awake",
+    "sleep_breath_average",
+    "sleep_deep",
+    "sleep_duration",
+    "sleep_efficiency",
+    "sleep_hr_average",
+    "sleep_hr_lowest",
+    "sleep_light",
+    "sleep_midpoint_at_delta",
+    "sleep_midpoint_time",
+    "sleep_onset_latency",
+    "sleep_rem",
+    "sleep_restless",
+    "sleep_rmssd",
+    "sleep_score",
+    "sleep_score_alignment",
+    "sleep_score_deep",
+    "sleep_score_disturbances",
+    "sleep_score_efficiency",
+    "sleep_score_latency",
+    "sleep_score_rem",
+    "sleep_score_total",
+    "sleep_temperature_delta",
+    "sleep_temperature_deviation"
+  ],
+  "n_activity_features": 22,
+  "n_sleep_features": 24,
+  "records_per_class": {
+    "CN": 7737,
+    "MCI": 3661,
+    "Dem": 785
+  },
+  "subjects_per_class": {
+    "CN": 111,
+    "MCI": 51,
+    "Dem": 12
+  },
+  "paper_table3_records": {
+    "CN": 7737,
+    "MCI": 3661,
+    "Dem": 785
+  },
+  "paper_table3_subjects": {
+    "CN": 111,
+    "MCI": 51,
+    "Dem": 12
+  },
+  "matches_paper_table3": true,
+  "contract": {
+    "n_rows": 12183,
+    "n_subjects": 174,
+    "n_features": 46,
+    "n_activity_columns": 28,
+    "n_sleep_columns": 32,
+    "records_per_class": {
+      "CN": 7737,
+      "MCI": 3661,
+      "Dem": 785
+    },
+    "subjects_per_class": {
+      "CN": 111,
+      "MCI": 51,
+      "Dem": 12
+    },
+    "n_missing_cells": 0,
+    "n_duplicate_rows": 0
+  },
+  "n_missing_cells": 0,
+  "n_duplicate_rows": 0,
+  "records_per_subject": {
+    "min": 35,
+    "max": 122,
+    "mean": 70.01724137931035,
+    "median": 66.5
+  },
+  "dem_subject_record_counts": [
+    40,
+    44,
+    50,
+    51,
+    55,
+    61,
+    67,
+    74,
+    74,
+    75,
+    87,
+    107
+  ],
+  "duplicate_column_pairs": [
+    {
+      "left": "sleep_temperature_delta",
+      "right": "sleep_temperature_deviation",
+      "identical": true
+    }
+  ],
+  "missing_paper_features": [],
+  "n_negative_valued_features": 3,
+  "negative_valued_features": [
+    "sleep_midpoint_at_delta",
+    "sleep_temperature_delta",
+    "sleep_temperature_deviation"
+  ],
+  "n_expected_nonnegative": 43,
+  "n_expected_integer_valued": 41,
+  "paper_after_outlier_counts": {
+    "CN": 7075,
+    "MCI": 3374,
+    "Dem": 515
+  },
+  "paper_after_outlier_total": 10964,
+  "paper_after_outlier_retention": 0.8999425428876303,
+  "feature_profile": [
+    {
+      "feature": "activity_average_met",
+      "min": 0.0625,
+      "max": 4.0312,
+      "mean": 1.464,
+      "std": 0.1899,
+      "n_unique": 68
+    },
+    {
+      "feature": "activity_cal_active",
+      "min": 0.0,
+      "max": 2640.0,
+      "mean": 460.4595,
+      "std": 265.9298,
+      "n_unique": 1260
+    },
+    {
+      "feature": "activity_cal_total",
+      "min": 1478.0,
+      "max": 4808.0,
+      "mean": 2496.4147,
+      "std": 349.3075,
+      "n_unique": 1757
+    },
+    {
+      "feature": "activity_daily_movement",
+      "min": 0.0,
+      "max": 46659.0,
+      "mean": 8678.3834,
+      "std": 5215.3887,
+      "n_unique": 8765
+    },
+    {
+      "feature": "activity_high",
+      "min": 0.0,
+      "max": 149.0,
+      "mean": 3.2121,
+      "std": 7.6613,
+      "n_unique": 84
+    },
+    {
+      "feature": "activity_inactive",
+      "min": 1.0,
+      "max": 1082.0,
+      "mean": 517.2934,
+      "std": 138.6306,
+      "n_unique": 816
+    },
+    {
+      "feature": "activity_low",
+      "min": 0.0,
+      "max": 861.0,
+      "mean": 282.6362,
+      "std": 120.397,
+      "n_unique": 675
+    },
+    {
+      "feature": "activity_medium",
+      "min": 0.0,
+      "max": 362.0,
+      "mean": 51.4641,
+      "std": 43.6048,
+      "n_unique": 260
+    },
+    {
+      "feature": "activity_met_min_high",
+      "min": 0.0,
+      "max": 1090.0,
+      "mean": 21.5366,
+      "std": 50.0547,
+      "n_unique": 307
+    },
+    {
+      "feature": "activity_met_min_inactive",
+      "min": 0.0,
+      "max": 50.0,
+      "mean": 7.723,
+      "std": 3.4324,
+      "n_unique": 33
+    },
+    {
+      "feature": "activity_met_min_low",
+      "min": 0.0,
+      "max": 1081.0,
+      "mean": 191.3909,
+      "std": 99.0788,
+      "n_unique": 579
+    },
+    {
+      "feature": "activity_met_min_medium",
+      "min": 0.0,
+      "max": 1256.0,
+      "mean": 164.3717,
+      "std": 147.7126,
+      "n_unique": 721
+    },
+    {
+      "feature": "activity_rest",
+      "min": 3.0,
+      "max": 1430.0,
+      "mean": 533.4764,
+      "std": 130.2608,
+      "n_unique": 844
+    },
+    {
+      "feature": "activity_score",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 81.9956,
+      "std": 14.3224,
+      "n_unique": 70
+    },
+    {
+      "feature": "activity_score_meet_daily_targets",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 74.5699,
+      "std": 32.8467,
+      "n_unique": 8
+    },
+    {
+      "feature": "activity_score_move_every_hour",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 95.8274,
+      "std": 9.7452,
+      "n_unique": 8
+    },
+    {
+      "feature": "activity_score_recovery_time",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 85.7154,
+      "std": 29.7248,
+      "n_unique": 16
+    },
+    {
+      "feature": "activity_score_stay_active",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 77.9217,
+      "std": 15.6647,
+      "n_unique": 91
+    },
+    {
+      "feature": "activity_score_training_frequency",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 79.4107,
+      "std": 34.1004,
+      "n_unique": 6
+    },
+    {
+      "feature": "activity_score_training_volume",
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 86.6497,
+      "std": 21.38,
+      "n_unique": 101
+    },
+    {
+      "feature": "activity_steps",
+      "min": 41.0,
+      "max": 44836.0,
+      "mean": 10577.8505,
+      "std": 5795.562,
+      "n_unique": 9101
+    },
+    {
+      "feature": "activity_total",
+      "min": 0.0,
+      "max": 941.0,
+      "mean": 337.3124,
+      "std": 139.9542,
+      "n_unique": 763
+    },
+    {
+      "feature": "sleep_awake",
+      "min": 510.0,
+      "max": 27420.0,
+      "mean": 5556.1266,
+      "std": 3454.9873,
+      "n_unique": 631
+    },
+    {
+      "feature": "sleep_breath_average",
+      "min": 11.75,
+      "max": 22.25,
+      "mean": 16.7628,
+      "std": 1.2945,
+      "n_unique": 72
+    },
+    {
+      "feature": "sleep_deep",
+      "min": 0.0,
+      "max": 15390.0,
+      "mean": 5120.8914,
+      "std": 2593.171,
+      "n_unique": 455
+    },
+    {
+      "feature": "sleep_duration",
+      "min": 10800.0,
+      "max": 54000.0,
+      "mean": 29240.3349,
+      "std": 6959.7971,
+      "n_unique": 647
+    },
+    {
+      "feature": "sleep_efficiency",
+      "min": 39.0,
+      "max": 98.0,
+      "mean": 81.6429,
+      "std": 8.7599,
+      "n_unique": 59
+    },
+    {
+      "feature": "sleep_hr_average",
+      "min": 35.9,
+      "max": 99.99,
+      "mean": 60.4592,
+      "std": 7.3089,
+      "n_unique": 3101
+    },
+    {
+      "feature": "sleep_hr_lowest",
+      "min": 33.0,
+      "max": 91.0,
+      "mean": 54.9792,
+      "std": 6.6037,
+      "n_unique": 53
+    },
+    {
+      "feature": "sleep_light",
+      "min": 1500.0,
+      "max": 38190.0,
+      "mean": 14805.0209,
+      "std": 4403.4842,
+      "n_unique": 822
+    },
+    {
+      "feature": "sleep_midpoint_at_delta",
+      "min": -9212.0,
+      "max": 98539.0,
+      "mean": 11244.5257,
+      "std": 15622.8576,
+      "n_unique": 8343
+    },
+    {
+      "feature": "sleep_midpoint_time",
+      "min": 3330.0,
+      "max": 35070.0,
+      "mean": 14688.5373,
+      "std": 3726.6477,
+      "n_unique": 740
+    },
+    {
+      "feature": "sleep_onset_latency",
+      "min": 0.0,
+      "max": 7650.0,
+      "mean": 711.3322,
+      "std": 641.0799,
+      "n_unique": 167
+    },
+    {
+      "feature": "sleep_rem",
+      "min": 0.0,
+      "max": 14280.0,
+      "mean": 3758.296,
+      "std": 2158.596,
+      "n_unique": 372
+    },
+    {
+      "feature": "sleep_restless",
+      "min": 7.0,
+      "max": 101.0,
+      "mean": 36.1738,
+      "std": 11.8424,
+      "n_unique": 80
+    },
+    {
+      "feature": "sleep_rmssd",
+      "min": 10.0,
+      "max": 197.0,
+      "mean": 32.937,
+      "std": 15.1596,
+      "n_unique": 126
+    },
+    {
+      "feature": "sleep_score",
+      "min": 27.0,
+      "max": 98.0,
+      "mean": 73.434,
+      "std": 11.4671,
+      "n_unique": 72
+    },
+    {
+      "feature": "sleep_score_alignment",
+      "min": 1.0,
+      "max": 100.0,
+      "mean": 90.9029,
+      "std": 18.0455,
+      "n_unique": 99
+    },
+    {
+      "feature": "sleep_score_deep",
+      "min": 1.0,
+      "max": 100.0,
+      "mean": 81.5596,
+      "std": 24.8933,
+      "n_unique": 97
+    },
+    {
+      "feature": "sleep_score_disturbances",
+      "min": 14.0,
+      "max": 99.0,
+      "mean": 65.7332,
+      "std": 12.7192,
+      "n_unique": 77
+    },
+    {
+      "feature": "sleep_score_efficiency",
+      "min": 8.0,
+      "max": 100.0,
+      "mean": 75.3804,
+      "std": 19.2979,
+      "n_unique": 52
+    },
+    {
+      "feature": "sleep_score_latency",
+      "min": 1.0,
+      "max": 99.0,
+      "mean": 79.5529,
+      "std": 15.0061,
+      "n_unique": 52
+    },
+    {
+      "feature": "sleep_score_rem",
+      "min": 1.0,
+      "max": 100.0,
+      "mean": 56.2098,
+      "std": 29.5312,
+      "n_unique": 100
+    },
+    {
+      "feature": "sleep_score_total",
+      "min": 14.0,
+      "max": 100.0,
+      "mean": 71.9883,
+      "std": 20.1397,
+      "n_unique": 81
+    },
+    {
+      "feature": "sleep_temperature_delta",
+      "min": -1.98,
+      "max": 3.14,
+      "mean": -0.0099,
+      "std": 0.3158,
+      "n_unique": 286
+    },
+    {
+      "feature": "sleep_temperature_deviation",
+      "min": -1.98,
+      "max": 3.14,
+      "mean": -0.0099,
+      "std": 0.3158,
+      "n_unique": 286
+    }
+  ]
+}

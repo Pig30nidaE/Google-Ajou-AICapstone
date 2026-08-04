@@ -50,7 +50,13 @@ augmentation:
     n_synthetic: null
     fit_scope: train_dem_only
     input_space: scaled
-    epochs: 200                    # 탐색 비용을 줄이기 위해 base(300)보다 짧게
+    # [교정 2026-08-03 3차] 이전 값 200은 optimizer step 약 1,000회에 그쳐
+    # VAE가 학습되지 않은 채 합성자료를 만들었다. inner CV는 이 VAE를 후보마다
+    # 다시 학습하므로 비용이 크지만, 학습되지 않은 VAE로 "VAE 증강이 도움이 되는가"를
+    # 판정하는 것은 무의미하다. 탐색 비용은 search.max_evals로 줄인다.
+    epochs: 2500
+    kl_warmup_epochs: 500
+    target_reconstruction_error: 0.0002
 
 audit:
   mode: enforce

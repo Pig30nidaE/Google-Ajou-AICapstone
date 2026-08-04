@@ -224,6 +224,47 @@ class WideDeepClassifier(BaseClassifier, TorchTrainingMixin):
         return d
 
 
+#: pytorch-tabnet은 Metric 서브클래스를 이름으로 조회한다(``Metric.get_metrics_by_names``).
+#: 아래 이름을 eval_metric에 넘기면 우리 구현이 쓰인다.
+_TABNET_LOGLOSS_NAME = "multiclass_logloss_with_labels"
+
+
+def _register_tabnet_logloss(n_classes: int = 3):
+    """클래스 수를 고정한 log loss metric을 pytorch-tabnet에 등록한다.
+
+    내장 ``LogLoss``는 ``sklearn.metrics.log_loss(y_true, y_score)``를 ``labels`` 없이
+    호출한다. 그러면 validation에 없는 클래스가 하나라도 있을 때
+    "y_true and y_prob contain different number of classes"로 즉시 죽는다.
+
+    이 데이터에서 그 상황은 예외가 아니라 **정상 경로**다.
+
+    * TSTR은 정의상 실제 소수 클래스를 전부 제거하고 합성행만 남긴다. 내부 validation은
+      합성행을 배제하므로(synthetic_data_risk.md §2 금지 6) Dem이 0건이 된다.
+    * inner CV의 작은 fold에서는 Dem 피험자가 우연히 전부 빠질 수 있다.
+
+    따라서 ``labels``를 명시해 확률 열 수와 항상 일치시킨다.
+    """
+    try:
+        from pytorch_tabnet.metrics import Metric
+    except ImportError:
+        # 테스트가 pytorch_tabnet을 모의 모듈로 대체한 경우 등 metrics를 못 찾을 수 있다.
+        # 등록에 실패하면 eval_metric을 지정하지 않고 라이브러리 기본값으로 넘어간다.
+        return None
+    from sklearn.metrics import log_loss
+
+    labels = list(range(n_classes))
+
+    class MulticlassLogLossWithLabels(Metric):
+        def __init__(self):
+            self._name = _TABNET_LOGLOSS_NAME
+            self._maximize = False
+
+        def __call__(self, y_true, y_score):
+            return log_loss(y_true, y_score, labels=labels)
+
+    return MulticlassLogLossWithLabels
+
+
 class TabNetClassifier(BaseClassifier):
     """논문 보고: n_d = n_a = 64, n_steps = 5."""
 
@@ -246,15 +287,19 @@ class TabNetClassifier(BaseClassifier):
         "virtual_batch_size": 128,
         # pytorch-tabnet의 다중분류 기본 eval_metric은 'accuracy'다. CN이 64%인 이 데이터에서
         # accuracy는 "전부 CN"에서 이미 최대에 가까워 early stopping이 다수 클래스 해에서
-        # 멈춘다 — 2026-08-03 실행에서 TabNet만 balanced accuracy가 정확히 0.3333(단일 클래스
-        # 예측)이었던 원인이다. DNN·Wide&Deep이 validation cross-entropy로 멈추는 것과
-        # 맞추기 위해 logloss를 쓴다.
-        "eval_metric": ["logloss"],
+        # 멈춘다. DNN·Wide&Deep이 validation cross-entropy로 멈추는 것과 맞추기 위해
+        # log loss를 쓰되, pytorch-tabnet 내장 'logloss'는 쓰지 않는다 —
+        # 그 구현이 sklearn log_loss를 labels 없이 호출해, validation에 클래스가 하나라도
+        # 빠지면 ValueError로 죽는다 (2026-08-03 실행 20260803_063643_full에서 B·C 전멸).
+        # TSTR은 실제 Dem을 전부 제거하므로 이 상황이 **설계상 반드시** 발생한다.
+        "eval_metric": [_TABNET_LOGLOSS_NAME],
     }
 
     def fit(self, X, y, *, sample_weight=None, eval_set=None):
         from pytorch_tabnet.tab_model import TabNetClassifier as _TabNet
 
+        # Metric 서브클래스는 정의 시점에 등록되므로 fit 직전에 보장한다.
+        metric_registered = _register_tabnet_logloss(self.n_classes) is not None
         p = {**self.DEFAULTS, **self.params}
         model_keys = {"n_d", "n_a", "n_steps", "gamma", "lambda_sparse", "n_independent", "n_shared"}
         self._model = _TabNet(
@@ -267,7 +312,8 @@ class TabNetClassifier(BaseClassifier):
         if eval_set is not None and len(eval_set[0]):
             kwargs["eval_set"] = [(np.asarray(eval_set[0]), np.asarray(eval_set[1]))]
             kwargs["patience"] = p["patience"]
-            kwargs["eval_metric"] = list(p["eval_metric"])
+            if metric_registered:
+                kwargs["eval_metric"] = list(p["eval_metric"])
         weights = self.params.get("class_weight", 0)
         if weights:
             weights = {int(label): float(weight) for label, weight in weights.items()}

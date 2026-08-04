@@ -48,6 +48,16 @@ class VAEConfig:
     kl_reduction: str = "sum"                  # sum | mean
     output_activation: str = "linear"          # linear | sigmoid
     layer_order: str = "linear_bn_relu_dropout"
+    #: KL warm-up. beta를 0에서 목표값까지 선형으로 올린다.
+    #: latent_dim(500)이 input_dim(46)보다 크면 표준 ELBO의 KL 항이 recon 항보다
+    #: 항 개수부터 10.9배 많아, 학습 초반에 KL을 죽이는 쪽(posterior collapse)이
+    #: 손실을 가장 빨리 낮추는 경로가 된다. 실측: sum/sum·warm-up 없음 →
+    #: best_epoch=0, 재구성 MSE 1.12(평균 예측보다 나쁨). 디코더가 먼저 재구성을
+    #: 배우게 한 뒤 KL을 걸면 논문이 보고한 낮은 재구성 오차에 도달할 수 있다.
+    kl_warmup_epochs: int = 0
+    #: 논문 §5.1이 보고한 재구성 오차. 미보고 하이퍼파라미터(epoch·batch·beta)를
+    #: 이 값에 맞춰 교정하기 위한 **검증 가능한 목표**다 (I-15).
+    target_reconstruction_error: float | None = None
     early_stopping: bool = True
     patience: int = 30
     min_delta: float = 1e-5
@@ -113,6 +123,10 @@ class VAETrainingLog:
     posterior_mu_std_max: float = float("nan")
     n_active_latent_units: int = -1
     prior_mismatch_suspected: bool = False
+    #: 실제로 수행한 optimizer step 수. 155 step으로 끝나는 사고를 눈에 보이게 한다.
+    n_optimizer_steps: int = 0
+    #: 논문 보고 재구성 오차 대비 배수 (1.0이면 일치)
+    reconstruction_error_ratio_vs_paper: float = float("nan")
 
     def to_dict(self) -> dict:
         return {
@@ -130,6 +144,8 @@ class VAETrainingLog:
             "posterior_mu_std_max": self.posterior_mu_std_max,
             "n_active_latent_units": self.n_active_latent_units,
             "prior_mismatch_suspected": self.prior_mismatch_suspected,
+            "n_optimizer_steps": self.n_optimizer_steps,
+            "reconstruction_error_ratio_vs_paper": self.reconstruction_error_ratio_vs_paper,
         }
 
 
@@ -270,8 +286,13 @@ class TabularVAE:
 
         opt = torch.optim.Adam(self.model.parameters(), lr=self.cfg.learning_rate)
         best, best_state, bad = float("inf"), None, 0
+        n_steps = 0
 
         for epoch in range(self.cfg.epochs):
+            # KL warm-up: 디코더가 재구성을 먼저 배우게 한 뒤 KL을 건다.
+            beta_now = self.cfg.beta
+            if self.cfg.kl_warmup_epochs > 0:
+                beta_now = self.cfg.beta * min(1.0, epoch / self.cfg.kl_warmup_epochs)
             self.model.train()
             tot = rec = kld = 0.0
             n_batch = 0
@@ -280,9 +301,10 @@ class TabularVAE:
                 opt.zero_grad()
                 recon, mu, logvar = self.model(xb)
                 r, k = vae_loss(recon, xb, mu, logvar, self.cfg)
-                loss = r + self.cfg.beta * k
+                loss = r + beta_now * k
                 loss.backward()
                 opt.step()
+                n_steps += 1
                 tot += float(loss); rec += float(r); kld += float(k); n_batch += 1
             n_batch = max(n_batch, 1)
             self.log.train_total.append(tot / n_batch)
@@ -294,11 +316,16 @@ class TabularVAE:
                 with torch.no_grad():
                     recon, mu, logvar = self.model(val_t)
                     r, k = vae_loss(recon, val_t, mu, logvar, self.cfg)
+                    # 목표 beta 기준으로 기록해야 warm-up 전후 값이 비교 가능하다.
                     v = float(r + self.cfg.beta * k)
                 self.log.val_total.append(v)
                 self.log.val_recon.append(float(r))
                 self.log.val_kl.append(float(k))
-                if self.cfg.early_stopping:
+                # warm-up 중에는 손실 정의가 매 epoch 바뀌므로 early stopping을 멈춘다.
+                # 이것을 빠뜨리면 beta가 커지는 동안 val loss가 단조 증가해
+                # best_epoch=0에서 즉시 종료된다 (실측 20260803_063643_full).
+                in_warmup = epoch < self.cfg.kl_warmup_epochs
+                if self.cfg.early_stopping and not in_warmup:
                     if v < best - self.cfg.min_delta:
                         best, bad = v, 0
                         best_state = {kk: vv.detach().clone() for kk, vv in self.model.state_dict().items()}
@@ -312,8 +339,10 @@ class TabularVAE:
 
         if best_state is not None:
             self.model.load_state_dict(best_state)
+        self.log.n_optimizer_steps = n_steps
         self.log.final_recon_mse_scaled_space = self._reconstruction_mse(X)
         self._diagnose_posterior(X)
+        self._check_reconstruction_target(n_steps)
         if self.cfg.checkpoint_dir:
             self.save_checkpoint(Path(self.cfg.checkpoint_dir) / "vae_best.pt")
         return self
@@ -339,6 +368,47 @@ class TabularVAE:
         idx = rng.permutation(n)
         n_val = max(1, int(round(n * self.cfg.val_fraction)))
         return idx[n_val:], idx[:n_val]
+
+    def _check_reconstruction_target(self, n_steps: int) -> None:
+        """논문이 보고한 재구성 오차와 대조한다.
+
+        논문 §5.1의 "재구성 오류는 0.0002"는 VAE 품질에 대해 논문이 제시한 **유일하게
+        검증 가능한 수치**다. 미보고 하이퍼파라미터(epoch·batch_size·beta)를 이 값에
+        맞추는 것이 원 구현에 가장 가까이 가는 방법이며, 이를 대조하지 않은 것이
+        2026-08-03 두 차례 실패의 근본 원인이었다.
+
+        실측 대조:
+
+        =========================  ==========  ==============  =========================
+        실행                        step 수     재구성 MSE       논문(0.0002) 대비
+        =========================  ==========  ==============  =========================
+        20260803_041244 (mean/mean)     1,455          0.2612                   1,306배
+        20260803_063643 (sum/sum)         155          1.1243                   5,621배
+        =========================  ==========  ==============  =========================
+
+        lr=1e-4(논문 보고값)에서 60만 파라미터 망을 수렴시키려면 수만 step이 필요한데
+        155~1,455 step만 돌았다. 즉 두 실행 모두 **VAE가 학습되지 않은 상태**로
+        합성자료를 만들었다.
+        """
+        target = self.cfg.target_reconstruction_error
+        got = self.log.final_recon_mse_scaled_space
+        log.info(
+            "VAE 학습 완료: optimizer step %d회, 재구성 MSE %.6g (best_epoch=%d, early_stop=%s)",
+            n_steps, got, self.log.best_epoch, self.log.stopped_early,
+        )
+        if target is None or not np.isfinite(got) or target <= 0:
+            return
+        ratio = float(got / target)
+        self.log.reconstruction_error_ratio_vs_paper = ratio
+        if ratio > 10:
+            log.warning(
+                "재구성 오차가 논문 보고값의 %.0f배다 (%.6g 대 %.6g). VAE가 충분히 "
+                "학습되지 않았다 — optimizer step %d회. epochs/batch_size/kl_warmup_epochs를 "
+                "올려 논문 수준에 도달시켜야 합성자료가 의미를 갖는다 (I-15).",
+                ratio, got, target, n_steps,
+            )
+        else:
+            log.info("재구성 오차가 논문 보고값의 %.2f배다 — 논문 수준에 도달했다.", ratio)
 
     def _diagnose_posterior(self, X: np.ndarray) -> None:
         """aggregate posterior ``q(z)``가 prior ``N(0, I)``와 맞는지 측정한다.

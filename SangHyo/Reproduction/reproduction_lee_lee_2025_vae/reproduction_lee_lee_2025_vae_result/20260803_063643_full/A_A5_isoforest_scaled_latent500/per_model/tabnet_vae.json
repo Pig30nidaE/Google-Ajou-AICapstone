@@ -1,0 +1,202 @@
+{
+  "record_level": {
+    "unit": "record",
+    "n": 1096,
+    "macro_f1": 0.5518087570780605,
+    "balanced_accuracy": 0.52682736460921,
+    "macro_roc_auc_ovr": 0.7843581466730778,
+    "macro_pr_auc": 0.6324799448571361,
+    "accuracy": 0.6897810218978102,
+    "weighted_f1": 0.647196894486048,
+    "brier": 0.40860567437373163,
+    "confusion_matrix": [
+      [
+        650,
+        51,
+        6
+      ],
+      [
+        249,
+        86,
+        5
+      ],
+      [
+        28,
+        1,
+        20
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.6487367539630161,
+    "CN_precision": 0.7011866235167206,
+    "CN_recall": 0.9193776520509194,
+    "CN_f1": 0.795593635250918,
+    "n_CN": 707,
+    "n_CN_correct": 650,
+    "MCI_precision": 0.6231884057971014,
+    "MCI_recall": 0.2529411764705882,
+    "MCI_f1": 0.3598326359832636,
+    "n_MCI": 340,
+    "n_MCI_correct": 86,
+    "Dem_precision": 0.6451612903225806,
+    "Dem_recall": 0.40816326530612246,
+    "Dem_f1": 0.5,
+    "n_Dem": 49,
+    "n_Dem_correct": 20,
+    "dem_recall": 0.40816326530612246,
+    "dem_precision": 0.6451612903225806,
+    "dem_f1": 0.5,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 20,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ],
+    "n_dem_subjects_eval": 8,
+    "n_dem_subjects_correct": 4
+  },
+  "validation_record_level": {
+    "unit": "record",
+    "n": 1097,
+    "macro_f1": 0.5741026271531181,
+    "balanced_accuracy": 0.5572500186515285,
+    "macro_roc_auc_ovr": 0.7828220290144436,
+    "macro_pr_auc": 0.6580082697701858,
+    "accuracy": 0.690975387420237,
+    "weighted_f1": 0.6553980790184079,
+    "brier": 0.4039034953483056,
+    "confusion_matrix": [
+      [
+        639,
+        59,
+        10
+      ],
+      [
+        240,
+        95,
+        5
+      ],
+      [
+        23,
+        2,
+        24
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.6421975924258296,
+    "CN_precision": 0.7084257206208425,
+    "CN_recall": 0.902542372881356,
+    "CN_f1": 0.7937888198757764,
+    "n_CN": 708,
+    "n_CN_correct": 639,
+    "MCI_precision": 0.6089743589743589,
+    "MCI_recall": 0.27941176470588236,
+    "MCI_f1": 0.38306451612903225,
+    "n_MCI": 340,
+    "n_MCI_correct": 95,
+    "Dem_precision": 0.6153846153846154,
+    "Dem_recall": 0.4897959183673469,
+    "Dem_f1": 0.5454545454545454,
+    "n_Dem": 49,
+    "n_Dem_correct": 24,
+    "dem_recall": 0.4897959183673469,
+    "dem_precision": 0.6153846153846154,
+    "dem_f1": 0.5454545454545454,
+    "n_dem_units": 49,
+    "n_dem_units_correct": 24,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "subject_level": {
+    "unit": "subject",
+    "n": 167,
+    "macro_f1": 0.6107073643410853,
+    "balanced_accuracy": 0.5657225853304285,
+    "macro_roc_auc_ovr": 0.8348406039742408,
+    "macro_pr_auc": 0.756006324784615,
+    "accuracy": 0.7245508982035929,
+    "weighted_f1": 0.6683159843104488,
+    "brier": 0.3767656969743324,
+    "confusion_matrix": [
+      [
+        106,
+        2,
+        0
+      ],
+      [
+        40,
+        11,
+        0
+      ],
+      [
+        4,
+        0,
+        4
+      ]
+    ],
+    "auc_skipped_classes": [],
+    "log_loss": 0.6139987756400009,
+    "CN_precision": 0.7066666666666667,
+    "CN_recall": 0.9814814814814815,
+    "CN_f1": 0.8217054263565892,
+    "n_CN": 108,
+    "n_CN_correct": 106,
+    "MCI_precision": 0.8461538461538461,
+    "MCI_recall": 0.21568627450980393,
+    "MCI_f1": 0.34375,
+    "n_MCI": 51,
+    "n_MCI_correct": 11,
+    "Dem_precision": 1.0,
+    "Dem_recall": 0.5,
+    "Dem_f1": 0.6666666666666666,
+    "n_Dem": 8,
+    "n_Dem_correct": 4,
+    "dem_recall": 0.5,
+    "dem_precision": 1.0,
+    "dem_f1": 0.6666666666666666,
+    "n_dem_units": 8,
+    "n_dem_units_correct": 4,
+    "class_order": [
+      "CN",
+      "MCI",
+      "Dem"
+    ]
+  },
+  "model": {
+    "model": "TabNet",
+    "params": {
+      "n_d": 64,
+      "n_a": 64,
+      "n_steps": 5,
+      "gamma": 1.3,
+      "lambda_sparse": 0.001,
+      "lr": 0.02,
+      "max_epochs": 200,
+      "patience": 20
+    },
+    "paper_reported_keys": [
+      "n_d",
+      "n_a",
+      "n_steps"
+    ],
+    "assumed_keys": [
+      "gamma",
+      "lambda_sparse",
+      "lr",
+      "max_epochs",
+      "patience"
+    ]
+  },
+  "fit_log": {
+    "n_train": 12771,
+    "class_weight_applied": false,
+    "n_train_rows_used": 12771,
+    "n_early_stopping_validation_rows": 1097,
+    "validation_source": "explicit_valid_split",
+    "class_weight_requested": false
+  }
+}

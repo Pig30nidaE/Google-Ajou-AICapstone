@@ -55,8 +55,19 @@ augmentation:
     batch_norm: true             # [논문] §5.1
     learning_rate: 0.0001        # [논문] §5.1
     beta: 1.0                    # [가정] D-2. 논문은 "가중합"이라고만 함
-    epochs: 300                  # [가정] D-3
+    # [교정 2026-08-03 2차] 학습량. 이전 두 실행은 optimizer step이 각각 155·1,455회에
+    # 그쳐 VAE가 학습되지 않은 채 합성자료를 만들었다. 논문이 보고한 lr=1e-4에서
+    # 60만 파라미터 망을 수렴시키려면 수만 step이 필요하다.
+    # train Dem ~390행, batch 64 → 5 step/epoch 이므로 5000 epoch ≈ 25,000 step.
+    epochs: 5000
     batch_size: 64               # [가정] D-3
+    # KL warm-up: latent_dim(500) > input_dim(46)이면 표준 ELBO의 KL 항이 recon보다
+    # 항 개수부터 10.9배 많아 학습 초반에 posterior collapse로 직행한다.
+    # 디코더가 재구성을 먼저 배우게 한 뒤 KL을 건다. warm-up 중에는 early stopping을 멈춘다.
+    kl_warmup_epochs: 1000
+    # 논문 §5.1이 보고한 재구성 오차. 미보고 하이퍼파라미터를 이 값에 맞춰 교정하기 위한
+    # 검증 가능한 목표이며, 10배 이상 벗어나면 경고를 낸다 (I-15).
+    target_reconstruction_error: 0.0002
     # [교정 2026-08-03] 표준 ELBO. 이전 mean_per_feature+mean 조합은 KL을 latent_dim(500)으로
     # 한 번 더 나눠 실효 beta가 0.002가 되었고, aggregate posterior가 prior를 크게 벗어나
     # z~N(0,I) 표집이 중심부만 훑으면서 합성 표본의 표준편차가 실제의 30%로 붕괴했다
@@ -68,7 +79,9 @@ augmentation:
     input_space: scaled          # raw | scaled               (I-9, D-5)
     early_stopping:
       enabled: true
-      patience: 30               # [가정] D-3
+      # warm-up(1000) 이후 구간에서만 동작한다. 학습 표본이 ~78행뿐이라 val loss가
+      # 요동치므로 patience를 넉넉히 준다.
+      patience: 500
       min_delta: 0.00001
     val_fraction: 0.2
     val_split_by: subject        # outer test를 절대 쓰지 않는다

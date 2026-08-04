@@ -1,0 +1,19 @@
+{
+  "metric": "macro_f1",
+  "n_cells_subject_level": 8,
+  "n_cells_record_level": 8,
+  "experiments_present": [
+    "A"
+  ],
+  "notes": [
+    "실험 A5는 논문의 기록 단위 평가 틀을 따르되, 미보고 VAE 입력 척도와 손실 축척에는 결과 감사 후 교정한 가정을 사용했다. 원저자 설정의 정확 재현이 아니다. 교차 비교를 위해 피험자 단위 집계도 함께 산출했다."
+  ],
+  "caveat": "본 실험의 Dem 클래스는 독립 피험자 12명에서 유래한다. 합성 Dem 행은 각 fold의 train Dem 피험자 기록 분포에서 생성된 것이며 정확한 source 피험자 수는 fold_composition 및 augmentation diagnostics에 기록된다. 새로운 피험자를 의미하지 않는다.",
+  "saved_tables": {
+    "main_comparison": "/content/drive/MyDrive/reproduction_lee_lee_2025_vae/20260803_063643_full/COMPARISON/main_comparison_subject_level.csv",
+    "paper_comparison": "/content/drive/MyDrive/reproduction_lee_lee_2025_vae/20260803_063643_full/COMPARISON/paper_comparison_record_level.csv",
+    "validation_comparison": "/content/drive/MyDrive/reproduction_lee_lee_2025_vae/20260803_063643_full/COMPARISON/validation_comparison.csv",
+    "deltas": "/content/drive/MyDrive/reproduction_lee_lee_2025_vae/20260803_063643_full/COMPARISON/deltas.csv",
+    "rank_changes": "/content/drive/MyDrive/reproduction_lee_lee_2025_vae/20260803_063643_full/COMPARISON/rank_changes.csv"
+  }
+}

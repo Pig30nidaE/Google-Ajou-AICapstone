@@ -214,4 +214,10 @@ def test_tabnet_early_stops_on_logloss_not_accuracy():
     (실행 20260803_041244_full: TabNet balanced accuracy 정확히 0.3333)."""
     from src.models.classifiers import TabNetClassifier
 
-    assert TabNetClassifier.DEFAULTS["eval_metric"] == ["logloss"]
+    # 내장 'logloss'는 sklearn log_loss를 labels 없이 호출해, validation에 클래스가
+    # 빠지면 죽는다 (TSTR은 실제 Dem을 전부 제거하므로 그 상황이 설계상 발생).
+    # 그래서 labels를 명시하는 자체 metric을 쓴다.
+    from src.models.classifiers import _TABNET_LOGLOSS_NAME
+
+    assert TabNetClassifier.DEFAULTS["eval_metric"] == [_TABNET_LOGLOSS_NAME]
+    assert "logloss" not in TabNetClassifier.DEFAULTS["eval_metric"]

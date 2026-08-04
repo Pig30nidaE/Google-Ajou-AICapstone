@@ -26,6 +26,52 @@ class InternalValidation:
     subjects: np.ndarray = field(default_factory=lambda: np.array([], dtype=object))
 
 
+def _stratified_subject_sample(
+    y: np.ndarray,
+    subject: np.ndarray,
+    real: np.ndarray,
+    subs: np.ndarray,
+    fraction: float,
+    rng: np.random.Generator,
+) -> set[str]:
+    """클래스별로 층화해 validation 피험자를 뽑는다.
+
+    무작위 표집이면 train fold에 Dem 피험자가 8명뿐이라 20% 표집에서 Dem이 통째로
+    빠지는 일이 실제로 생긴다(실측: 20개 seed 중 3건). 그러면
+
+    * early stopping이 존재하지 않는 클래스를 무시한 채 이뤄지고,
+    * 클래스 수를 확인하는 metric(예: log loss)이 예외로 죽는다.
+
+    각 클래스에서 최소 1명(단, 그 클래스 피험자가 2명 이상일 때)을 보장한다.
+    """
+    subject_label: dict[str, int] = {}
+    for s, label in zip(subject[real], y[real]):
+        subject_label.setdefault(str(s), int(label))
+
+    n_val_total = max(1, int(round(len(subs) * fraction)))
+    by_class: dict[int, list[str]] = {}
+    for s in subs:
+        by_class.setdefault(subject_label[str(s)], []).append(str(s))
+
+    val_subs: set[str] = set()
+    for label in sorted(by_class):
+        pool = sorted(by_class[label])
+        if len(pool) < 2:
+            # 1명뿐이면 train에서 빼면 그 클래스를 학습할 수 없다. 그대로 둔다.
+            continue
+        k = max(1, int(round(len(pool) * fraction)))
+        k = min(k, len(pool) - 1)          # 최소 1명은 train에 남긴다
+        val_subs.update(rng.choice(np.array(pool), size=k, replace=False).tolist())
+
+    # 층화 결과가 목표 비율에 못 미치면 남은 피험자에서 무작위로 채운다.
+    remaining = sorted(set(map(str, subs)) - val_subs)
+    if len(val_subs) < n_val_total and remaining:
+        extra = min(n_val_total - len(val_subs), len(remaining) - 1)
+        if extra > 0:
+            val_subs.update(rng.choice(np.array(remaining), size=extra, replace=False).tolist())
+    return val_subs
+
+
 def make_internal_validation(
     y: np.ndarray,
     subject: np.ndarray,
@@ -48,8 +94,7 @@ def make_internal_validation(
     if split_by == "subject":
         subs = np.array(sorted({str(s) for s in subject[real]}))
         if len(subs) >= 5:
-            n_val = max(1, int(round(len(subs) * fraction)))
-            val_subs = set(rng.choice(subs, size=n_val, replace=False).tolist())
+            val_subs = _stratified_subject_sample(y, subject, real, subs, fraction, rng)
             val_mask = np.array([str(s) in val_subs for s in subject]) & real
             if val_mask.any() and (~val_mask).sum() > 0:
                 return InternalValidation(
