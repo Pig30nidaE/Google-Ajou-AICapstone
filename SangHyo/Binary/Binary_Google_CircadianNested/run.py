@@ -76,6 +76,25 @@ def _ensure_ydf() -> None:
     import ydf  # noqa: F401
 
 
+def _in_notebook_host() -> bool:
+    """True when this file is being executed from inside a notebook kernel.
+
+    ``base.ipynb`` runs it with ``runpy.run_path``, which rewrites
+    ``sys.argv[0]`` to this file but leaves the *kernel's* own arguments
+    (``-f .../kernel-<uuid>.json``) in place.  Those are not ours, and parsing
+    them aborts the run, so in a notebook host sys.argv is ignored entirely and
+    BGCN_ARGS becomes the only argument channel.
+    """
+
+    ipython = sys.modules.get("IPython")
+    if ipython is None:
+        return False
+    try:
+        return ipython.get_ipython() is not None
+    except Exception:  # pragma: no cover - defensive
+        return False
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=EXPERIMENT_NAME)
     parser.add_argument("--profile", default="default",
@@ -83,8 +102,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--data-root", default=None)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--seed", type=int, default=None)
-    argv = sys.argv[1:]
-    # base.ipynb runs this file without CLI arguments; BGCN_ARGS covers that.
+    argv = [] if _in_notebook_host() else sys.argv[1:]
+    # base.ipynb runs this file through runpy inside an IPython kernel, so it
+    # passes no arguments of its own; BGCN_ARGS is the notebook's channel.
     if not argv and os.environ.get("BGCN_ARGS"):
         argv = shlex.split(os.environ["BGCN_ARGS"])
     return parser.parse_args(argv)

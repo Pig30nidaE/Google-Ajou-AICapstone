@@ -191,6 +191,50 @@ def test_run_py_freezes_before_opening_validation_labels():
     assert freeze_at < labels_at
 
 
+# --------------------------------------------------------- notebook launch --
+def _load_run_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_bgcn_run_under_test", EXPERIMENT_ROOT / "run.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_notebook_kernel_argv_is_ignored(monkeypatch):
+    """base.ipynb runs this file with runpy inside an IPython kernel, which
+    leaves the kernel's own ``-f .../kernel-<uuid>.json`` in sys.argv."""
+
+    run_module = _load_run_module()
+
+    class _FakeIPython:
+        @staticmethod
+        def get_ipython():
+            return object()
+
+    monkeypatch.setitem(sys.modules, "IPython", _FakeIPython)
+    monkeypatch.setattr(
+        sys, "argv",
+        ["/usr/local/lib/python3.12/dist-packages/colab_kernel_launcher.py",
+         "-f", "/root/.local/share/jupyter/runtime/kernel-abc.json"],
+    )
+    monkeypatch.delenv("BGCN_ARGS", raising=False)
+    assert run_module._parse_args().profile == "default"
+
+    monkeypatch.setenv("BGCN_ARGS", "--profile smoke")
+    assert run_module._parse_args().profile == "smoke"
+
+
+def test_shell_argv_is_still_honored(monkeypatch):
+    run_module = _load_run_module()
+    monkeypatch.delitem(sys.modules, "IPython", raising=False)
+    monkeypatch.setattr(sys, "argv", ["run.py", "--profile", "max"])
+    monkeypatch.delenv("BGCN_ARGS", raising=False)
+    assert run_module._parse_args().profile == "max"
+
+
 def test_run_py_has_no_silent_ydf_fallback():
     source = (EXPERIMENT_ROOT / "circnested" / "modeling.py").read_text(encoding="utf-8")
     assert "fallback is forbidden" in source
