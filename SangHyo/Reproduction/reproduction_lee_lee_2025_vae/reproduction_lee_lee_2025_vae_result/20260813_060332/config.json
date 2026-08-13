@@ -1,0 +1,42 @@
+{
+ "version": "v3_reproduction",
+ "seed": 42,
+ "seeds": [
+  42,
+  43,
+  44
+ ],
+ "quick_test": false,
+ "vae_recipe": "paper",
+ "latent_dim": 500,
+ "vae_kl_warmup_frac": 0.0,
+ "vae_loss_reduction": "mean",
+ "vae_obs_noise": false,
+ "vae_epochs": 300,
+ "n_synthetic_A": 4000,
+ "syn_ratio_B": 9.71,
+ "iso_contamination": 0.1,
+ "clf_epochs": 200,
+ "xgb_n_estimators": 500,
+ "tabnet": {
+  "scheduler": {
+   "step_size": 10,
+   "gamma": 0.95
+  },
+  "patience": 50,
+  "batch": 256,
+  "virtual_batch": 64,
+  "early_stop_metric": "balanced_accuracy"
+ },
+ "models": [
+  "xgboost",
+  "dnn",
+  "tabnet",
+  "wide_deep"
+ ],
+ "b_augs": [
+  "none",
+  "vae",
+  "class_weight"
+ ]
+}

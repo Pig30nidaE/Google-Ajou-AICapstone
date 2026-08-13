@@ -1,0 +1,16 @@
+{
+ "seed": 42,
+ "quick_test": false,
+ "latent_dim": 500,
+ "n_synthetic_A": 4000,
+ "syn_ratio_B": 9.71,
+ "iso_contamination": 0.1,
+ "vae_epochs": 300,
+ "clf_epochs": 200,
+ "models": [
+  "xgboost",
+  "dnn",
+  "tabnet",
+  "wide_deep"
+ ]
+}

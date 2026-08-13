@@ -1,0 +1,26 @@
+{
+ "version": "v2_corrected",
+ "seed": 42,
+ "quick_test": false,
+ "latent_dim": 50,
+ "vae_kl_warmup_frac": 0.2,
+ "vae_loss": "per-sample sum ELBO",
+ "generation": "dec(z) + observation noise",
+ "n_synthetic_A": 4000,
+ "syn_ratio_B": 9.71,
+ "iso_contamination": 0.1,
+ "vae_epochs": 2000,
+ "clf_epochs": 200,
+ "models": [
+  "xgboost",
+  "dnn",
+  "tabnet",
+  "wide_deep"
+ ],
+ "b_augs": [
+  "none",
+  "vae",
+  "class_weight"
+ ],
+ "tabnet_early_stop_metric": "balanced_accuracy"
+}
