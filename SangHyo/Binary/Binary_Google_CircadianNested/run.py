@@ -53,27 +53,57 @@ for _name in [m for m in list(sys.modules) if m == "circnested" or m.startswith(
 
 
 # ----------------------------------------------------------- environment ----
-def _ensure_ydf() -> None:
-    """Install the pinned Google YDF wheel when absent (Colab), fail-closed."""
+YDF_PIN = "0.16.1"
 
+
+def _installed_ydf_version() -> str | None:
+    import importlib.metadata
     try:
-        import ydf  # noqa: F401
+        return importlib.metadata.version("ydf")
+    except importlib.metadata.PackageNotFoundError:
+        return None
+
+
+def _ensure_ydf() -> None:
+    """Install the pinned Google YDF wheel, fail-closed.
+
+    The Colab image can ship its own ydf (run 20260813_060156_utc silently used
+    0.15.0 because an earlier version of this function only installed when the
+    import failed).  Tree structure and defaults can move between minor
+    versions, so the pin is enforced rather than merely requested; if pip
+    cannot deliver it the run continues on the installed version but the
+    deviation is printed and recorded in FINAL_REPORT.
+    """
+
+    current = _installed_ydf_version()
+    if current == YDF_PIN:
         return
-    except ImportError:
-        pass
-    print("[env] ydf not found; installing ydf==0.16.1 ...", flush=True)
+    if current is None:
+        print(f"[env] ydf not found; installing ydf=={YDF_PIN} ...", flush=True)
+    else:
+        print(f"[env] ydf {current} present but pin is {YDF_PIN}; installing the pin ...",
+              flush=True)
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--quiet", "ydf==0.16.1"],
+        [sys.executable, "-m", "pip", "install", "--quiet", f"ydf=={YDF_PIN}"],
         check=False,
     )
-    if result.returncode != 0:
-        raise RuntimeError(
-            "pip install ydf==0.16.1 failed. Google YDF is the core engine of "
-            "this experiment and has no fallback."
-        )
     import importlib
     importlib.invalidate_caches()
-    import ydf  # noqa: F401
+    if result.returncode != 0 or _installed_ydf_version() != YDF_PIN:
+        if current is None:
+            raise RuntimeError(
+                f"pip install ydf=={YDF_PIN} failed. Google YDF is the core engine "
+                "of this experiment and has no fallback."
+            )
+        print(
+            f"[env] WARNING: could not install the pin; continuing on ydf {current}. "
+            "Results are valid Google-YDF results but not version-pinned.",
+            flush=True,
+        )
+    try:
+        import ydf  # noqa: F401
+    except ImportError as error:  # pragma: no cover - broken install
+        raise RuntimeError("Google YDF is unimportable after installation") from error
 
 
 def _in_notebook_host() -> bool:
@@ -294,6 +324,10 @@ def main(namespace: dict) -> None:
             "benchmark_anchors": C.BENCHMARK,
         }
         run_config["google_technology"]["runtime"] = ydf_runtime_info()
+        run_config["google_technology"]["version_pin"] = YDF_PIN
+        run_config["google_technology"]["version_pin_honored"] = (
+            run_config["google_technology"]["runtime"]["version"] == YDF_PIN
+        )
 
         log("=" * 78)
         log(f"{EXPERIMENT_NAME}  |  run {run_id}  |  profile {profile.name}")

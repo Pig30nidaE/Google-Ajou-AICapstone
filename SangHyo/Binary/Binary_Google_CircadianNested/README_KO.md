@@ -2,9 +2,10 @@
 
 과제: **CN(0) vs MCI+Dem(1)** — 사람(피험자) 단위 이진 분류.
 
-> **상태: 코드 완성 + 로컬 계약테스트/smoke 배선 확인만 완료. 정식 성능 결과 없음.**
-> 이 문서의 어떤 숫자도 이 폴더의 실측 성능이 아닙니다. 정식 결과는 Colab에서
-> `run.py`를 실행한 뒤 `FINAL_REPORT.json`에서 확인합니다.
+> **상태: 정식 run 1회 완료** — `20260813_060156_utc` (profile `default`,
+> Colab CPU, 34.9분, `status: complete`). 결과 요약은 아래 **11절**.
+> 한 줄 결론: **사전 가설(circadian 추가 이득)은 기각**됐고, nested OOF
+> ROC-AUC는 **0.7426 ± 0.0220**입니다.
 
 ---
 
@@ -128,8 +129,9 @@ RUN_FILE = "Binary/Binary_Google_CircadianNested/run.py"
 # import os; os.environ["BGCN_ARGS"] = "--profile max"
 ```
 
-- **런타임: CPU** (GPU 불필요, High-RAM 불필요). `ydf==0.16.1`은 없으면 자동
-  설치(실패 시 중단).
+- **런타임: CPU** (GPU 불필요, High-RAM 불필요). `ydf==0.16.1` 핀은 다른 버전이
+  이미 깔려 있어도 강제 설치하며, 미설치 상태에서 실패하면 중단합니다
+  (`config.google_technology.version_pin_honored`에 기록).
 - 결과: Drive 마운트 시 `/content/drive/MyDrive/Binary_Google_CircadianNested_result/<UTC_RUN_ID>/`,
   아니면 폴더 옆 `Binary_Google_CircadianNested_result/<UTC_RUN_ID>/`.
 - 예상 wall time (로컬 M-계열 Mac 실측 기반 추정): default(5×10 repeats) 약
@@ -140,7 +142,7 @@ RUN_FILE = "Binary/Binary_Google_CircadianNested/run.py"
 ```bash
 python run.py --profile smoke    # 배선 확인 전용(성능 아님)
 python run.py                    # default
-python -m pytest tests/ -q      # 계약 테스트 13개
+python -m pytest tests/ -q      # 계약 테스트 15개
 ```
 
 ## 9. 산출물
@@ -159,7 +161,7 @@ python -m pytest tests/ -q      # 계약 테스트 13개
     └── TRAINING_COMPLETE.json
 ```
 
-## 10. 결과 해석 기준 (실행 후 확인할 것)
+## 10. 결과 해석 기준 (11절은 이 기준대로 판독함)
 
 1. **Primary:** `nested_oof.repeat_roc_auc_mean ± sd` — 기존 정식 nested 최고
    `Binary_MMSE_MaxAUC` 0.7658과 비교.
@@ -171,7 +173,112 @@ python -m pytest tests/ -q      # 계약 테스트 13개
 5. `circadian_ydf` 트랙: intraday 단독이 0.5대(기존 daily-summary 기록)를 넘는지.
 6. Validation 수치는 disclaimer와 함께만 인용.
 
-## 11. 재현성
+## 11. 실측 결과 (`20260813_060156_utc`, profile `default`)
+
+### 11-1. Primary
+
+| 지표 | 값 |
+|---|---|
+| **nested OOF ROC-AUC (repeat mean ± sd, 10 repeats)** | **0.7426 ± 0.0220** |
+| subject-mean OOF ROC-AUC | 0.7519, bootstrap 95% CI **[0.6613, 0.8309]** |
+| PR-AUC (prevalence 0.397) | 0.7279 |
+| CN vs MCI 보조 AUC (Dem 9명 제외) | 0.7156 |
+| fold-local 임계값 기준 균형정확도 / 민감도 / 특이도 | 0.6583 / 0.5554 / 0.7612 |
+| inner−outer gap | +0.0145 |
+| 선택 낙관(단일 최고 후보 − nested) | +0.0111 |
+
+기존 정식 nested 최고 `Binary_MMSE_MaxAUC` 0.7658 대비 **-0.023**. 두 값의
+bootstrap CI가 크게 겹치고 프로토콜(반복 수·후보군)도 다르므로 **순위 역전을
+주장하지 않습니다.** 여기서의 의미는 "엄격한 nested 선택을 붙여도 MMSE 앵커
+수준을 유지한다"입니다.
+
+### 11-2. 후보별 정직 OOF (선택 아님, 동일 fold에서 각자 refit)
+
+| candidate | repeat mean ± sd | subject-mean | CN vs MCI |
+|---|---:|---:|---:|
+| `lr_mmse_c001` (anchor) | 0.7617 ± 0.0135 | 0.7630 | 0.7277 |
+| `blend_mmse` | 0.7546 ± 0.0188 | 0.7618 | 0.7279 |
+| `lr_mmse_c01` | 0.7416 ± 0.0201 | 0.7475 | 0.7094 |
+| `blend_fusion` | 0.7365 ± 0.0164 | 0.7401 | 0.7059 |
+| `lr_fusion_c001` | 0.7373 ± 0.0169 | 0.7387 | 0.7051 |
+| `obl_mmse` (YDF oblique) | 0.7218 ± 0.0268 | 0.7261 | 0.6921 |
+| `gbt_mmse` (YDF axis) | 0.7057 ± 0.0229 | 0.7128 | 0.6826 |
+| `obl_fusion` | 0.6979 ± 0.0172 | 0.7038 | 0.6663 |
+| `gbt_fusion` | 0.6369 ± 0.0291 | 0.6487 | 0.6113 |
+| `gbt_circ` (진단 arm) | 0.3999 ± 0.0361 | 0.3834 | 0.3937 |
+
+### 11-3. 가설 검정 — **circadian 추가 이득 없음 (기각)**
+
+사전 등록한 4개 paired 대비가 **전부 음의 부호**이며 CI는 모두 0을 포함합니다.
+
+| 대비 | 차이 | 95% CI |
+|---|---:|---|
+| `lr_fusion − lr_mmse` | −0.0244 | [−0.0673, +0.0150] |
+| `gbt_fusion − gbt_mmse` | −0.0641 | [−0.1395, +0.0130] |
+| `obl_fusion − obl_mmse` | −0.0223 | [−0.0920, +0.0440] |
+| `blend_fusion − blend_mmse` | −0.0216 | [−0.0692, +0.0237] |
+
+행동적 증거도 일치합니다: 50개 outer fold 중 **45개가 MMSE-only 후보**를
+선택했고 fusion 후보는 5개(`blend_fusion` 3, `lr_fusion_c001` 2)뿐이었습니다.
+따라서 **intraday circadian 특징은 이 과제(CN vs MCI+Dem)에서 MMSE 위에
+추가 신호를 주지 않습니다.**
+
+### 11-4. `gbt_circ` 0.383의 정체 — 신호가 아니라 **용량 과적합**
+
+우연(0.5) 아래이므로 별도 진단을 수행했습니다. **AGENTS.md 계약 6에 따라
+점수를 뒤집지 않습니다.**
+
+- **단변량 감사:** circadian 34개의 사람 단위 AUC 평균이 정확히 **0.500**,
+  최대 편차 0.116, |편차|>0.10인 특징 3개(우연 기대 1.3개) → 사실상 null.
+- **라벨 순열 검정(30회, 동일 outer CV):** 귀무분포 평균 **0.512**,
+  95% 구간 [0.411, 0.645] → CV 구조 자체의 음의 편향은 **없음**.
+  관측값 0.393은 이 구간 **아래**(0퍼센타일)이므로 단순 우연도 아님.
+- **용량 대조:** 동일 특징·동일 fold에서 저용량 LR(C=0.01)은 **0.514**(≈우연),
+  YDF GBT(250 trees, depth 4)만 **0.393**.
+
+결론: 141명 · 34개 null 특징에 고용량 부스팅을 적용하면 fold 내부 잡음을
+암기하고 held-out에서 체계적으로 역상관하는 예측을 냅니다. 이는 특징의 역방향
+마커가 아니라 **표본 대비 모델 용량 문제**입니다. (이 arm은 고정 진단 arm이라
+inner CV 튜닝 대상이 아니었고 선택에도 참여하지 않았으므로 primary 결과에는
+영향이 없습니다. 다만 진단 arm에 fusion arm과 같은 250-tree 설정을 그대로 쓴
+것은 설계상의 아쉬움입니다.)
+
+### 11-5. Validation 33명 (동결 후 1회 채점, 참고용)
+
+deployment 모델은 `lr_mmse_c001`(임계값 0.5921). ROC-AUC **0.5412**,
+임계값 기준 TN 26 / FP 0 / FN 5 / TP 2 → 정확도 0.8485(all-CN 0.7879),
+균형정확도 0.6429, 특이도 1.000, 민감도 0.2857.
+
+**해석 금지 사항:** 33명은 여러 실험이 반복 사용한 historical benchmark이고
+양성이 7명뿐입니다. OOF 0.75와 Val 0.54의 불일치는 이 저장소에서 반복 관측된
+현상(예: `GoogleModels` OOF 0.537 / Val 0.758)이며, **모델 순위 근거로 쓰지
+않습니다.**
+
+### 11-6. 무결성 감사 (통과)
+
+OOF 141행·검증 33행, 원본 이메일 0건(SHA-256 해시만), 동결 SHA-256이 디스크
+파일과 일치하며 라벨은 동결 이후 개봉, train/val 중복 0, 50개 fold가 매 repeat
+141명을 정확히 1회 커버, sparse-oblique가 axis GBT와 다른 결과를 내어 실제
+실행됨을 확인.
+
+**단, 재현성 이슈 1건:** 이 run은 Colab에 미리 설치돼 있던 **ydf 0.15.0**으로
+실행됐습니다(당시 `_ensure_ydf`가 import 성공 시 설치를 건너뛰었음). Google
+YDF 정품이며 fallback도 아니지만 README의 핀 0.16.1과 다릅니다. 이후 커밋에서
+핀을 강제하고 `FINAL_REPORT > config.google_technology.version_pin_honored`에
+기록하도록 수정했으므로, **다음 run은 0.15.0 결과와 직접 비교하지 마십시오.**
+
+### 11-7. 다음 실험에 남기는 결론
+
+1. MMSE 앵커는 여전히 깨지지 않았습니다. wearable 계열은 daily summary에 이어
+   **intraday circadian까지** 추가 이득이 없음이 확인됐습니다(이제 두 표현
+   모두 소진).
+2. 이 코호트에서 부스팅 계열은 MMSE view에서도 규제 LR보다 낮았습니다
+   (0.71~0.73 vs 0.76). 141명에서는 **용량이 작은 모델이 유리**하다는 기존
+   교훈이 다시 재현됐습니다.
+3. 다음 유의미한 진전은 새 모델이 아니라 **새 코호트 또는 더 민감한 인지
+   측정**입니다.
+
+## 12. 재현성
 
 seed 20260813에서 전 단계 시드 파생(`derive_seed`, 오버플로 없는 결정적 믹싱).
 실행 시작 시 전체 configuration(프로파일·후보·엔진 버전·환경)을 출력하고

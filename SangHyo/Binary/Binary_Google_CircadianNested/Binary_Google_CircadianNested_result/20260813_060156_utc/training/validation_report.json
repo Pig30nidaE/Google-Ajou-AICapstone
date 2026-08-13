@@ -1,0 +1,42 @@
+{
+  "disclaimer": "The 33-subject validation split is a historical benchmark reused by many prior experiments (all-CN accuracy 26/33 = 0.788). It is scored exactly once here and was never used for any selection. Do not treat it as an independent cohort.",
+  "n_subjects": 33,
+  "class_distribution": {
+    "CN": 26,
+    "MCI": 4,
+    "Dem": 3
+  },
+  "deployed_candidate": "lr_mmse_c001",
+  "deployment_inner_auc_by_candidate": {
+    "lr_mmse_c001": 0.7688550420168068,
+    "lr_mmse_c01": 0.7521533613445379,
+    "lr_fusion_c001": 0.7440126050420168,
+    "gbt_mmse": 0.7243172268907563,
+    "obl_mmse": 0.7386029411764706,
+    "gbt_fusion": 0.6331932773109243,
+    "obl_fusion": 0.701890756302521,
+    "blend_mmse": 0.7694852941176471,
+    "blend_fusion": 0.7453256302521009
+  },
+  "prediction_freeze_sha256": "d18b830266c24d7ef3d57c832004154e30e79ee1453132e8b539c2c0ae679a8c",
+  "labels_opened_after_prediction_freeze": true,
+  "metrics": {
+    "roc_auc": 0.5412087912087912,
+    "pr_auc": 0.48017263331664956,
+    "pr_auc_prevalence_baseline": 0.21212121212121213,
+    "cn_vs_mci_auc": 0.32211538461538464,
+    "at_deployment_threshold": {
+      "threshold": 0.5920687788931716,
+      "tp": 2,
+      "tn": 26,
+      "fp": 0,
+      "fn": 5,
+      "accuracy": 0.8484848484848485,
+      "sensitivity_recall": 0.2857142857142857,
+      "specificity": 1.0,
+      "balanced_accuracy": 0.6428571428571428,
+      "precision": 1.0,
+      "mcc": 0.4895215382447742
+    }
+  }
+}

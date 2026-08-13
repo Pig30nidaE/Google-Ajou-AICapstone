@@ -1,0 +1,8 @@
+{
+  "sha256": "d18b830266c24d7ef3d57c832004154e30e79ee1453132e8b539c2c0ae679a8c",
+  "file": "validation_predictions_label_free_hashed.csv",
+  "created_utc": "2026-08-13T06:36:49.514720+00:00",
+  "deployed_candidate": "lr_mmse_c001",
+  "threshold": 0.5920687788931716,
+  "note": "written BEFORE any validation label file was opened"
+}
