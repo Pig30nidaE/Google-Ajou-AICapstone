@@ -39,6 +39,7 @@ env/
 *.ipynb
 *.ipynb의 사본
 !base.ipynb
+!SangHyo/Reproduction/reproduction_lee_lee_2025_vae/run_reproduction_ABC.ipynb
 .matplotlib-cache/
 
 # Data & Datasets
