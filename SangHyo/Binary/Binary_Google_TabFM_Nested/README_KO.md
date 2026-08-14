@@ -90,9 +90,26 @@ RUN_FILE = "Binary/Binary_Google_TabFM_Nested/run.py"
 # import os; os.environ["BGTF_ARGS"] = "--profile quick"
 ```
 
-- **런타임: GPU(T4) 권장** — TabFM은 transformer 추론이라 GPU에서 크게
-  빨라집니다. CPU도 동작하지만 느릴 수 있으며, 시작 1분 내에 출력되는
-  `[probe] ... projected N min` 줄로 실행 가능성을 먼저 판단하십시오.
+- **런타임: GPU(T4) 필수에 가깝게 권장** — TabFM은 transformer 추론이고 이
+  프로토콜은 `default`에서 **967회 fit / 약 67,000행 추론**을 수행합니다.
+  CPU 런타임에서는 수 시간~십수 시간이 걸릴 수 있습니다.
+- **먼저 `[probe]` 줄을 읽으십시오.** 시작 1분 내에 다음이 출력됩니다.
+
+  ```text
+  [probe] fit(113x38) 0.42s | predict(28 rows) 1.10s
+  [probe] planned 967 TabFM fits / 66948 predicted rows -> PROJECTED TOTAL 78 min (1.3 h)
+  ```
+
+  3시간을 넘기면 경고가 함께 출력됩니다. 이 예측치는 **fit 고정비 + 행당
+  추론비** 모델이며, blend 후보가 ECDF를 만들려고 자기 학습 context(~85행)를
+  한 번 더 추론하는 비용까지 포함합니다. (2026-08-14 이전 버전은 fit 개수만
+  세어 **약 2.4배 과소** 예측했습니다.)
+- **진행 상황 확인**: outer fold마다 한 줄씩, 그리고 fold 내부에서도 60초마다
+  `[progress] n/N model fits (xx.x%) | elapsed | ETA`가 출력됩니다. 결과
+  디렉터리의 `PROGRESS.json`을 다른 셀에서 열어보면 실행을 방해하지 않고
+  진척도를 확인할 수 있습니다.
+- **비용이 과하면**: `--profile quick`(5×2 repeats)은 `default`의 약 1/5
+  비용이며 프로토콜 구조는 동일합니다.
 - TabFM(태그 v1.0.1)은 없으면 자동 설치되고, 첫 로드 시 Hugging Face에서
   가중치를 내려받습니다 (가중치 라이선스: 비상업·연구용 — 캡스톤 사용 적합).
 - 프로파일: `quick`(5×2, 타당성) → `default`(5×10, 정식) → `max`(5×20).

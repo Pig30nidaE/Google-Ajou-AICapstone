@@ -36,6 +36,12 @@ from .features import select_view
 from .modeling import build_model
 
 
+# Liveness reporting cadence inside one outer fold.  With a slow engine a
+# single fold can run for many minutes, and a silent process is
+# indistinguishable from a hung one.
+HEARTBEAT_SECONDS = 60.0
+
+
 def derive_seed(*parts: int) -> int:
     """Deterministically mix seed components into the sklearn/numpy range."""
 
@@ -94,12 +100,17 @@ def _inner_evaluation(
     candidates: list[Candidate],
     profile: Profile,
     seed: int,
+    on_step: Callable[[], None] | None = None,
 ) -> dict[str, dict]:
     """Evaluate every candidate on inner CV inside one outer-training set.
 
     Returns, per candidate id: ``inner_mean_auc`` (mean of per-inner-repeat
     pooled AUCs) and ``inner_oof`` (per-subject scores averaged over inner
     repeats; used only for threshold selection).
+
+    ``on_step`` is called after every single model fit+score so the caller can
+    emit fine-grained progress; with a slow engine like TabFM the inner loop is
+    ~85% of the wall time, and without this the run looks hung for many minutes.
     """
 
     y_train = y[train_index]
@@ -127,6 +138,8 @@ def _inner_evaluation(
                 model = build_model(candidate, fit_seed)
                 model.fit(X_tr, y_train[inner_tr])
                 repeat_scores[candidate.candidate_id][inner_te] = model.predict_score(X_te)
+                if on_step is not None:
+                    on_step()
         for candidate_id, scores in repeat_scores.items():
             results[candidate_id]["repeat_aucs"].append(roc_auc_safe(y_train, scores))
             observed = np.isfinite(scores)
@@ -153,12 +166,17 @@ def run_repeated_nested_cv(
     profile: Profile,
     seed: int,
     log: Callable[[str], None] = print,
+    on_fold: Callable[[dict], None] | None = None,
 ) -> dict:
     """Run the full protocol and return raw per-fold records plus OOF tracks.
 
     ``selection_candidates`` compete inside inner CV; ``audit_candidates`` are
     additionally evaluated on the same folds (fixed arms) without competing.
     Tracks returned in ``oof_scores``: ``"nested"`` plus every candidate id.
+
+    ``on_fold`` receives a progress dict after every outer fold so the caller
+    can persist it (PROGRESS.json), making a long run inspectable from another
+    notebook cell without disturbing it.
     """
 
     every_candidate = list(selection_candidates) + [
@@ -176,16 +194,48 @@ def run_repeated_nested_cv(
 
     fold_records: list[dict] = []
     start = time.monotonic()
+    total_folds = profile.outer_k * profile.outer_repeats
+    folds_done = 0
+
+    # Progress accounting: every model fit+score is one step, so the very first
+    # fold already reports a measured rate instead of leaving the user guessing.
+    steps_per_fold = (
+        profile.inner_k * profile.inner_repeats * len(selection_candidates)
+        + len(every_candidate)
+    )
+    total_steps = steps_per_fold * total_folds
+    steps_done = 0
+    last_heartbeat = time.monotonic()
+
+    def _heartbeat() -> None:
+        nonlocal steps_done, last_heartbeat
+        steps_done += 1
+        now = time.monotonic()
+        # Report at most every HEARTBEAT_SECONDS; enough to prove liveness
+        # inside a single slow fold, not enough to spam a fast one.
+        if now - last_heartbeat < HEARTBEAT_SECONDS:
+            return
+        last_heartbeat = now
+        elapsed = now - start
+        fraction = steps_done / max(1, total_steps)
+        eta = elapsed / fraction - elapsed if fraction > 0 else float("nan")
+        log(
+            f"    [progress] {steps_done}/{total_steps} model fits "
+            f"({100 * fraction:4.1f}%) | elapsed {elapsed / 60:5.1f} min | "
+            f"ETA {eta / 60:5.1f} min"
+        )
 
     for outer_repeat in range(profile.outer_repeats):
         repeat_seed = derive_seed(seed, 1000, outer_repeat)
         folds = stratified_subject_folds(diag, profile.outer_k, repeat_seed)
         for fold_index, (train_index, test_index) in enumerate(folds):
+            fold_started = time.monotonic()
             fold_seed = derive_seed(repeat_seed, 31, fold_index)
             # Fixed audit arms never compete, so only selection candidates pay
             # the inner-CV cost.
             inner = _inner_evaluation(
-                view_frames, y, diag, train_index, selection_candidates, profile, fold_seed
+                view_frames, y, diag, train_index, selection_candidates, profile,
+                fold_seed, on_step=_heartbeat,
             )
             inner_mean = {cid: inner[cid]["inner_mean_auc"] for cid in inner}
             selected_id = select_candidate(inner_mean, selection_candidates)
@@ -199,6 +249,7 @@ def run_repeated_nested_cv(
                 scores = model.predict_score(frame.iloc[test_index])
                 candidate_test_scores[candidate.candidate_id] = scores
                 oof_scores[candidate.candidate_id][outer_repeat, test_index] = scores
+                _heartbeat()
 
             nested_test_scores = candidate_test_scores[selected_id]
             oof_scores["nested"][outer_repeat, test_index] = nested_test_scores
@@ -225,11 +276,28 @@ def run_repeated_nested_cv(
                     ),
                 }
             )
-        elapsed = time.monotonic() - start
-        log(
-            f"  [nested-cv] repeat {outer_repeat + 1}/{profile.outer_repeats} done "
-            f"({elapsed:6.1f}s elapsed)"
-        )
+            folds_done += 1
+            elapsed = time.monotonic() - start
+            eta = elapsed / folds_done * (total_folds - folds_done)
+            log(
+                f"  [nested-cv] fold {folds_done}/{total_folds} "
+                f"(repeat {outer_repeat + 1}/{profile.outer_repeats}, "
+                f"fold {fold_index + 1}/{profile.outer_k}) "
+                f"took {time.monotonic() - fold_started:5.1f}s | "
+                f"elapsed {elapsed / 60:5.1f} min | ETA {eta / 60:5.1f} min | "
+                f"picked {selected_id}"
+            )
+            if on_fold is not None:
+                on_fold(
+                    {
+                        "folds_done": folds_done,
+                        "total_folds": total_folds,
+                        "elapsed_minutes": round(elapsed / 60.0, 2),
+                        "eta_minutes": round(eta / 60.0, 2),
+                        "last_selected_candidate": selected_id,
+                        "last_outer_test_auc": fold_records[-1]["outer_test_auc_selected"],
+                    }
+                )
 
     for track, matrix in oof_scores.items():
         if np.isnan(matrix).any():

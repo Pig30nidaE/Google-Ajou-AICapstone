@@ -120,7 +120,7 @@ def _ensure_tabfm(stub_requested: bool, profile_name: str) -> None:
               "(recorded in the report).", flush=True)
 
 
-def _probe_and_benchmark(log, n_features: int, planned_fits: int) -> dict:
+def _probe_and_benchmark(log, n_features: int, planned: dict) -> dict:
     """Fail-fast API probe on synthetic data, then a timed realistic fit.
 
     Runs BEFORE feature building so an API mismatch or an infeasible runtime
@@ -147,21 +147,37 @@ def _probe_and_benchmark(log, n_features: int, planned_fits: int) -> dict:
         f"kwargs accepted {model.kwargs_accepted_} dropped {model.kwargs_dropped_}")
 
     # 2) realistic-size micro-benchmark (113 context rows, real feature width)
+    unit_rows = max(1, int(planned["probe_unit_rows"]))
     X_real = pd.DataFrame(
-        rng.normal(size=(141, n_features)),
+        rng.normal(size=(113 + unit_rows, n_features)),
         columns=[f"b{i}" for i in range(n_features)],
     )
-    y_real = (rng.random(141) < 0.4).astype(int)
+    y_real = (rng.random(len(X_real)) < 0.4).astype(int)
+    y_real[:2] = [0, 1]
     started = time.monotonic()
-    TabFMModel(seed=1).fit(X_real.iloc[:113], y_real[:113]).predict_score(X_real.iloc[113:])
-    per_fit = time.monotonic() - started
-    projected = per_fit * planned_fits
-    log(f"[probe] one fit+predict at 113x{n_features}: {per_fit:.2f}s | "
-        f"~{planned_fits} TabFM fits planned -> projected {projected / 60:.0f} min "
-        "(LR fits are negligible)")
+    fitted = TabFMModel(seed=1).fit(X_real.iloc[:113], y_real[:113])
+    fit_seconds = time.monotonic() - started
+    started = time.monotonic()
+    fitted.predict_score(X_real.iloc[113:])
+    predict_seconds = time.monotonic() - started
+
+    # Cost model: one fixed fit cost per fit, plus a per-row inference cost.
+    per_row = predict_seconds / unit_rows
+    projected = planned["fits"] * fit_seconds + planned["predicted_rows"] * per_row
+    log(f"[probe] fit(113x{n_features}) {fit_seconds:.2f}s | "
+        f"predict({unit_rows} rows) {predict_seconds:.2f}s")
+    log(f"[probe] planned {planned['fits']} TabFM fits / "
+        f"{planned['predicted_rows']} predicted rows "
+        f"-> PROJECTED TOTAL {projected / 60:.0f} min "
+        f"({projected / 3600:.1f} h)")
+    if projected > 3 * 3600:
+        log("[probe] WARNING: projected over 3 hours. Consider --profile quick "
+            "(5x cheaper) or a GPU runtime before letting this run.")
     return {
-        "per_fit_seconds": round(per_fit, 3),
-        "planned_tabfm_fits": planned_fits,
+        "fit_seconds": round(fit_seconds, 3),
+        "predict_seconds_per_row": round(per_row, 4),
+        "planned_tabfm_fits": planned["fits"],
+        "planned_predicted_rows": planned["predicted_rows"],
         "projected_minutes": round(projected / 60.0, 1),
         "kwargs_accepted": dict(model.kwargs_accepted_),
         "kwargs_dropped": dict(model.kwargs_dropped_),
@@ -169,11 +185,48 @@ def _probe_and_benchmark(log, n_features: int, planned_fits: int) -> dict:
     }
 
 
-def _planned_tabfm_fits(profile, n_selection_tabfm: int, n_audit_tabfm: int) -> int:
-    inner = profile.inner_k * profile.inner_repeats * n_selection_tabfm
-    per_fold = inner + n_selection_tabfm + n_audit_tabfm
-    deployment = profile.inner_k * profile.inner_repeats * n_selection_tabfm + 1
-    return profile.outer_k * profile.outer_repeats * per_fold + deployment
+def _planned_tabfm_work(profile, selection_candidates, audit_candidates,
+                        n_subjects: int) -> dict:
+    """Planned TabFM fits AND predicted rows.
+
+    Counting fits alone underestimates the cost by ~2.5x, because a blend
+    candidate additionally scores its own training context to build the ECDF
+    (~85 rows against ~28 test rows).  TabFM inference scales with rows, so the
+    projection below is normalised in *predicted rows*, using the probe's
+    measured cost for one fit + one test-sized prediction as the unit.
+    """
+
+    def _is_tabfm(candidate) -> bool:
+        return candidate.learner in ("tabfm", "blend_tabfm_lr")
+
+    def _is_blend(candidate) -> bool:
+        return candidate.learner == "blend_tabfm_lr"
+
+    inner_cycles = profile.inner_k * profile.inner_repeats
+    inner_train = int(n_subjects * (1 - 1 / profile.outer_k) * (1 - 1 / profile.inner_k))
+    inner_test = int(n_subjects * (1 - 1 / profile.outer_k) / profile.inner_k)
+    outer_train = int(n_subjects * (1 - 1 / profile.outer_k))
+    outer_test = int(n_subjects / profile.outer_k)
+
+    sel = [c for c in selection_candidates if _is_tabfm(c)]
+    aud = [c for c in audit_candidates if _is_tabfm(c)]
+
+    fits_per_fold = inner_cycles * len(sel) + len(sel) + len(aud)
+    rows_per_fold = (
+        inner_cycles * sum(inner_test + (inner_train if _is_blend(c) else 0) for c in sel)
+        + sum(outer_test + (outer_train if _is_blend(c) else 0) for c in sel)
+        + sum(outer_test for _ in aud)
+    )
+    folds = profile.outer_k * profile.outer_repeats
+    deploy_fits = inner_cycles * len(sel) + 1
+    deploy_rows = inner_cycles * sum(
+        inner_test + (inner_train if _is_blend(c) else 0) for c in sel
+    ) + outer_test
+    return {
+        "fits": folds * fits_per_fold + deploy_fits,
+        "predicted_rows": folds * rows_per_fold + deploy_rows,
+        "probe_unit_rows": outer_test,
+    }
 
 
 def _resolve_data_root(namespace: dict, explicit: str | None) -> Path:
@@ -338,13 +391,12 @@ def main(namespace: dict) -> None:
             c for c in C.CANDIDATES if c.candidate_id in set(profile.candidate_ids)
         ]
         audit_candidates = list(C.FIXED_ARMS.values()) if profile.name != "smoke" else []
-        n_sel_tabfm = sum(1 for c in selection_candidates
-                          if c.learner in ("tabfm", "blend_tabfm_lr"))
-        n_audit_tabfm = sum(1 for c in audit_candidates
-                            if c.learner in ("tabfm", "blend_tabfm_lr"))
-        planned = _planned_tabfm_fits(profile, n_sel_tabfm, n_audit_tabfm)
+        planned = _planned_tabfm_work(
+            profile, selection_candidates, audit_candidates,
+            n_subjects=C.SPLIT_CONTRACT["train"]["n"],
+        )
         mmse_width = len(C.VIEWS["mmse"])
-        probe = _probe_and_benchmark(log, n_features=mmse_width, planned_fits=planned)
+        probe = _probe_and_benchmark(log, n_features=mmse_width, planned=planned)
 
         run_config = {
             "experiment": EXPERIMENT_NAME,
@@ -453,9 +505,20 @@ def main(namespace: dict) -> None:
         log(f"[nested-cv] starting: {len(selection_candidates)} selection candidates, "
             f"{len(audit_candidates)} fixed audit arms")
         cv_start = time.monotonic()
+
+        def _persist_progress(payload: dict) -> None:
+            """Write PROGRESS.json so a long run can be inspected from another
+            notebook cell without disturbing it."""
+
+            _write_json(
+                output / "PROGRESS.json",
+                {"run_id": run_id, "profile": profile.name,
+                 "updated_utc": datetime.now(timezone.utc).isoformat(), **payload},
+            )
+
         nested = run_repeated_nested_cv(
             train_features, y, diag, selection_candidates, audit_candidates,
-            profile, seed, log=log,
+            profile, seed, log=log, on_fold=_persist_progress,
         )
         log(f"[nested-cv] finished in {(time.monotonic() - cv_start) / 60:.1f} min")
 

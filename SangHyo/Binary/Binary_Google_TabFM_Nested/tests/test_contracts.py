@@ -310,6 +310,47 @@ def test_run_py_freezes_before_opening_validation_labels():
     assert freeze_at < labels_at
 
 
+# ------------------------------------------------------------- progress -----
+def test_progress_heartbeat_and_fold_callback_fire(monkeypatch):
+    """A long run must prove liveness *inside* a fold, not only per repeat.
+
+    Regression guard for the 2026-08-14 report that the TabFM run produced no
+    output for an hour: logging used to fire once per outer repeat (10% of the
+    run), which is indistinguishable from a hang.
+    """
+
+    from tabfmnested import nested_cv as N
+
+    monkeypatch.setattr(N, "HEARTBEAT_SECONDS", 0.0)  # log every step
+
+    rng = np.random.default_rng(0)
+    n = 60
+    diag = np.array(["CN"] * 36 + ["MCI"] * 20 + ["Dem"] * 4, dtype=object)
+    rng.shuffle(diag)
+    y = np.isin(diag, ("MCI", "Dem")).astype(int)
+    features = pd.DataFrame(
+        rng.normal(size=(n, len(C.VIEWS["mmse"]))), columns=list(C.VIEWS["mmse"])
+    )
+
+    profile = C.Profile(
+        name="t", outer_k=3, outer_repeats=1, inner_k=2, inner_repeats=1,
+        n_bootstrap=10, candidate_ids=("lr_mmse_c001",),
+    )
+    anchor = [c for c in C.CANDIDATES if c.candidate_id == "lr_mmse_c001"]
+
+    lines: list[str] = []
+    folds: list[dict] = []
+    N.run_repeated_nested_cv(
+        features, y, diag, anchor, [], profile, seed=1,
+        log=lines.append, on_fold=folds.append,
+    )
+
+    assert sum("[progress]" in line for line in lines) >= 3, "no intra-fold heartbeat"
+    assert sum("[nested-cv] fold" in line for line in lines) == 3, "no per-fold line"
+    assert [f["folds_done"] for f in folds] == [1, 2, 3]
+    assert all(f["total_folds"] == 3 and "eta_minutes" in f for f in folds)
+
+
 # --------------------------------------------------------- notebook launch --
 def _load_run_module():
     import importlib.util
