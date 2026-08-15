@@ -1,0 +1,65 @@
+{
+  "config_version": "faithful-2026-08-15-a",
+  "seed": 42,
+  "top5": [
+    "xgboost",
+    "lightgbm",
+    "et",
+    "rf",
+    "gbc"
+  ],
+  "tuning": [
+    {
+      "model": "xgboost",
+      "auc_before": 0.8949,
+      "auc_after": 0.9007,
+      "kept": "tuned"
+    },
+    {
+      "model": "lightgbm",
+      "auc_before": 0.8874,
+      "auc_after": 0.8919,
+      "kept": "tuned"
+    },
+    {
+      "model": "et",
+      "auc_before": 0.8833,
+      "auc_after": 0.7808,
+      "kept": "original"
+    },
+    {
+      "model": "rf",
+      "auc_before": 0.8759,
+      "auc_after": 0.8248,
+      "kept": "original"
+    },
+    {
+      "model": "gbc",
+      "auc_before": 0.7986,
+      "auc_after": 0.8737,
+      "kept": "tuned"
+    }
+  ],
+  "models": [
+    "et",
+    "gbc",
+    "lightgbm",
+    "rf",
+    "stacking",
+    "voting",
+    "xgboost"
+  ],
+  "versions": {
+    "pycaret": "3.3.2",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "scipy": "1.11.4",
+    "scikit-learn": "1.4.2",
+    "xgboost": "2.1.4",
+    "lightgbm": "4.5.0",
+    "joblib": "1.3.2",
+    "python": "3.11.13"
+  },
+  "elapsed_sec": 2691.1160514354706,
+  "finished_utc": "2026-08-15T06:50:00.859777+00:00"
+}

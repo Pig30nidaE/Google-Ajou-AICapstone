@@ -1,0 +1,59 @@
+{
+  "tag": "C_fold3",
+  "cv_kind": "row",
+  "config_version": "2026-08-14-a",
+  "seed": 42,
+  "top5": [
+    "xgboost",
+    "lightgbm",
+    "et",
+    "rf",
+    "knn"
+  ],
+  "tuning": [
+    {
+      "model": "xgboost",
+      "auc_before": 0.8992,
+      "auc_after": 0.9096,
+      "kept": "tuned"
+    },
+    {
+      "model": "lightgbm",
+      "auc_before": 0.889,
+      "auc_after": 0.8939,
+      "kept": "tuned"
+    },
+    {
+      "model": "et",
+      "auc_before": 0.8882,
+      "auc_after": 0.7851,
+      "kept": "original"
+    },
+    {
+      "model": "rf",
+      "auc_before": 0.8822,
+      "auc_after": 0.8203,
+      "kept": "original"
+    },
+    {
+      "model": "knn",
+      "auc_before": 0.8574,
+      "auc_after": 0.874,
+      "kept": "tuned"
+    }
+  ],
+  "n_train": 9747,
+  "n_test": 2436,
+  "elapsed_sec": 1730.7696323394775,
+  "versions": {
+    "python": "3.11.13",
+    "pycaret": "3.3.2",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "scipy": "1.11.4",
+    "scikit-learn": "1.4.2",
+    "xgboost": "2.1.4",
+    "lightgbm": "4.5.0"
+  },
+  "finished_utc": "2026-08-14T15:44:40.920779+00:00"
+}
