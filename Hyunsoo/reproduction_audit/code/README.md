@@ -17,6 +17,11 @@ AI Hub 원본 데이터 경로로 수정할 것.
 | 4 | `ymj_missed_variants.py` | 놓친 명세 변형 4종(V0~V3) 테스트 | ~3분 |
 | 5 | `ymj_final_robustness.py` | 윈도우·최소야간수·시드 감도 (총 51회 nested 평가) | ~1분 |
 | 6 | `ymj_perm_bootstrap.py` | Permutation test(1000회) + Bootstrap CI(2000회) | ~30분 |
+| 7 | `rq2_validate_and_ladder.py` | Part1: 논문 Suppl. Table 6(7개 모델) 재현 검증. Part2: 누수 사다리(L0/L1/L2) | ~3분 |
+| 8 | `rq2_nested_vs_nonnested.py` | Non-nested vs Repeated Nested (10회 반복), 5개 지표 + 95% CI, 하이퍼파라미터 탐색 포함 | ~20분 |
+
+7·8은 순서 무관, 6 이후 아무 때나 실행 가능. 둘 다 `ymj_faithful_build.py`가 만든
+`ymj_faithful_features.csv`가 같은 폴더에 있어야 한다.
 
 ## 자체 실험
 
