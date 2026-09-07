@@ -37,7 +37,14 @@
 
 ---
 
-## 4. 실행 방법
+## 4. 사용 데이터셋
+
+* **파일명**: `patient_level_circadian_v3.csv`
+* **위치**: `Taehyun/data/patient_level_circadian_v3.csv`
+
+---
+
+## 5. 실행 방법
 
 저장소 루트의 `base.ipynb`에서 다음과 같이 지정하여 실행합니다.
 

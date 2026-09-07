@@ -34,8 +34,8 @@ RUN_FILE = "실행할/파일.py"
 ### 1. 선행연구 재현 (`Paper_Reproduction/`)
 주요 선행연구 3편(최지예 2025, 천희웅 2025, Kim & Park 2026)의 논문 방법론 완전 재현 및 데이터 누수 검증 코드입니다.
 
-- `Paper_Reproduction/Choi_Ensemble.py`: 최지예(2025) RF+GBM+XGB+SVM 보팅 앙상블 재현
-- `Paper_Reproduction/Cheon_LGBM.py`: 천희웅(2025) SHAP 중요도 전진선택 + LightGBM 재현
+- `Paper_Reproduction/Choi_Ensemble.py`: 최지예(2025) 3진 분류 RF+GBM+XGB+SVM+PyTorch LSTM 5종 보팅 앙상블 재현
+- `Paper_Reproduction/Cheon_LGBM.py`: 천희웅(2025) Step 1~3 논문 결과 순서 3단계 완전 재현 (SHAP Top 40 + Tuned LGBM)
 - `Paper_Reproduction/KimPark_LR.py`: Kim & Park(2026) 피험자 종단 변동성 지표 + 로지스틱 회귀 재현
 
 ### 2. V44 최고 성능 모델 (`V44_Subspace_SOTA/`)
@@ -70,7 +70,15 @@ RUN_FILE = "previous/Binary_LGBM_RF.py"
 
 ## 데이터와 결과물
 
-데이터, 모델, 결과물은 Git에 올리지 않습니다. 필요한 파일은 각자 로컬 또는 Google Drive에 준비해둡니다.
+데이터, 모델, 결과물은 Git에 올리지 않습니다. 필요한 파일은 각자 로컬(`Taehyun/data/`) 또는 Google Drive에 준비해둡니다.
+
+### 주요 모델별 사용 데이터셋 (`Taehyun/data/` 직하 위치)
+* **V44 최고 성능 모델 (`V44_Subspace_SOTA`)**:
+  * `patient_level_circadian_v3.csv`
+* **선행연구 재현 모델 (`Paper_Reproduction`)**:
+  * `train_activity.csv` / `val_activity.csv`
+  * `train_sleep.csv` / `val_sleep.csv`
+  * `training_label.csv` (또는 `training_label_activity.csv`) / `val_label.csv`
 
 ## 앞으로 작업할 때
 

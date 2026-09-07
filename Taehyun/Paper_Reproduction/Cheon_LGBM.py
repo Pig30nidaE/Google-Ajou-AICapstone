@@ -5,19 +5,15 @@ import pandas as pd
 import warnings
 from pathlib import Path
 import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import StratifiedKFold, StratifiedGroupKFold
-from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, f1_score, confusion_matrix
-from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, roc_auc_score, precision_score, recall_score, f1_score
 from lightgbm import LGBMClassifier
-import scipy.stats as st
-import optuna
 import shap
 
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# 1. Raw Data Preprocessing (from AI Hub)
+# 1. Raw Data Preprocessing
 # ==========================================
 # Taehyun 폴더 바로 아래의 data 폴더 경로 설정 (하위 서브폴더 미사용)
 CURRENT_FILE_DIR = Path(__file__).resolve().parent
@@ -57,11 +53,9 @@ def preprocess_label(label_df: pd.DataFrame) -> pd.DataFrame:
     if "SAMPLE_EMAIL" in label_df.columns:
         label_df = label_df.rename(columns={"SAMPLE_EMAIL": "EMAIL"})
     if label_df.empty: return label_df
-    original_label_map = {"CN": 0, "MCI": 1, "Dem": 2, "Dementia": 2}
     binary_label_map = {"CN": 0, "MCI": 1, "Dem": 1, "Dementia": 1}
-    label_df["original_label"] = label_df["DIAG_NM"].map(original_label_map)
     label_df["label"] = label_df["DIAG_NM"].map(binary_label_map)
-    return label_df[["EMAIL", "DIAG_NM", "original_label", "label"]].drop_duplicates("EMAIL")
+    return label_df[["EMAIL", "DIAG_NM", "label"]].drop_duplicates("EMAIL")
 
 def parse_slash_sequence(value, dtype=float) -> np.ndarray:
     if pd.isna(value): return np.array([], dtype=float)
@@ -96,7 +90,6 @@ def activity_class_features(seq: np.ndarray) -> dict:
     out["activity_rest_ratio"] = out.get("activity_class_1_ratio", np.nan)
     out["activity_inactive_ratio"] = out.get("activity_class_2_ratio", np.nan)
     out["activity_active_ratio"] = out.get("activity_class_3_ratio", 0) + out.get("activity_class_4_ratio", 0) + out.get("activity_class_5_ratio", 0) if total else np.nan
-    out["activity_not_worn_ratio"] = out.get("activity_class_0_ratio", np.nan)
     out["activity_class_valid_count"] = total
     return out
 
@@ -161,7 +154,7 @@ def make_daily_table(activity: pd.DataFrame, sleep: pd.DataFrame, label: pd.Data
     daily = daily.replace([np.inf, -np.inf], np.nan)
     return daily
 
-def process_raw_to_daily_level():
+def process_data():
     print("Loading raw CSV files from data directory...")
     train_act = read_csv_flexible(find_csv("train_activity.csv"))
     val_act = read_csv_flexible(find_csv("val_activity.csv"))
@@ -181,215 +174,122 @@ def process_raw_to_daily_level():
     all_daily = pd.concat([train_daily, val_daily], ignore_index=True)
     
     TARGET_COL = "label"
-    DROP_COLS = ["EMAIL", "original_label", TARGET_COL, "DIAG_NM", "date"]
+    DROP_COLS = ["EMAIL", TARGET_COL, "DIAG_NM", "date"]
     features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]
     
-    all_daily[features] = all_daily[features].fillna(all_daily[features].median())
+    # Paper: "결측치 처리가 불가능한 로그 데이터는 제거"
+    # To try and hit exactly 7737 / 4446, we drop NaNs instead of median imputation.
+    print(f"Data shape before dropping NaNs: {all_daily.shape}")
+    all_daily = all_daily.dropna(subset=features)
+    print(f"Data shape after dropping NaNs: {all_daily.shape}")
     
-    X = all_daily[features].values
     y = all_daily[TARGET_COL].astype(int).values
-    groups = all_daily["EMAIL"].values
+    X = all_daily[features].values
     
-    return X, y, groups, features
+    print(f"Label Distribution -> CN(0): {np.sum(y==0)}, MCI(1): {np.sum(y==1)}")
+    
+    return X, y, features
 
 # ==========================================
-# 2. Main Model Execution
+# 2. Evaluation Pipeline (5 Repeats x 5-Fold CV)
 # ==========================================
-def calc_metrics(y_true, y_pred, y_prob):
-    acc = accuracy_score(y_true, y_pred)
-    auc = roc_auc_score(y_true, y_prob)
-    prec = precision_score(y_true, y_pred, zero_division=0)
-    rec = recall_score(y_true, y_pred, zero_division=0)
-    f1 = f1_score(y_true, y_pred, zero_division=0)
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0,1]).ravel()
-    sens = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
-    return acc, auc, prec, rec, f1, sens, spec
-
-def get_stats(arr):
-    arr = np.array(arr)
-    mean = np.mean(arr)
-    std = np.std(arr)
-    if std == 0 or len(arr) == 1:
-        return mean, std, mean, mean
-    ci = st.t.interval(0.95, len(arr)-1, loc=mean, scale=st.sem(arr))
-    return mean, std, ci[0], ci[1]
-
-def shap_forward_selection(X, y):
-    print("  [Feature Selection] Running SHAP (5-fold) + Forward Selection...")
-    
-    # 1. 5-Fold SHAP Importance
-    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    mean_abs_shap = np.zeros(X.shape[1])
-    
-    for tr, va in kf.split(X, y):
-        model = LGBMClassifier(n_estimators=100, random_state=42, verbose=-1)
-        model.fit(X[tr], y[tr])
-        
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X[tr])
-        if isinstance(shap_values, list):
-            shap_values = shap_values[1]
-        mean_abs_shap += np.abs(shap_values).mean(axis=0)
-        
-    mean_abs_shap /= 5.0
-    sorted_idx = np.argsort(mean_abs_shap)[::-1]
-    
-    # 2. Forward Selection with 5-Fold CV
-    best_auc = -1
-    best_features = []
-    current_features = []
-    
-    for idx in sorted_idx:
-        current_features.append(idx)
-        X_sub = X[:, current_features]
-        aucs = []
-        for tr, va in kf.split(X_sub, y):
-            m = LGBMClassifier(n_estimators=50, random_state=42, verbose=-1)
-            m.fit(X_sub[tr], y[tr])
-            preds = m.predict_proba(X_sub[va])[:, 1]
-            aucs.append(roc_auc_score(y[va], preds))
-            
-        avg_auc = np.mean(aucs)
-        if avg_auc > best_auc:
-            best_auc = avg_auc
-            best_features = list(current_features)
-            
-        # Early stopping if no improvement for 15 steps
-        if len(current_features) - len(best_features) > 15:
-            break
-            
-    print(f"  [Feature Selection] Selected {len(best_features)} features (Max AUC: {best_auc:.4f})")
-    return best_features
-
-def run_scenario(X, y, groups, scenario_name, leakage_allowed, use_nested_cv, n_repeats=5):
-    print(f"\n=============================================")
-    print(f"Starting Scenario: {scenario_name}")
-    print(f"Leakage Allowed: {leakage_allowed}, Nested CV: {use_nested_cv}, Repeats: {n_repeats}")
-    print(f"=============================================")
-    
-    all_acc, all_auc, all_prec, all_rec, all_f1, all_sens, all_spec = [], [], [], [], [], [], []
-    all_y_true, all_y_pred = [], []
-    
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
+def evaluate_model(model, X, y, n_repeats=5):
+    aucs = []
+    accs = []
+    precs = []
+    recs = []
+    f1s = []
     
     for repeat in range(n_repeats):
-        if leakage_allowed:
-            cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat)
-            cv_split = list(cv.split(X, y))
-            # Leakage: Select features using entire dataset
-            if repeat == 0:
-                best_features = shap_forward_selection(X, y)
-            X_used = X[:, best_features]
-        else:
-            cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42 + repeat)
-            cv_split = list(cv.split(X, y, groups))
-            X_used = X
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat)
+        for tr, va in cv.split(X, y):
+            model.fit(X[tr], y[tr])
+            preds = model.predict_proba(X[va])[:, 1]
+            pred_labels = np.where(preds >= 0.5, 1, 0)
+            
+            aucs.append(roc_auc_score(y[va], preds))
+            accs.append(accuracy_score(y[va], pred_labels))
+            precs.append(precision_score(y[va], pred_labels, zero_division=0))
+            recs.append(recall_score(y[va], pred_labels, zero_division=0))
+            f1s.append(f1_score(y[va], pred_labels, zero_division=0))
+            
+    def compute_stats(arr):
+        mean_val = np.mean(arr)
+        std_val = np.std(arr)
+        n = len(arr)
+        ci = 1.96 * std_val / np.sqrt(n)
+        return mean_val, std_val, mean_val - ci, mean_val + ci
 
-        for fold, (train_idx, test_idx) in enumerate(cv_split, 1):
-            if leakage_allowed:
-                X_tr, X_te = X_used[train_idx], X_used[test_idx]
-            else:
-                # No Leakage: Select features using ONLY training data
-                X_tr_raw, X_te_raw = X_used[train_idx], X_used[test_idx]
-                best_features = shap_forward_selection(X_tr_raw, y[train_idx])
-                X_tr = X_tr_raw[:, best_features]
-                X_te = X_te_raw[:, best_features]
-                
-            y_tr, y_te = y[train_idx], y[test_idx]
-            
-            if use_nested_cv:
-                def objective(trial):
-                    params = {
-                        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
-                        'num_leaves': trial.suggest_int('num_leaves', 20, 500),
-                        'min_child_samples': trial.suggest_int('min_child_samples', 10, 100),
-                        'n_estimators': 150,
-                        'random_state': 42,
-                        'verbose': -1
-                    }
-                    inner_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-                    inner_aucs = []
-                    for inner_tr, inner_val in inner_cv.split(X_tr, y_tr):
-                        inner_model = LGBMClassifier(**params)
-                        inner_model.fit(X_tr[inner_tr], y_tr[inner_tr])
-                        preds = inner_model.predict_proba(X_tr[inner_val])[:, 1]
-                        inner_aucs.append(roc_auc_score(y_tr[inner_val], preds))
-                    return np.mean(inner_aucs)
-                    
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=10)
-                best_params = study.best_params
-                best_params['n_estimators'] = 500
-                best_params['random_state'] = 42
-                best_params['verbose'] = -1
-                model = LGBMClassifier(**best_params)
-            else:
-                model = LGBMClassifier(min_child_samples=41, num_leaves=330, n_estimators=1000, learning_rate=0.08, random_state=42, verbose=-1)
-                
-            model.fit(X_tr, y_tr)
-            prob = model.predict_proba(X_te)[:, 1]
-            pred = np.where(prob >= 0.5, 1, 0)
-            
-            acc, auc, prec, rec, f1, sens, spec = calc_metrics(y_te, pred, prob)
-            all_acc.append(acc)
-            all_auc.append(auc)
-            all_prec.append(prec)
-            all_rec.append(rec)
-            all_f1.append(f1)
-            all_sens.append(sens)
-            all_spec.append(spec)
-            
-            all_y_true.extend(y_te)
-            all_y_pred.extend(pred)
-            
-            print(f"[{scenario_name}] R{repeat+1}-F{fold} Completed.")
-            
-    acc_m, acc_s, acc_l, acc_u = get_stats(all_acc)
-    auc_m, auc_s, auc_l, auc_u = get_stats(all_auc)
-    prec_m, prec_s, prec_l, prec_u = get_stats(all_prec)
-    rec_m, rec_s, rec_l, rec_u = get_stats(all_rec)
-    f1_m, f1_s, f1_l, f1_u = get_stats(all_f1)
-    sens_m, sens_s, sens_l, sens_u = get_stats(all_sens)
-    spec_m, spec_s, spec_l, spec_u = get_stats(all_spec)
+    stats = {
+        "Accuracy": compute_stats(accs),
+        "ROC-AUC": compute_stats(aucs),
+        "Precision": compute_stats(precs),
+        "Recall": compute_stats(recs),
+        "F1-Score": compute_stats(f1s)
+    }
     
-    print(f"\n[{scenario_name}] Final Statistical Results (5 Repeats x 5 Folds):")
-    print(f"Accuracy   : {acc_m*100:.2f} ± {acc_s*100:.2f}% (95% CI: {acc_l*100:.2f}-{acc_u*100:.2f})")
-    print(f"ROC-AUC    : {auc_m:.4f} ± {auc_s:.4f} (95% CI: {auc_l:.4f}-{auc_u:.4f})")
-    print(f"Precision  : {prec_m*100:.2f} ± {prec_s*100:.2f}% (95% CI: {prec_l*100:.2f}-{prec_u*100:.2f})")
-    print(f"Recall     : {rec_m*100:.2f} ± {rec_s*100:.2f}% (95% CI: {rec_l*100:.2f}-{rec_u*100:.2f})")
-    print(f"F1-Score   : {f1_m*100:.2f} ± {f1_s*100:.2f}% (95% CI: {f1_l*100:.2f}-{f1_u*100:.2f})")
-    print(f"Sensitivity: {sens_m*100:.2f} ± {sens_s*100:.2f}% (95% CI: {sens_l*100:.2f}-{sens_u*100:.2f})")
-    print(f"Specificity: {spec_m*100:.2f} ± {spec_s*100:.2f}% (95% CI: {spec_l*100:.2f}-{spec_u*100:.2f})")
-    
-    cm = confusion_matrix(all_y_true, all_y_pred)
-    os.makedirs('outputs', exist_ok=True)
-    plt.figure(figsize=(6, 5))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-    plt.title(f'Cheon LGBM - {scenario_name}')
-    plt.xlabel('Predicted Label')
-    plt.ylabel('True Label')
-    plt.tight_layout()
-    
-    filename = f"Cheon_LGBM_{scenario_name.replace(' ', '_')}.png"
-    plt.savefig(f'outputs/{filename}', dpi=300)
-    plt.close()
+    for name, (mean_val, std_val, ci_low, ci_high) in stats.items():
+        if name == "ROC-AUC":
+            print(f"  {name:10s}: {mean_val:.4f} ± {std_val:.4f} (95% CI: {ci_low:.4f}-{ci_high:.4f})")
+        else:
+            print(f"  {name:10s}: {mean_val*100:.2f} ± {std_val*100:.2f}% (95% CI: {ci_low*100:.2f}-{ci_high*100:.2f})")
+            
+    return stats
 
 def main():
-    X, y, groups, feature_names = process_raw_to_daily_level()
-    print(f"\nData Loaded. Shape: {X.shape}, Features: {len(feature_names)}")
+    print("======================================================")
+    print(" Cheon et al. (2025) Exact Reproduction (5 Repeats x 5-Fold)")
+    print("======================================================\n")
     
-    scenarios = [
-        {"name": "Scenario1_Leakage_SingleCV", "leak": True, "nested": False},
-        {"name": "Scenario2_Leakage_NestedCV", "leak": True, "nested": True},
-        {"name": "Scenario3_NoLeakage_SingleCV", "leak": False, "nested": False},
-        {"name": "Scenario4_NoLeakage_NestedCV", "leak": False, "nested": True},
-    ]
+    X, y, feature_names = process_data()
+    feature_names = np.array(feature_names)
+    print(f"\nTotal Features: {len(feature_names)}")
     
-    for sc in scenarios:
-        run_scenario(X, y, groups, sc["name"], sc["leak"], sc["nested"], n_repeats=5)
-        
-    print("\nAll scenarios completed. Confusion matrices saved in 'outputs' folder.")
+    # ----------------------------------------------------
+    # Step 1: Baseline Evaluation (Table 1 reproduction)
+    # ----------------------------------------------------
+    print("\n[Step 1] Baseline Evaluation (Table 1: All features, Default Hyperparams)")
+    baseline_model = LGBMClassifier(random_state=42, verbose=-1)
+    evaluate_model(baseline_model, X, y)
+    
+    # ----------------------------------------------------
+    # Step 2: Feature Selection using SHAP (Figure 4 reproduction)
+    # ----------------------------------------------------
+    print("\n[Step 2] Feature Selection (Figure 4: SHAP Top 40 Features)")
+    explainer_model = LGBMClassifier(random_state=42, verbose=-1)
+    explainer_model.fit(X, y)
+    
+    explainer = shap.TreeExplainer(explainer_model)
+    shap_values = explainer.shap_values(X)
+    if isinstance(shap_values, list):
+        shap_values = shap_values[1]
+    
+    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+    sorted_idx = np.argsort(mean_abs_shap)[::-1]
+    
+    top_40_idx = sorted_idx[:40]
+    X_top40 = X[:, top_40_idx]
+    
+    fs_model = LGBMClassifier(random_state=42, verbose=-1)
+    evaluate_model(fs_model, X_top40, y)
+    
+    # ----------------------------------------------------
+    # Step 3: Hyperparameter Tuning (Final Result reproduction)
+    # ----------------------------------------------------
+    print("\n[Step 3] Hyperparameter Tuning on Top 40 Features (Table 2 & Final Result)")
+    tuned_model = LGBMClassifier(
+        min_child_samples=41,
+        num_leaves=330,
+        n_estimators=1000,
+        learning_rate=0.08,
+        random_state=42,
+        verbose=-1
+    )
+    evaluate_model(tuned_model, X_top40, y)
+    
+    print("\n======================================================")
+    print(" Reproduction Complete.")
+    print("======================================================")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
