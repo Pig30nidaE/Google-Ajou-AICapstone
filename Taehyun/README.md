@@ -29,20 +29,43 @@ RUN_FILE = "실행할/파일.py"
 
 기존 `.ipynb` 원본도 로컬에는 그대로 있습니다. 다만 `.ipynb`는 `.gitignore` 대상이므로 Git 공유와 `base.ipynb` 실행은 변환된 `.py` 파일을 기준으로 합니다.
 
-## 실행 예시
+## 주요 실험 및 모델 폴더 안내
 
-Binary LGBM/RF 실행:
+### 1. 선행연구 재현 (`Paper_Reproduction/`)
+주요 선행연구 3편(최지예 2025, 천희웅 2025, Kim & Park 2026)의 논문 방법론 완전 재현 및 데이터 누수 검증 코드입니다.
 
+- `Paper_Reproduction/Choi_Ensemble.py`: 최지예(2025) RF+GBM+XGB+SVM 보팅 앙상블 재현
+- `Paper_Reproduction/Cheon_LGBM.py`: 천희웅(2025) SHAP 중요도 전진선택 + LightGBM 재현
+- `Paper_Reproduction/KimPark_LR.py`: Kim & Park(2026) 피험자 종단 변동성 지표 + 로지스틱 회귀 재현
+
+### 2. V44 최고 성능 모델 (`V44_Subspace_SOTA/`)
+도메인 특화 피처 서브스페이스 분해 및 랭크 앙상블 기법으로 **ROC-AUC 0.7074 신기록**을 달성한 최신 SOTA 모델입니다.
+
+- `V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py`: V44 최종 챔피언 파이프라인
+- `V44_Subspace_SOTA/report_binary_v44_circadian_subspace_sota.md`: V44 상세 성과 보고서
+
+---
+
+## 실행 예시 (`base.ipynb` 기준)
+
+### 1) V44 최고 성능 모델 실행 (SOTA, ROC-AUC 0.7074)
+```python
+USER_FOLDER = "Taehyun"
+RUN_FILE = "V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py"
+```
+
+### 2) 선행연구 재현 모델 실행
+```python
+USER_FOLDER = "Taehyun"
+RUN_FILE = "Paper_Reproduction/Choi_Ensemble.py"      # 최지예 (2025) 재현
+# RUN_FILE = "Paper_Reproduction/Cheon_LGBM.py"      # 천희웅 (2025) 재현
+# RUN_FILE = "Paper_Reproduction/KimPark_LR.py"      # Kim & Park (2026) 재현
+```
+
+### 3) 기존 Binary LGBM/RF 실행
 ```python
 USER_FOLDER = "Taehyun"
 RUN_FILE = "previous/Binary_LGBM_RF.py"
-```
-
-Binary LGBM/RF 테스트 실행:
-
-```python
-USER_FOLDER = "Taehyun"
-RUN_FILE = "previous/Binary_LGBM_RF_test.py"
 ```
 
 ## 데이터와 결과물
