@@ -68,7 +68,7 @@ RANDOM_STATE = 42
 OUTER_SPLITS = 5
 INNER_SPLITS = 5
 
-# 🌟 [전체 14개 핵심 도메인 피처]
+# [전체 14개 핵심 도메인 피처]
 ALL_14_FEATURES = [
     'sleep_score_alignment',          # 수면 시간대 규칙성
     'sleep_hr_5min_max_std',          # 수면 중 최대 심박수 변동성
@@ -86,13 +86,13 @@ ALL_14_FEATURES = [
     'Circadian_Strain'                # [2026 SOTA] 일주기 리듬 파괴 스트레스 (IV / IS)
 ]
 
-# 🧬 [서브스페이스 1: 일주기 생체 시계 및 자율신경계 전문 모델용 (7종)]
+# [서브스페이스 1: 일주기 생체 시계 및 자율신경계 전문 모델용 (7종)]
 SUBSPACE_CIRCADIAN_AUTONOMIC = [
     'circadian_IV', 'circadian_IS', 'circadian_RA', 'sleep_wake_bouts_avg',
     'HR_drop_ratio', 'Circadian_Strain', 'sleep_hr_5min_max_std'
 ]
 
-# 💤 [서브스페이스 2: 야간 수면 구조 및 주간 활동 라이프로그 전문 모델용 (7종)]
+# [서브스페이스 2: 야간 수면 구조 및 주간 활동 라이프로그 전문 모델용 (7종)]
 SUBSPACE_SLEEP_ACTIVITY = [
     'sleep_score_alignment', 'sleep_awake_std', 'sleep_breath_average',
     'activity_score_std', 'activity_class_3_count_std', 'activity_met_min_low_std', 'sleep_restless_std'
@@ -223,7 +223,7 @@ def fit_predict_subspace_pipeline(X_tr_df, y_tr, X_te_df, random_state=42):
 
 def run_v44_subspace_sota_nested():
     print("="*95)
-    print(" 🚀 [V44 Circadian Subspace SOTA] Zero-Leakage Nested CV 종합 평가")
+    print(" [V44 Circadian Subspace SOTA] Zero-Leakage Nested CV 종합 평가")
     print(f"    피처 수: {len(ALL_14_FEATURES)}개 (Circadian 서브스페이스: 7개, Sleep 서브스페이스: 7개)")
     print("="*95)
     
@@ -240,7 +240,7 @@ def run_v44_subspace_sota_nested():
         "CatBoost_Global", "XGBoost_Global", "RBF_SVM_Global", "RandomForest_Global"
     ]
     ensemble_names = [
-        "V44_Subspace_Decomposed_Rank_Ensemble",   # 🌟 챔피언 서브스페이스 분해 순위 앙상블
+        "V44_Subspace_Decomposed_Rank_Ensemble",   # 챔피언 서브스페이스 분해 순위 앙상블
         "V44_Subspace_Soft_Ensemble",
         "Stacking_MetaLearner"
     ]
@@ -461,9 +461,9 @@ def save_v44_report(results):
         )
     table_md = "\n".join(table_rows)
     
-    content = f"""# 🚀 V44 Circadian Subspace SOTA 신기록 달성 성과 보고서 (No-MMSE)
+    content = f"""# V44 Circadian Subspace SOTA 신기록 달성 성과 보고서 (No-MMSE)
 
-## 1. 📌 개요 및 핵심 아키텍처
+## 1. 개요 및 핵심 아키텍처
 본 모델은 기존 챔피언 모델(V42, AUC 0.7004)을 뛰어넘기 위해, 인터넷 및 최신 의료 AI(2025~2026)에서 검증된 **도메인 특화 피처 서브스페이스 분해(Feature-Subspace Decomposition)** 기법을 도입하여 **ROC-AUC 0.7074 신기록**을 달성한 최종 SOTA 파이프라인입니다.
 
 - **검증 프로토콜**: 엄격한 **Zero-Leakage Nested CV (Outer 5-Fold + Inner 5-Fold)**
@@ -479,7 +479,7 @@ def save_v44_report(results):
 
 ---
 
-## 2. 🔍 도메인 서브스페이스별 피처 구성
+## 2. 도메인 서브스페이스별 피처 구성
 
 ### [서브스페이스 1: 일주기 생체 시계 & 자율신경계 (7종)]
 - `Circadian_Strain` (IV / IS), `circadian_IV`, `circadian_IS`, `circadian_RA`, `sleep_wake_bouts_avg`, `HR_drop_ratio`, `sleep_hr_5min_max_std`
@@ -489,7 +489,7 @@ def save_v44_report(results):
 
 ---
 
-## 3. 📊 최종 성능 평가 결과 (Outer 5-Fold Out-of-Fold)
+## 3. 최종 성능 평가 결과 (Outer 5-Fold Out-of-Fold)
 
 | 모델 | **ROC-AUC** | [Tier2 진단] Acc | [Tier2 진단] Recall | [Tier2 진단] Spec | [Tier2 진단] F1 | **[Tier1 선별] Recall** | **[Tier3 확진] Specificity** |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -497,7 +497,7 @@ def save_v44_report(results):
 
 ---
 
-## 4. 💡 0.7074 신기록 달성 핵심 요인 및 임상적 결론
+## 4. 0.7074 신기록 달성 핵심 요인 및 임상적 결론
 
 1. **서브스페이스 분해(Subspace Decomposition)의 압도적 시너지**:
    - 모든 피처를 한꺼번에 학습시킬 때 발생하는 노이즈 간섭을 제거하고, **생체 시계 전문 모델(CatBoost Specialist)** 과 **수면-활동 전문 모델(LightGBM Specialist)** 이 각각 순도 높은 신호를 포착한 후 융합함으로써 **ROC-AUC 0.7074 신기록**을 달성했습니다.

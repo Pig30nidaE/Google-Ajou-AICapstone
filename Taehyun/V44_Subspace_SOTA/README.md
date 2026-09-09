@@ -1,4 +1,4 @@
-# 🚀 V44 Circadian Subspace SOTA 신기록 달성 모델
+# V44 Circadian Subspace SOTA 신기록 달성 모델
 
 이 폴더는 치매 고위험군 라이프로그 데이터(Zero-Leakage 환자 단위 분할, No-MMSE 환경)에서 **ROC-AUC 0.7074 신기록**을 달성한 **V44 최고 성능 모델** 및 관련 보고서를 포함하고 있습니다.
 

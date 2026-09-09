@@ -1,6 +1,6 @@
-# 🚀 V44 Circadian Subspace SOTA 신기록 달성 성과 보고서 (No-MMSE)
+# V44 Circadian Subspace SOTA 신기록 달성 성과 보고서 (No-MMSE)
 
-## 1. 📌 개요 및 핵심 아키텍처
+## 1. 개요 및 핵심 아키텍처
 본 모델은 기존 챔피언 모델(V42, AUC 0.7004)을 뛰어넘기 위해, 인터넷 및 최신 의료 AI(2025~2026)에서 검증된 **도메인 특화 피처 서브스페이스 분해(Feature-Subspace Decomposition)** 기법을 도입하여 **ROC-AUC 0.7074 신기록**을 달성한 최종 SOTA 파이프라인입니다.
 
 - **검증 프로토콜**: 엄격한 **Zero-Leakage Nested CV (Outer 5-Fold + Inner 5-Fold)**
@@ -16,7 +16,7 @@
 
 ---
 
-## 2. 🔍 도메인 서브스페이스별 피처 구성
+## 2. 도메인 서브스페이스별 피처 구성
 
 ### [서브스페이스 1: 일주기 생체 시계 & 자율신경계 (7종)]
 - `Circadian_Strain` (IV / IS), `circadian_IV`, `circadian_IS`, `circadian_RA`, `sleep_wake_bouts_avg`, `HR_drop_ratio`, `sleep_hr_5min_max_std`
@@ -26,7 +26,7 @@
 
 ---
 
-## 3. 📊 최종 성능 평가 결과 (Outer 5-Fold Out-of-Fold)
+## 3. 최종 성능 평가 결과 (Outer 5-Fold Out-of-Fold)
 
 | 모델 | **ROC-AUC** | [Tier2 진단] Acc | [Tier2 진단] Recall | [Tier2 진단] Spec | [Tier2 진단] F1 | **[Tier1 선별] Recall** | **[Tier3 확진] Specificity** |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -42,16 +42,16 @@
 
 ---
 
-## 4. 💡 0.7074 신기록 달성 핵심 요인 및 임상적 결론
+## 4. 0.7074 신기록 달성 핵심 요인 및 임상적 결론
 
-1. **서브스페이스 분해(Subspace Decomposition)의 압도적 시너지**:
-   - 모든 피처를 한꺼번에 학습시킬 때 발생하는 노이즈 간섭을 제거하고, **생체 시계 전문 모델(CatBoost Specialist)** 과 **수면-활동 전문 모델(LightGBM Specialist)** 이 각각 순도 높은 신호를 포착한 후 융합함으로써 **ROC-AUC 0.7074 신기록**을 달성했습니다.
-2. **소규모 임상 데이터($N=174$)에서의 분산 억제**:
+1. **서브스페이스 분해(Subspace Decomposition)의 시너지**:
+   - 모든 피처를 한꺼번에 학습시킬 때 발생하는 노이즈 간섭을 제거하고, 생체 시계 전문 모델(CatBoost Specialist)과 수면-활동 전문 모델(LightGBM Specialist)이 각각 순도 높은 신호를 포착한 후 융합함으로써 ROC-AUC 0.7074 신기록을 달성했습니다.
+2. **소규모 임상 데이터(N=174)에서의 분산 억제**:
    - 도메인 특화 모델들의 백분위 순위를 가중 평균하여, 단일 모델 대비 분산을 대폭 축소하고 Outer Fold 전반에서 일관된 고성능을 기록했습니다.
-3. **완벽한 3단계 임상 운영 체계 탑재**:
+3. **3단계 임상 운영 체계 탑재**:
    - 보건소 1차 스크리닝(Recall 75%), 전문의 진단 보조(AUC 0.7074), 고비용 검사 전 확진(Spec 80~83%)의 3단계 맞춤형 진료 지원 체계를 완성했습니다.
 
 ---
 - **시각화 자료**:
-  - `c:\ML4\report\plots\roc_curves_v44_circadian_subspace_sota.png`
-  - `c:\ML4\report\plots\confusion_matrix_v44_circadian_subspace_sota.png`
+  - `report/plots/roc_curves_v44_circadian_subspace_sota.png`
+  - `report/plots/confusion_matrix_v44_circadian_subspace_sota.png`

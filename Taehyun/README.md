@@ -31,14 +31,21 @@ RUN_FILE = "실행할/파일.py"
 
 ## 주요 실험 및 모델 폴더 안내
 
-### 1. 선행연구 재현 (`Paper_Reproduction/`)
-주요 선행연구 3편(최지예 2025, 천희웅 2025, Kim & Park 2026)의 논문 방법론 완전 재현 및 데이터 누수 검증 코드입니다.
+### 1. 선행연구 순수 재현 (`Paper_Reproduction/`)
+주요 선행연구 3편(최지예 2025, 천희웅 2025, Kim & Park 2026)의 원 논문 방법론 및 실험 절차 순수 재현 코드입니다.
 
 - `Paper_Reproduction/Choi_Ensemble.py`: 최지예(2025) 3진 분류 RF+GBM+XGB+SVM+PyTorch LSTM 5종 보팅 앙상블 재현
 - `Paper_Reproduction/Cheon_LGBM.py`: 천희웅(2025) Step 1~3 논문 결과 순서 3단계 완전 재현 (SHAP Top 40 + Tuned LGBM)
 - `Paper_Reproduction/KimPark_LR.py`: Kim & Park(2026) 피험자 종단 변동성 지표 + 로지스틱 회귀 재현
 
-### 2. V44 최고 성능 모델 (`V44_Subspace_SOTA/`)
+### 2. 피험자 분할 & Nested CV 검증 (`Paper_Reproduction_Nested/`)
+선행연구 3편에 대해 환자 ID 단위 분할(`StratifiedGroupKFold`, Zero-Leakage) 및 내부 Optuna 튜닝(Nested CV)을 적용하여 4대 시나리오(Leakage vs Zero-Leakage, Single CV vs Nested CV)를 정밀 검증하는 코드입니다.
+
+- `Paper_Reproduction_Nested/Cheon_LGBM.py`: 피험자 분할 + Fold 내 SHAP 선별 + Optuna Nested CV
+- `Paper_Reproduction_Nested/Choi_Ensemble.py`: 피험자 분할 + 5종 앙상블(LSTM 포함) + Optuna Nested CV
+- `Paper_Reproduction_Nested/KimPark_LR.py`: 피험자 단위 종단 변동성 + Fold 내 RFECV + L2 정규화 LR Nested CV
+
+### 3. V44 최고 성능 모델 (`V44_Subspace_SOTA/`)
 도메인 특화 피처 서브스페이스 분해 및 랭크 앙상블 기법으로 **ROC-AUC 0.7074 신기록**을 달성한 최신 SOTA 모델입니다.
 
 - `V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py`: V44 최종 챔피언 파이프라인
@@ -54,7 +61,7 @@ USER_FOLDER = "Taehyun"
 RUN_FILE = "V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py"
 ```
 
-### 2) 선행연구 재현 모델 실행
+### 2) 선행연구 순수 재현 모델 실행
 ```python
 USER_FOLDER = "Taehyun"
 RUN_FILE = "Paper_Reproduction/Choi_Ensemble.py"      # 최지예 (2025) 재현
@@ -62,7 +69,15 @@ RUN_FILE = "Paper_Reproduction/Choi_Ensemble.py"      # 최지예 (2025) 재현
 # RUN_FILE = "Paper_Reproduction/KimPark_LR.py"      # Kim & Park (2026) 재현
 ```
 
-### 3) 기존 Binary LGBM/RF 실행
+### 3) 피험자 분할 & Nested CV 검증 모델 실행
+```python
+USER_FOLDER = "Taehyun"
+RUN_FILE = "Paper_Reproduction_Nested/Cheon_LGBM.py"    # 천희웅 Nested CV 검증
+# RUN_FILE = "Paper_Reproduction_Nested/Choi_Ensemble.py" # 최지예 5종 앙상블 Nested CV 검증
+# RUN_FILE = "Paper_Reproduction_Nested/KimPark_LR.py"   # Kim & Park Nested CV 검증
+```
+
+### 4) 기존 Binary LGBM/RF 실행
 ```python
 USER_FOLDER = "Taehyun"
 RUN_FILE = "previous/Binary_LGBM_RF.py"
