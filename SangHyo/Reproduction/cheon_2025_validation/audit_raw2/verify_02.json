@@ -1,0 +1,162 @@
+{
+  "verdicts": [
+    {
+      "claim": "DEVIATION 1 — 5-min heart-rate and RMSSD logs are used as features: 20 statistics of CONVERT(sleep_hr_5min) and CONVERT(sleep_rmssd_5min) enter the feature table (evidence :119-122, :152, :178)",
+      "verdict": "confirmed",
+      "reason": "Both CONVERT columns are passed to numeric_sequence_stats, which emits 10 named columns per prefix (:77/:79). I tried to refute this by checking whether the derived columns are dropped: the :152 drop list contains only the raw and CONVERT *string* column names, never the derived 'sleep_hr_5min_*' / 'sleep_rmssd_5min_*' names, and :178 admits every numeric column not in DROP_COLS. One caveat the reader did not state: the calls are guarded by 'if \"CONVERT(...)\" in row', so their existence depends on the raw schema (not openable here) — but the same exact CONVERT names appear in the :152 drop list, showing the author expects them present.",
+      "evidence": ":120 `feats.update(numeric_sequence_stats(parse_slash_sequence(row[\"CONVERT(sleep_hr_5min USING utf8)\"], dtype=float), \"sleep_hr_5min\", remove_zero=True))`; :122 same for \"sleep_rmssd_5min\"; :79 returns `{prefix}_mean … {prefix}_valid_count` (10 keys); :178 `features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]`"
+    },
+    {
+      "claim": "DEVIATION 2 — no 24-h clock conversion of sleep_bedtime_start/end and no sleep_time feature; the bedtime columns are used only for the join key and dedup, then dropped (evidence :131, :135-136, :143, :152)",
+      "verdict": "confirmed",
+      "reason": "Exactly as described. The two bedtime columns are held back from numeric coercion by the `keep` set, parsed only into `_dt` helpers, used for the join date (:139) and for a duration used solely to order the dedup (:143-144), and then all six related columns are named in the :152 drop list. I searched the whole file for any hour/minute arithmetic or a 'sleep_time' assignment — there is none.",
+      "evidence": ":131 `sleep = coerce_numeric_columns(sleep, keep={\"EMAIL\", \"sleep_bedtime_start\", \"sleep_bedtime_end\"})`; :143 `sleep[\"_sleep_duration_seconds\"] = (sleep_end - sleep_start).dt.total_seconds()`; :152 drop_cols includes `\"sleep_bedtime_start\", \"sleep_bedtime_end\", \"sleep_bedtime_start_dt\", \"sleep_bedtime_end_dt\", \"_sleep_duration_seconds\"`"
+    },
+    {
+      "claim": "DEVIATION 3 — MET statistics are mean/std/var(ddof=0)/min/max/median/q25/q75 plus extra iqr and valid_count; kurtosis, skewness, autocorrelation and quantile_50 are absent; −1 tokens removed (evidence :72-79, :74, :118)",
+      "verdict": "confirmed",
+      "reason": "The returned dict at :79 is the complete stat set; there is no scipy import (only numpy/pandas at :3-4) and no kurt/skew/autocorr call anywhere in the file. `arr = arr[arr != -1]` at :74 is unconditional, so it applies to the MET series even though remove_zero=False at :118. 8 of the paper's 12 MET statistics are present; quantile_50's value is carried by `median`.",
+      "evidence": ":74 `arr = arr[arr != -1]`; :79 `... {prefix}_mean, _std, _var, _min, _max, _median, _q25, _q75, _iqr, _valid_count`; :118 `numeric_sequence_stats(parse_slash_sequence(row[\"CONVERT(activity_met_1min USING utf8)\"], dtype=float), \"activity_met_1min\", remove_zero=False)`"
+    },
+    {
+      "claim": "DEVIATION 4 — feature space is ≈107 columns: activity-class counts/ratios for classes 0 and 5, three redundant ratio columns, hypnogram ratios and transition count, valid-count columns, sleep_is_longest and sleep_temperature_deviation (evidence :86-93, :104-107, :176-178, :152)",
+      "verdict": "confirmed",
+      "reason": "Confirmed for the mechanism and for every column the code itself creates: `for level in range(6)` emits count+ratio for classes 0-5 (12 cols) plus rest/inactive/active ratios and a valid count (16 total); the hypnogram block emits 4 counts + 4 ratios + transition + valid (10); and :176-178 makes every numeric column a feature with no allow-list. Two sub-claims are NOT verifiable from the code and I flag them as inference, not evidence: the exact '≈107' total, and the presence of sleep_is_longest / sleep_temperature_deviation — both depend on the raw CSV schema, which I did not open. The code-level fact is only that the drop list does not name them.",
+      "evidence": ":86-89 `for level in range(6): … out[f\"activity_class_{level}_count\"] … out[f\"activity_class_{level}_ratio\"]`; :92 `out[\"activity_active_ratio\"] = out.get(\"activity_class_3_ratio\", 0) + out.get(\"activity_class_4_ratio\", 0) + out.get(\"activity_class_5_ratio\", 0) if total else np.nan`; :177-178 `DROP_COLS = [\"EMAIL\", TARGET_COL, \"DIAG_NM\", \"date\"]` → `features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(...)]`"
+    },
+    {
+      "claim": "DEVIATION 5 — no forward selection; k=40 is hard-coded and evaluated once (evidence :270, :273-274)",
+      "verdict": "confirmed",
+      "reason": "There is no loop over k anywhere in main(); the ranking is sliced once at :270 and the resulting matrix is evaluated once at :274 and reused at :288. No per-k curve is computed or plotted (matplotlib is imported at :7 and never called), so README.md:12's 'Figure 4' label describes a single point, not a path.",
+      "evidence": ":270 `top_40_idx = sorted_idx[:40]`; :271 `X_top40 = X[:, top_40_idx]`; :274 `evaluate_model(fs_model, X_top40, y)`; README.md:12 `- Step 2: SHAP 절대 중요도 상위 40개 특성 선택 (Figure 4)`"
+    },
+    {
+      "claim": "DEVIATION 6 — records are built by a wake-date join with longest-episode sleep dedup and an inner merge, then complete-case deletion; no check of 12,183 / 7,737 / 4,446 (evidence :138-146, :183, :180-181)",
+      "verdict": "confirmed",
+      "reason": "Every code fact holds: activity date = calendar date of activity_day_start, sleep date = calendar date of sleep_bedtime_end (wake date), sleep sorted by duration descending and deduplicated on (EMAIL, date), inner merge, then dropna. A grep over the file returns no `assert` and no `nunique`, so nothing is checked. The one part I cannot verify here is 'a wake-date join cannot yield 12,183' — that is inherited from ASSUMPTIONS A03, not from this code.",
+      "evidence": ":139 `sleep[\"date\"] = sleep[\"sleep_bedtime_end_dt\"].dt.date`; :144 `.sort_values([\"EMAIL\",\"date\",\"_sleep_duration_seconds\"], ascending=[True,True,False]).drop_duplicates([\"EMAIL\",\"date\"], keep=\"first\")`; :146 `how=\"inner\"`; :181 `# To try and hit exactly 7737 / 4446, we drop NaNs instead of median imputation.`; :183 `all_daily = all_daily.dropna(subset=features)`"
+    },
+    {
+      "claim": "DEVIATION 7 — Precision/Recall/F1 use sklearn's default average='binary' on the positive class, not macro (evidence :212-214)",
+      "verdict": "confirmed",
+      "reason": "No `average=` argument is passed to any of the three metric calls, so sklearn's binary default applies; only `zero_division=0` is set. The paper's Table 1 column is F1-macro, so those three numbers are not comparable.",
+      "evidence": ":212-214 `precs.append(precision_score(y[va], pred_labels, zero_division=0))` / `recs.append(recall_score(y[va], pred_labels, zero_division=0))` / `f1s.append(f1_score(y[va], pred_labels, zero_division=0))`"
+    },
+    {
+      "claim": "DEVIATION 8 — only LightGBM is evaluated; the paper's other six Table-1 models are absent (evidence :252-253)",
+      "verdict": "confirmed",
+      "reason": "The import block contains exactly one estimator; there is no LogisticRegression / DecisionTree / KNeighbors / SVC / MLP / RandomForest import or instantiation anywhere in the 295 lines. All three model objects (:252, :259, :273, :280) are LGBMClassifier.",
+      "evidence": ":10 `from lightgbm import LGBMClassifier` (only estimator import); :252 `baseline_model = LGBMClassifier(random_state=42, verbose=-1)`; README.md:12 `- Step 1: Baseline LGBM 평가 (Table 1)`"
+    },
+    {
+      "claim": "DEVIATION 9 — dataset-level listwise deletion of any row with a NaN in any of the ~107 numeric columns, including non-paper HR/RMSSD columns (evidence :183)",
+      "verdict": "confirmed",
+      "reason": "`subset=features` is the full numeric feature list built at :178, so any single NaN — including one produced by an empty HR/RMSSD series at :76-77 or an empty hypnogram at :105 — deletes the whole day. It runs on the pooled frame before any split, so it is not fold-scoped, and LightGBM's native NaN handling is never reached.",
+      "evidence": ":178 features built from all numeric columns; :183 `all_daily = all_daily.dropna(subset=features)`; :77 empty-series branch returns `{prefix}_mean: np.nan, …`"
+    },
+    {
+      "claim": "DEVIATION 10 — 5 repeats × 5 folds pooled into 25 scores, summarised as mean ± 1.96·SD/√25 (evidence :196, :203-204, :216-221)",
+      "verdict": "confirmed",
+      "reason": "All 25 fold scores are appended to one flat list per metric and compute_stats is applied to that flat list; n = len(arr) = 25. The paper describes a single 5-fold run with a fold-mean; there is no per-repeat aggregation in the code.",
+      "evidence": ":203-204 `for repeat in range(n_repeats): cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat)`; :219-220 `n = len(arr)` / `ci = 1.96 * std_val / np.sqrt(n)`"
+    },
+    {
+      "claim": "DEVIATION 11 — Table 2 hyperparameters are hard-coded constants; no grid search (evidence :280-287)",
+      "verdict": "confirmed",
+      "reason": "The four values match the paper's Table 2 exactly (min_data_in_leaf→min_child_samples alias), and there is no GridSearchCV/Optuna/loop anywhere in the file. The paper's coarse-to-fine num_leaves ladder is not re-run.",
+      "evidence": ":280-287 `LGBMClassifier(min_child_samples=41, num_leaves=330, n_estimators=1000, learning_rate=0.08, random_state=42, verbose=-1)`"
+    },
+    {
+      "claim": "DEVIATION 12 — documentation says CN vs MCI although Dem is mapped to the positive class (evidence README.md:12, :56, :189)",
+      "verdict": "confirmed",
+      "reason": "The mapping is CN vs MCI+Dem (paper-correct), but both the README table cell and the runtime print describe class 1 as MCI only. This is a labelling/documentation defect, not a modelling one.",
+      "evidence": ":56 `binary_label_map = {\"CN\": 0, \"MCI\": 1, \"Dem\": 1, \"Dementia\": 1}`; :189 `print(f\"Label Distribution -> CN(0): {np.sum(y==0)}, MCI(1): {np.sum(y==1)}\")`; README.md:12 `• **이진 분류 (CN vs MCI)**`"
+    },
+    {
+      "claim": "DEVIATION 13 — series token filtering: −1 removed from MET/class/hypnogram, 0 additionally removed from hypnogram, zeros removed from HR/RMSSD (evidence :74, :75, :83, :98)",
+      "verdict": "confirmed",
+      "reason": "All four filter lines read as claimed. Note the filtering is unreported in the paper, so this is an undocumented operational choice rather than a contradiction of a stated rule.",
+      "evidence": ":74 `arr = arr[arr != -1]`; :75 `if remove_zero: arr = arr[arr != 0]`; :83 `arr = arr[arr != -1]`; :98 `arr = arr[(arr != -1) & (arr != 0)]`"
+    },
+    {
+      "claim": "ERROR 1 — feature-selection leakage: the SHAP ranking that defines the top-40 is fit and explained on ALL pooled records and reused for every fold of Steps 2 and 3 (evidence :259-260, :263, :270-274, :288)",
+      "verdict": "confirmed",
+      "reason": "explainer_model.fit receives the full X, y (the same arrays later passed to evaluate_model), and shap_values is computed on the same full X. The resulting index vector is applied once at :271 and the identical X_top40 is fed to both Step 2 and Step 3. There is no train-fold-scoped variant in the file, and the selection happens outside evaluate_model, so every validation row of every one of the 50 fits participated in choosing its own features.",
+      "evidence": ":260 `explainer_model.fit(X, y)`; :263 `shap_values = explainer.shap_values(X)`; :271 `X_top40 = X[:, top_40_idx]`; :274 and :288 both call `evaluate_model(..., X_top40, y)`"
+    },
+    {
+      "claim": "ERROR 2 — subject overlap across folds: record-level StratifiedKFold(shuffle=True) with no groups puts the same subject in train and validation folds, contradicting the README's 'Leakage Proof' claim (evidence :204-205, :177, README.md:3)",
+      "verdict": "confirmed",
+      "reason": "cv.split(X, y) is called with two arguments only — there is no groups argument and no StratifiedGroupKFold import (:8 imports StratifiedKFold alone). EMAIL is in DROP_COLS and is also a str column (held in the `keep` set at :130-131), so it is neither a feature nor a group. Confirmed as a code fact; that this mirrors the paper's own day-level CV is correct per PAPER_PROTOCOL 'Unit of splitting: Records (days)', so the defect is the README's claim, not the split per se.",
+      "evidence": ":8 `from sklearn.model_selection import StratifiedKFold`; :205 `for tr, va in cv.split(X, y):`; :177 `DROP_COLS = [\"EMAIL\", TARGET_COL, \"DIAG_NM\", \"date\"]`; README.md:3 `**최종 및 완전 재현(Exact Reproduction & Leakage Proof)**`"
+    },
+    {
+      "claim": "ERROR 3 — metric mismatch: binary-averaged Precision/Recall/F1 are not comparable with the paper's F1-macro; only Accuracy and ROC-AUC are comparable (evidence :212-214)",
+      "verdict": "confirmed",
+      "reason": "Same lines as deviation 7; the conclusion follows directly. Accuracy (:211) and ROC-AUC (:210) are averaging-independent, so the reader's scoping is right.",
+      "evidence": ":210-214 `aucs.append(roc_auc_score(y[va], preds))` … `f1s.append(f1_score(y[va], pred_labels, zero_division=0))` — no `average=` on any of precision/recall/f1"
+    },
+    {
+      "claim": "ERROR 4 — invalid confidence interval: 25 correlated fold scores treated as i.i.d. with z=1.96 and population SD (ddof=0) (evidence :216-221)",
+      "verdict": "confirmed",
+      "reason": "np.std is called with no ddof, i.e. ddof=0, and the standard error divides by sqrt(25) where the 25 scores share training data within a repeat and share the entire dataset across repeats. Both the independence assumption and the normal (rather than t) quantile are in the code as claimed.",
+      "evidence": ":218-220 `std_val = np.std(arr)` / `n = len(arr)` / `ci = 1.96 * std_val / np.sqrt(n)`"
+    },
+    {
+      "claim": "ERROR 5 — the selected 'top 40' cannot be the paper's set: three Figure-6 top-20 features are absent, 20 forbidden HR/RMSSD statistics compete for rank, duplicate columns split SHAP mass, and the selected names are never logged (evidence :152, :72-79, :90-91, :119-122, :245-271)",
+      "verdict": "confirmed",
+      "reason": "Confirmed on every load-bearing point: sleep_bedtime_end is dropped at :152, no kurtosis/autocorrelation exists at :72-79, the HR/RMSSD stats are present at :119-122, activity_rest_ratio and activity_inactive_ratio are literal aliases of class_1/class_2 ratios at :90-91, and feature_names is used only for the count print at :246 and never indexed by top_40_idx. ONE SUB-CLAIM IS REFUTED: 'median == quantile' does not hold in this file — there is no quantile_50 column at :79, so `median` duplicates nothing. That mistake does not change the verdict on the item.",
+      "evidence": ":90-91 `out[\"activity_rest_ratio\"] = out.get(\"activity_class_1_ratio\", np.nan)` / `out[\"activity_inactive_ratio\"] = out.get(\"activity_class_2_ratio\", np.nan)`; :246 `print(f\"\\nTotal Features: {len(feature_names)}\")` is the last use of feature_names; :270 `top_40_idx = sorted_idx[:40]` (indices only, never mapped to names)"
+    },
+    {
+      "claim": "ERROR 6 — cohort and record count are unverified: no assertion of 174 subjects or 12,183 / 7,737 / 4,446; activity-side duplicates are not deduplicated (possible many-to-one duplication) (evidence :138-146, :183, :180-181, :189)",
+      "verdict": "confirmed",
+      "reason": "A grep of the file for `assert` and `nunique` returns nothing, so no cohort or record-count check exists; the only visibility is three print statements. The asymmetric dedup is real: drop_duplicates is applied to `sleep` only (:144), while `activity` goes into the inner merge unfiltered, so a repeated (EMAIL, date) activity row would be paired twice with the same sleep row.",
+      "evidence": ":144 `sleep = sleep.sort_values(...).drop_duplicates([\"EMAIL\", \"date\"], keep=\"first\").reset_index(drop=True)` (no equivalent for `activity`); :146 `daily = activity.merge(sleep, on=[\"EMAIL\", \"date\"], how=\"inner\", ...)`; grep for `assert|nunique` over the file: no matches"
+    },
+    {
+      "claim": "ERROR 7 — silent data-loading failure modes: FileNotFoundError swallowed → empty DataFrame; a missing val label file skips the label merge and crashes at :186; the required CSVs are absent from Taehyun/data in this checkout (evidence :34-40, :55, :147-148, :174, :186)",
+      "verdict": "confirmed",
+      "reason": "The read loop catches FileNotFoundError inside the encoding loop and falls through to `return pd.DataFrame()`; preprocess_label short-circuits on an empty frame, so `label.empty` is True and the merge at :147-148 is skipped, leaving val rows without a 'label' column that becomes NaN after concat and fails at astype(int). I verified the directory: Taehyun/data contains only mmse/, processed/, training_label_activity.csv, training_label_sleep.csv — no activity/sleep CSVs and no val_label*, so with an empty activity frame :129 returns an empty DataFrame and :186 raises KeyError('label'), exactly as claimed. Minor precision note: in the NaN-label path the exception is a ValueError from astype(int), not a KeyError.",
+      "evidence": ":38-40 `except (UnicodeDecodeError, FileNotFoundError): continue` → `return pd.DataFrame()`; :55 `if label_df.empty: return label_df`; :147 `if not label.empty:`; :186 `y = all_daily[TARGET_COL].astype(int).values`; `ls Taehyun/data` → `mmse  processed  training_label_activity.csv  training_label_sleep.csv`"
+    },
+    {
+      "claim": "ERROR 8 — label table deduplicated by keeping the first row per EMAIL, silently discarding a conflicting second diagnosis; no cross-check against the Sleep label copy (evidence :58, :164-168)",
+      "verdict": "confirmed",
+      "reason": "drop_duplicates('EMAIL') keeps the first occurrence with no consistency check, and only one label file per partition is ever read (training_label*.csv and val_label*.csv). training_label_sleep.csv exists in the folder but is never referenced anywhere in the script. Whether conflicting duplicates actually occur is not determinable without opening the data, which is why the reader's own 'low' confidence is appropriate.",
+      "evidence": ":58 `return label_df[[\"EMAIL\", \"DIAG_NM\", \"label\"]].drop_duplicates(\"EMAIL\")`; :164-165 single filename resolution per partition; no occurrence of `training_label_sleep` in the file"
+    },
+    {
+      "claim": "ERROR 9 — repeat variance is understated: SHAP ranking computed once (seed 42) and model random_state fixed at 42 for every fit, so repeats vary only the fold assignment (evidence :259, :252/:273/:285, :204)",
+      "verdict": "confirmed",
+      "reason": "All four estimator constructions pass random_state=42 and only the split seed varies with the repeat index; the explainer is fit once before evaluate_model is entered. Worth qualifying: with LightGBM defaults (no bagging, feature_fraction=1) model random_state has little effect anyway, so the practically decisive part is the once-computed ranking, not the fixed model seed.",
+      "evidence": ":204 `random_state=42 + repeat` (split only); :252/:259/:273/:285 all `random_state=42`; :260 `explainer_model.fit(X, y)` outside evaluate_model"
+    },
+    {
+      "claim": "ERROR 10 — np.std / np.var use ddof=0 where the paper (pandas default) would use ddof=1; harmless on complete 1,440-sample days but not on shorter series (evidence :79)",
+      "verdict": "confirmed",
+      "reason": "The code fact is exact: `np.std(arr)` and `np.var(arr)` with no ddof. One correction to the reader's reasoning, in the direction of MORE severity: because :74 removes −1 tokens per row, the surviving length varies row to row for the MET series too, so the ddof=0↔ddof=1 factor sqrt(n/(n-1)) is row-dependent for every derived column, not only for the 172 short activity-class series. It is therefore not a constant rescaling anywhere.",
+      "evidence": ":79 `f\"{prefix}_std\": float(np.std(arr)), f\"{prefix}_var\": float(np.var(arr))`; :74 `arr = arr[arr != -1]` (row-dependent length)"
+    },
+    {
+      "claim": "ERROR 11 — pd.to_datetime called without utc=True on offset-carrying ISO strings; latent failure if offsets ever differ (evidence :133-136, :138-139)",
+      "verdict": "confirmed",
+      "reason": "The four to_datetime calls pass only `errors=\"coerce\"` and no utc argument, and `.dt.date` is taken immediately after. Confirmed as a code fact. The consequence ('all +09:00 in this dataset, so latent only') rests on the data, which I did not open, so the severity is inference; the reader's 'low' confidence is right.",
+      "evidence": ":135-136 `sleep[\"sleep_bedtime_start_dt\"] = pd.to_datetime(sleep.get(\"sleep_bedtime_start\"), errors=\"coerce\")` (no `utc=True`); :139 `sleep[\"date\"] = sleep[\"sleep_bedtime_end_dt\"].dt.date`"
+    }
+  ],
+  "missed_items": [
+    "MERGE-KEY ASYMMETRY (not reported): only the LABEL table gets the SAMPLE_EMAIL→EMAIL rename (:53-54 `if \"SAMPLE_EMAIL\" in label_df.columns: label_df = label_df.rename(columns={\"SAMPLE_EMAIL\": \"EMAIL\"})`). The activity and sleep tables get no such rename, yet :146 merges them `on=[\"EMAIL\", \"date\"]` and :130-131 hold \"EMAIL\" in the numeric-coercion keep set. If the raw activity/sleep CSVs use SAMPLE_EMAIL (as the label copies evidently can), the run dies at the merge — the subject-key handling is inconsistent between the three inputs.",
+    "PARTIAL-PARSE COERCION RULE (not reported): :47 `if not converted.isna().all():` means a column is promoted to numeric when even ONE cell parses. Such a column is then admitted as a feature by :178 while being almost entirely NaN, and :183 `dropna(subset=features)` deletes every row that lacks it. A single stray numeric token in a text column can therefore silently empty the dataset. The reader described only the opposite case (columns that never parse stay str and are excluded).",
+    "SILENT LOSS OF ALL 56 DERIVED FEATURES (not reported): the sequence blocks are keyed strictly on the `CONVERT(... USING utf8)` names and each is wrapped in `if \"CONVERT(...)\" in row:` with no else and no warning (:115, :117, :119, :121, :123). The :152 drop list also names the plain forms (`\"activity_class_5min\", \"activity_met_1min\", \"sleep_hr_5min\", \"sleep_hypnogram_5min\", \"sleep_rmssd_5min\"`), so if a CSV export carries the plain names the script produces zero MET/class/hypnogram/HR/RMSSD features, prints a much smaller 'Total Features' count, and completes as if nothing were wrong.",
+    "PARTITION COLUMN-SET RECONCILIATION (not reported): Training and Validation are preprocessed by independent make_daily_table calls (:171-172) and then `pd.concat([train_daily, val_daily], ignore_index=True)` at :174. Any column present in one partition and missing in the other becomes all-NaN for the other partition's rows, and :183 then deletes that entire partition — silently, since only a shape is printed. No column-set check exists.",
+    "HARD-CODED MACHINE-SPECIFIC DATA ROOT (not reported): :26-27 `elif Path(r\"c:\\ML4\\Google-Ajou-AICapstone\\Taehyun\\data\").exists(): DATA_DIR = Path(...)`, with a final cwd-relative fallback `DATA_DIR = Path(\"./data\")` (:29). The resolution is silent, so a wrong root yields empty frames rather than an error — this is the mechanism behind the crash-on-this-checkout finding, and it makes the run non-portable despite the README's Colab instructions.",
+    "ZERO ASSERTIONS AND ZERO PERSISTENCE, verified by grep (reader asserted parts of this without evidence): the file contains no `assert`, no `nunique`, no `to_csv`, no `savefig`, no `open(`, and no json write. Cohort size, record count, class balance, the full feature list, the identity of the selected 40 features, and all 15 metric summaries exist only as stdout; nothing is reproducible or auditable after the process exits, and `stats` returned by evaluate_model is discarded at :253/:274/:288.",
+    "POSITIVE-CLASS HANDLING IS PAPER-CORRECT (a match the reader did not credit): :207 `preds = model.predict_proba(X[va])[:, 1]` and :210 `roc_auc_score(y[va], preds)` score the impaired class (label 1), matching PAPER_PROTOCOL's 'ROC curve for the cognitive-impairment class' (p.165 §3.2(2)). ROC-AUC is therefore the one headline number that is directly comparable to the paper's 0.9010 / 0.9037 / 0.9492, independent of the threshold and averaging defects.",
+    "NO IMBALANCE HANDLING (not reported): stratification is on the record label only (:205 `cv.split(X, y)`) and no `class_weight`, `is_unbalance`, or `scale_pos_weight` is set on any of the four LGBMClassifier constructions, despite the paper's 1.74:1 CN:impaired ratio and the fixed 0.5 threshold at :208 — this is what makes the binary-averaged Recall/F1 at :213-214 threshold-sensitive.",
+    "SHAP OUTPUT-SHAPE HANDLING IS ONE-SIDED, WITH NO VERSION PIN (not reported as a defect): :264-265 `if isinstance(shap_values, list): shap_values = shap_values[1]` covers only the legacy list form. A shap version that returns a 3-D (n_rows, n_features, n_classes) ndarray would make :267 `np.abs(shap_values).mean(axis=0)` two-dimensional, so :268 `np.argsort(...)[::-1]` would sort along the wrong axis and :270 would yield a 2-D `top_40_idx` — a silently wrong ranking or a shape error rather than a clean failure. There is no requirements.txt or version pin anywhere in Taehyun/Paper_Reproduction/.",
+    "PHANTOM STAGE TRANSITIONS (not reported): :106 `out[\"sleep_stage_transition_count\"] = int(np.sum(arr[1:] != arr[:-1])) if total > 1 else 0` is computed AFTER :98 deletes the −1 and 0 tokens, so the array is re-concatenated across the removed gaps and each gap boundary is counted as a real stage change. The feature is not one of the paper's 72 but it competes in the SHAP ranking at :267.",
+    "STEP-TO-STEP DELTAS ARE CONFOUNDED (implied but not stated): Step 1 (:253) runs on all features while Steps 2 and 3 (:274, :288) run on the same leaked X_top40, and Step 3 changes hyperparameters without changing anything else. So the printed Step1→Step2 gap conflates feature reduction with the all-data SHAP leak, and the Step 3 number that would be compared to the paper's 0.9492 carries that leak forward — the three printed blocks cannot be read as an ablation.",
+    "DEAD DROP ENTRIES (minor, not reported): :152 already removes `\"DIAG_NM\"` and `\"date\"` inside make_daily_table, so the corresponding entries in :177 `DROP_COLS = [\"EMAIL\", TARGET_COL, \"DIAG_NM\", \"date\"]` never match. Harmless, but it means the only live exclusions at feature-selection time are EMAIL and label, which is why the all-numeric sweep is so wide."
+  ]
+}

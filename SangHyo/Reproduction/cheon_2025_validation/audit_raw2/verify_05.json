@@ -1,0 +1,147 @@
+{
+  "verdicts": [
+    {
+      "claim": "DEVIATION 1 — Feature universe is 86, not the paper's 72 (adds class-0/5 counts, ratios, valid_count, transition counts, MET iqr, sleep_temperature_deviation; omits MET kurtosis/skewness/autocorrelation/quantile_50)",
+      "verdict": "confirmed",
+      "reason": "feature_columns.json contains exactly 86 entries and I enumerated them: all 10 extra activity_class_5min columns (valid_count, count_0/ratio_0, ratio_1..4, count_5/ratio_5, transition_count), all 6 extra hypnogram columns (valid_count, ratio_1..4, transition_count), activity_met_1min_iqr and sleep_temperature_deviation are present; no kurtosis, skewness, autocorrelation or quantile_50 column exists anywhere because numeric_stats never computes them. PAPER_PROTOCOL enumerates 72. The reader's added remark that two of the omitted columns sit in the paper's Figure-6 top-20 is also correct.",
+      "evidence": "src/xai_paper_reproduction.py:200 `keys = [\"mean\", \"std\", \"var\", \"min\", \"max\", \"median\", \"q25\", \"q75\", \"iqr\", \"count\"]`; SRC:254 `categorical_counts(..., \"activity_class_5min\", [0, 1, 2, 3, 4, 5])`; SRC:296 `categorical_counts(..., \"sleep_hypnogram_5min\", [1, 2, 3, 4])`; SRC:224-227 emit `_valid_count`, `_count_{l}`, `_ratio_{l}`, `_transition_count`. outputs/data/preprocess_summary.json:12 `\"feature_count\": 86`. PAPER_PROTOCOL.md:104 \"Total = 24 + 27 + 21 = 72\"; PAPER_PROTOCOL.md:195,198 list activity_met_1min_kurtosis and activity_met_1min_autocorrelation in the Figure-6 top-20."
+    },
+    {
+      "claim": "DEVIATION 2 — Activity–sleep records built by a wake-date LEFT join with keep-longest de-duplication; 12 sleep rows discarded, 33 activity rows left with all-NaN sleep features",
+      "verdict": "confirmed",
+      "reason": "The mechanism is exactly as described in code, and I independently verified the 33 figure from the shipped dataset: 39 columns (all sleep-derived) have missing cells and every one of them has exactly 33. The '12 discarded sleep rows' number is not derivable from code — it comes from REPRODUCTION_DETAILS_KO.md:105 and is independently corroborated by the reference ASSUMPTIONS A03 ('leaves 12 duplicate (subject, wake-date) sleep rows'), so I accept it but note it is doc-sourced, not code-derived.",
+      "evidence": "SRC:277 `df[\"sample_date\"] = end.dt.date.astype(str)`; SRC:283-287 `.sort_values([\"patient_id\", \"sample_date\", \"_sleep_duration_seconds\"], ascending=[True, True, False]) .drop_duplicates([\"patient_id\", \"sample_date\"], keep=\"first\")`; SRC:349 `daily = activity.merge(sleep, on=merge_cols, how=\"left\", suffixes=(\"\", \"_sleepdup\"))`. My own count over outputs/data/daily_binary_lifelog.csv: 12,183 rows, 39 columns with missing values, every one missing exactly 33 cells. PAPER_PROTOCOL.md:73 \"Activity–sleep date matching rule: NOT REPORTED.\""
+    },
+    {
+      "claim": "DEVIATION 3 — sleep_time computed as (end − start).total_seconds() from full timestamps, duplicating sleep_duration",
+      "verdict": "confirmed",
+      "reason": "The code line is exactly as quoted, and I went further than the reader, who asserted the duplication without evidence: I compared the two columns in the shipped dataset and they are bit-identical in all 12,150 rows where both are present. So sleep_time_from_timestamp is a literal duplicate feature, and the deviation from the paper's 'convert to 24-h real value, then subtract' ordering is real (though the paper leaves the unit and ordering unreported).",
+      "evidence": "SRC:280 `df[\"sleep_time_from_timestamp\"] = (end - start).dt.total_seconds()`. My check on outputs/data/daily_binary_lifelog.csv: 'both present: 12150 equal: 12150 not equal: 0'. PAPER_PROTOCOL.md:113-114 lists 'units of sleep_time and of the converted clock values' as NOT REPORTED."
+    },
+    {
+      "claim": "DEVIATION 4 — MET statistic conventions: numpy ddof=0, linear percentiles, -1 tokens removed, no kurtosis/skewness/autocorrelation",
+      "verdict": "confirmed",
+      "reason": "Every convention is visible in numeric_stats. np.std/np.var default to ddof=0, np.percentile defaults to linear interpolation, and the -1 filter is explicit. No higher-moment or lag statistic is computed. The paper leaves the conventions unreported but does name kurtosis, skewness and autocorrelation as features, so their absence is a substantive deviation, not just a convention choice.",
+      "evidence": "SRC:197-198 `arr = arr[np.isfinite(arr)]` / `arr = arr[arr != -1]`; SRC:202 `q25, q75 = np.percentile(arr, [25, 75])`; SRC:207-208 `float(np.std(arr))` / `float(np.var(arr))`; the returned dict (SRC:205-215) has no kurtosis/skew/autocorr key. PAPER_PROTOCOL.md:97-98 names `activity_met_1min_{std, variance, kurtosis, skewness, mean, median, min, max, autocorrelation, quantile_25, quantile_50, quantile_75}`."
+    },
+    {
+      "claim": "DEVIATION 5 — Fold-fit median imputer for all Table-1 models plus StandardScaler for LR/KNN/SVM/MLP, which the paper does not report and which lifts MLP/SVM/KNN far above Table 1",
+      "verdict": "confirmed",
+      "reason": "Both pipeline factories are in model_registry as described, the imputer/scaler are cloned and fit on train_idx only inside evaluate_cv_model, and the reported deltas match: the shipped report shows MLP +0.2501, SVM +0.2482, KNN +0.1929 ROC-AUC over the paper. The paper's protocol lists imputation and scaling as NOT REPORTED, so this is a genuine unreported-choice deviation with a large effect on four of the seven Table-1 rows.",
+      "evidence": "SRC:451-457 `scaled = lambda estimator: Pipeline([(\"imputer\", make_median_imputer()), (\"scaler\", StandardScaler()), (\"model\", estimator)])`; SRC:526-527 `model = clone(estimator)` / `model.fit(X.iloc[train_idx], y.iloc[train_idx])`. outputs/reproduction_report.md:59-61 delta_roc_auc 0.2501 (MLP), 0.2482 (SVM), 0.1929 (KNN). PAPER_PROTOCOL.md:68,70 'Missing-value imputation method: NOT REPORTED' / 'Scaling / normalisation: NOT REPORTED'."
+    },
+    {
+      "claim": "DEVIATION 6 — Non-default base-model hyperparameters (RF 500 trees, MLP early_stopping + max_iter 500, LR max_iter 3000, SVC probability=True, n_jobs=-1)",
+      "verdict": "confirmed",
+      "reason": "Every value is literally in model_registry. The paper reports no base-model hyperparameters, so defaults would be the neutral choice; these are all deviations from library defaults (RF default is 100 trees, MLP default early_stopping=False / max_iter=200, LR default max_iter=100, SVC default probability=False).",
+      "evidence": "SRC:466 `LogisticRegression(max_iter=3000, solver=\"lbfgs\", random_state=random_state)`; SRC:475 `SVC(kernel=\"rbf\", probability=True, random_state=random_state)`; SRC:478 `MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, early_stopping=True, ...)`; SRC:481 `RandomForestClassifier(n_estimators=500, random_state=random_state, n_jobs=-1)`. PAPER_PROTOCOL.md:133 'Hyperparameters of the 7 base models | NOT REPORTED'."
+    },
+    {
+      "claim": "DEVIATION 7 — Metrics are pooled out-of-fold rather than the paper's mean of five fold scores",
+      "verdict": "confirmed",
+      "reason": "evaluate_cv_model fills OOF arrays and calls metrics_dict once on the whole vector; per-fold metrics are stored but never aggregated anywhere. The audit reads the pooled roc_auc, and the reader's arithmetic checks out: fold mean = 0.94770 vs pooled 0.94775. One small qualification — the report does dump the fold_metrics block verbatim inside the final-CV JSON, so 'the report uses the pooled value' is true of the headline lines and the baseline table, not of the whole document.",
+      "evidence": "SRC:534-535 `overall = metrics_dict(y.to_numpy(), pred, prob)` / `overall[\"fold_metrics\"] = fold_metrics`; scripts/06:152 `add_check(checks, \"final_cv_has_roc_auc\", \"roc_auc\" in metrics, str(metrics.get(\"roc_auc\")))` with outputs/reproduction_audit.json:118 `\"detail\": \"0.94775047035205\"`. final_cv_metrics.json fold AUCs 0.9445741/0.9439227/0.9458585/0.9494271/0.9547344 → mean 0.947703. PAPER_PROTOCOL.md:151 'Performance = (1/5) Σ Performance_i'."
+    },
+    {
+      "claim": "DEVIATION 8 — Forward path capped at k≤80 of 86; k*=28 found but the final model is forced to the paper's k=40 via --feature-source paper_top40",
+      "verdict": "confirmed",
+      "reason": "The default max-features is 80, run_forward_selection caps at min(80, n_features), and the shipped metrics file ends at n_features=80 (80 data rows). The final script's --feature-source default is paper_top40 and the shipped final_cv_metrics.json records that choice. So k* = 28 (AUC 0.9038) was computed and then discarded in favour of 40 (AUC 0.9000).",
+      "evidence": "scripts/03:28 `parser.add_argument(\"--max-features\", type=int, default=80)`; SRC:663 `max_features = min(max_features, len(ranked_features))`; forward_selection_metrics.csv last row `80,0.901400000500019,...`; scripts/04:50-52 `choices=[\"paper_top40\", \"best_reproduction\"], default=\"paper_top40\"`; final_cv_metrics.json:8-9 `\"feature_source\": \"paper_top40\", \"selected_feature_count\": 40`; selected_features.json:3-4 `\"n_features\": 28.0, \"roc_auc\": 0.9038041900534503`."
+    },
+    {
+      "claim": "DEVIATION 9 — Table-2 values used as constants; an unused 72-point grid ships alongside",
+      "verdict": "confirmed",
+      "reason": "PAPER_FINAL_PARAMS is a module constant used whenever --grid-search is absent, the notebook's only final-stage cell passes --use-paper-params, no grid_search_metrics.csv exists under outputs/, and default_lgbm_grid enumerates 4×3×3×2 = 72 configurations, which is not the paper's coarse-to-fine num_leaves ladder.",
+      "evidence": "SRC:66-71 `PAPER_FINAL_PARAMS = {\"min_child_samples\": 41, \"num_leaves\": 330, \"n_estimators\": 1000, \"learning_rate\": 0.08}`; scripts/04:100-101 `else: params = dict(PAPER_FINAL_PARAMS)`; SRC:743-746 loops over `[300, 320, 330, 340] × [31, 41, 51] × [0.05, 0.08, 0.1] × [600, 1000]`; `find outputs -name \"*grid*\"` returns nothing. PAPER_PROTOCOL.md:140 gives the reported trajectory 100–1000 → 220–380 → 310–330."
+    },
+    {
+      "claim": "DEVIATION 10 — StratifiedKFold, shuffle=True, seed 42, one run, where the paper reports none of these",
+      "verdict": "confirmed",
+      "reason": "make_cv's non-grouped branch is exactly that, and every script defaults --random-state to 42 with no repeat mechanism anywhere in the codebase.",
+      "evidence": "SRC:416-418 `return StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state).split(np.zeros(len(y)), y)`; scripts/02:28, scripts/03:27, scripts/04:32 all `--random-state ... default=42`. PAPER_PROTOCOL.md:153-155 'Stratification: NOT REPORTED / Shuffling / random seed: NOT REPORTED / Repeats: None mentioned'."
+    },
+    {
+      "claim": "DEVIATION 11 — Tokens equal to -1 and unparseable tokens are silently dropped before counting/statistics",
+      "verdict": "confirmed",
+      "reason": "parse_slash_sequence swallows ValueError with a bare continue, and both consumers strip non-finite values and -1. Nothing counts or logs how many tokens were discarded. Note this is a low-severity item precisely because the reference ASSUMPTIONS A09 verified no inner missing tokens exist, which the reader correctly stated.",
+      "evidence": "SRC:186-190 `try: out.append(float(token))` / `except ValueError: continue`; SRC:197-198 and SRC:221-222 both `arr = arr[np.isfinite(arr)]` then `arr = arr[arr != -1]`."
+    },
+    {
+      "claim": "DEVIATION 12 — DRS is computed in-sample from a Table-2 LightGBM fit on all 12,183 rows, giving perfect class separation unlike the paper's overlapping ranges",
+      "verdict": "confirmed",
+      "reason": "final_shap_and_drs fits the pipeline on the full X/y, then explains those same rows; the shipped summary shows all training metrics at 1.0 and CN max 13.30 below impaired min 16.07, i.e. zero overlap, against the paper's 1.06–24.99 vs 1.79–31.28.",
+      "evidence": "SRC:782-783 `pipe = lgbm_pipeline(params=params, random_state=random_state)` / `pipe.fit(X[feature_cols], y)`; SRC:816 `drs = np.maximum(shap_pos, 0).sum(axis=1)`; dementia_risk_score_summary.json:9-16 all 1.0; :28 `\"max\": 13.304953905035342` (CN) vs :35 `\"min\": 16.068461469240066` (impaired). PAPER_PROTOCOL.md:204-205 'CN: min 1.06, max 24.99, mean 7.59; impaired: min 1.79, max 31.28, mean 15.71'."
+    },
+    {
+      "claim": "ERROR 1 — Feature selection sits outside the CV loop: one global SHAP ranking, then the FS curve and the final 0.9478 are scored on the same seed-42 folds",
+      "verdict": "confirmed",
+      "reason": "The mechanism is exactly as described: five fold-models each explain their own validation fold, but the |SHAP| matrices are stacked and averaged into a single global ranking that is then reused for every k and for the final model, all under the identical seed-42 StratifiedKFold. Each row's label enters the ranking through the four fold-models that trained on it, so the FS curve and the final CV number are selection-inside-evaluation estimates. One correction to the reader's framing: KO:386's literal claim is narrower than quoted — it says validation-fold information is not used *for train-fold training*, which is true per fold; the leak is in the pooling and reuse, not in any single fold's fit.",
+      "evidence": "SRC:609-611 loop `make_cv(..., random_state=random_state, ...)` then `pipe.fit(X.iloc[train_idx], ...)`; SRC:621-625 `all_abs = np.vstack(shap_accum)` / `\"mean_abs_shap\": np.mean(all_abs, axis=0)`; SRC:666-672 forward path calls evaluate_cv_model with the same `random_state=random_state`; scripts/04:106-112 final CV with `random_state=args.random_state` (42). REPRODUCTION_DETAILS_KO.md:386 '이 방식은 SHAP ranking에서 validation fold 정보를 train fold 학습에 사용하지 않는다.'"
+    },
+    {
+      "claim": "ERROR 2 — Record-level shuffled CV puts days of the same subject in both training and test folds for every reported number, and the --grouped diagnostic was never run",
+      "verdict": "confirmed",
+      "reason": "With 12,183 rows from 174 subjects (35–122 days each) split by shuffled StratifiedKFold, subject overlap across folds is structural. The --grouped flag exists in all three scripts but no grouped artefact exists under outputs/, the Colab runner and .ipynb contain no occurrence of the string 'grouped', and the KO document acknowledges the leakage yet still declares the reproduction successful.",
+      "evidence": "SRC:416-418 StratifiedKFold on `np.zeros(len(y)), y` with no group argument; `grep -n \"grouped\" XAI_Paper_Reproduction_Colab.py XAI_Paper_Reproduction_Colab.ipynb` returns no matches; `find outputs -name \"*group*\"` returns nothing. KO:582 '같은 subject의 다른 날짜가 train/test fold에 함께 들어갈 수 있다' vs KO:591 '현재 구현은 논문 재현 목표를 충족한다.'"
+    },
+    {
+      "claim": "ERROR 3 — DRS validation (t=448.8, p=0.0) rests on in-sample SHAP from a model that fits its training data perfectly, and the audit's PASS gate is the trivially satisfied p<0.05",
+      "verdict": "confirmed",
+      "reason": "All three components check out: the DRS model is fit and explained on the same rows, its training metrics are all 1.0, and the audit's only statistical gate is a p<0.05 comparison plus a mean-ordering comparison — both of which a memorising model satisfies by construction. The 'memorization artifact' reading is an inference rather than a code fact, but it is the only reading consistent with roc_auc 1.0 on 12,183 rows and zero DRS overlap.",
+      "evidence": "SRC:783 `pipe.fit(X[feature_cols], y)` and SRC:813-814 `explainer = shap.TreeExplainer(model)` / `raw = explainer.shap_values(Xt)` on `Xt` derived from the same rows; scripts/06:164 `p_ok = daily_test.get(\"p_value\", 1) < 0.05`; scripts/06:166 `add_check(checks, \"drs_one_sided_t_test_significant\", p_ok, ...)`; reproduction_audit.json:130-133 that check PASS with `'p_value': 0.0`."
+    },
+    {
+      "claim": "ERROR 4 — Record set differs from row-wise pairing: 12 genuine sleep rows dropped, 33 rows with fully imputed sleep features, and a date join may pair a sleep record with a different activity day",
+      "verdict": "confirmed",
+      "reason": "Confirmed for the parts that are checkable, with two qualifications. (a) The 33 imputed rows are real and I verified them: exactly 39 sleep-derived columns each missing exactly 33 cells, and exactly 20 of the final 40 selected features are sleep_* columns, so the reader's '20+' is exactly 20. (b) The '12 discarded sleep rows' count is from KO:105 / ASSUMPTIONS A03, not from this code or its outputs. (c) The last clause — that a date join can pair a sleep record with a different activity day than row-wise pairing would — is a hypothesis I cannot test without opening the raw data, which is out of scope here; treat that sub-claim as unverified.",
+      "evidence": "SRC:283-287 keep-longest drop_duplicates; SRC:349 `how=\"left\"`. My counts on the shipped outputs: 12,183 rows, 12,150 with sleep present, 33 with none; `sleep features in top40: 20 /40`. ASSUMPTIONS.md:11 (A03) 'A date join (activity day = wake-up date) matches 99.7 % of rows and leaves 12 duplicate (subject, wake-date) sleep rows'."
+    },
+    {
+      "claim": "ERROR 5 — Latent NameError: positive_probability references Pipeline, which is only imported inside other functions",
+      "verdict": "confirmed",
+      "reason": "I grepped every occurrence. Pipeline appears at module scope only in two annotations (harmless under `from __future__ import annotations`, which is line 1) and in a runtime isinstance check at 544; the only imports are function-local at 445 and 490. The branch is unreachable today because every registry estimator's pipeline exposes predict_proba (SVC has probability=True), so this is a latent, not an active, defect — exactly as the reader qualified it.",
+      "evidence": "SRC:544 `elif isinstance(model, Pipeline) and hasattr(model[-1], \"predict_proba\"):`; the only imports are SRC:445 `from sklearn.pipeline import Pipeline` (inside model_registry) and SRC:490 (inside lgbm_pipeline); SRC:1 `from __future__ import annotations` neutralises the annotations at 489 and 632; SRC:475 `SVC(kernel=\"rbf\", probability=True, ...)`."
+    },
+    {
+      "claim": "ERROR 6 — Stale default data path and stale README/notebook paths; the shipped outputs came from a different project root",
+      "verdict": "confirmed",
+      "reason": "ProjectPaths sets repo_root two levels above the package, which from this location resolves to .../SangHyo, and I confirmed that directory contains no raw-data folder ('No such file or directory'); the real data lives at the repository's own Data/. The audit JSON records absolute paths under AJOU/3-2/기계학습/assignment/TeamProject/training/XAI_Paper_Reproduction, and the README and notebook both reference training/XAI_Paper_Reproduction, which does not exist here.",
+      "evidence": "SRC:92-93 `repo_root = reproduction_root.parents[1]` / `raw = ... else repo_root / \"128.치매 고위험군 라이프로그\"`; `ls` on that path → 'No such file or directory'; reproduction_audit.json:8 detail path '/Users/…/AJOU/3-2/기계학습/assignment/TeamProject/training/XAI_Paper_Reproduction/outputs/data/daily_binary_lifelog.csv'; README.md:70 `python training/XAI_Paper_Reproduction/scripts/01_preprocess_daily_binary.py`."
+    },
+    {
+      "claim": "ERROR 7 — The raw EMAIL identifier is used verbatim as patient_id and written in clear text to the output CSVs",
+      "verdict": "confirmed",
+      "reason": "Three separate renames map EMAIL (or SAMPLE_EMAIL) to patient_id with no hashing anywhere, and I verified without printing any value that the identifier column of both shipped CSVs holds an '@'-containing string on all 12,183 rows. No de-identification step exists in the codebase.",
+      "evidence": "SRC:242 and SRC:275 `df = df.rename(columns={\"EMAIL\": \"patient_id\"})`; SRC:150-152 the same for the label file; scripts/01:34 `daily.to_csv(daily_path, index=False, encoding=\"utf-8-sig\")`; SRC:836 `risk.to_csv(output_dir / \"dementia_risk_scores.csv\", ...)`. My counts: 12,183/12,183 rows contain '@' in the identifier column of both daily_binary_lifelog.csv and dementia_risk_scores.csv."
+    },
+    {
+      "claim": "ERROR 8 — Forward path truncated: --max-features defaults to 80 while 86 features exist, so k=81..86 are never evaluated",
+      "verdict": "confirmed",
+      "reason": "The default is 80, the cap is min(80, 86), and the shipped curve file has exactly 80 data rows ending at n_features=80. The reader's own severity framing (minor, because the plateau is flat) is supported by the data — the last ten k values sit between 0.898 and 0.901.",
+      "evidence": "scripts/03:28 `default=80`; SRC:663 `max_features = min(max_features, len(ranked_features))`; forward_selection_metrics.csv has 81 lines including the header, last row `80,0.901400000500019,...`; README.md:99 `... 03_shap_forward_selection.py --max-features 80`."
+    },
+    {
+      "claim": "ERROR 9 — Library defaults are unpinned (requirements.txt uses only lower bounds; both cpython-312 and cpython-314 bytecode present), and n_jobs=-1 adds thread-count variability",
+      "verdict": "confirmed",
+      "reason": "Confirmed for the pinning half, which is the substantive part: every requirement is a lower bound, and the folder carries bytecode for two different Python versions, so the sklearn/LightGBM defaults the Table-1 numbers depend on are not fixed and no environment record is written by any script. The trailing sub-claim about n_jobs=-1 introducing nondeterminism is not supported by anything in the code — LightGBM and scikit-learn ensembles are deterministic given random_state regardless of thread count — so treat that clause as unverified padding on an otherwise correct finding.",
+      "evidence": "requirements.txt:1-8 `pandas>=2.0` … `joblib>=1.3` (no upper bounds, no ==); `ls src/__pycache__` → `xai_paper_reproduction.cpython-312.pyc` and `xai_paper_reproduction.cpython-314.pyc`; SRC:481 `n_jobs=-1`, SRC:484 `n_jobs=-1`, SRC:495 `params.setdefault(\"n_jobs\", -1)`."
+    },
+    {
+      "claim": "ERROR 10 — pd.to_numeric(errors='coerce') applied blindly to all candidate columns with no NaN accounting, so silent data loss would go unnoticed",
+      "verdict": "confirmed",
+      "reason": "The mechanism is confirmed — the coercion is unconditional over all feature columns, and neither preprocess_summary.json nor any script records per-feature NaN counts. But I checked the consequence the reader could not, and it materially weakens the finding: in the shipped dataset there is zero coercion-induced NaN. Exactly 39 columns have any missing cells, every one of them has exactly 33, and all 39 are sleep-derived — i.e. all 1,287 imputed cells trace to the unmatched-sleep rows. So the risk is real but no loss actually occurred in this run.",
+      "evidence": "SRC:367-368 `for col in feature_cols:` / `daily[col] = pd.to_numeric(daily[col], errors=\"coerce\")`; summary dict SRC:373-382 has no NaN field. My scan of daily_binary_lifelog.csv: 'columns with any missing: 39', 'distinct missing counts: Counter({33: 39})', 'non-33 offenders: {}'."
+    }
+  ],
+  "missed_items": [
+    "Provenance of the shipped numbers is unestablished. reproduction_audit.json records absolute paths under '/Users/…/AJOU/3-2/기계학습/assignment/TeamProject/training/XAI_Paper_Reproduction/…' (audit lines 8-68), a different tree from the one audited, and no script writes a run manifest, git hash, or library-version record anywhere. The reader raised the stale path only as a re-runnability problem; the stronger consequence is that none of 0.9004 / 0.9038 / 0.9478 / the DRS statistics can be attributed to the source now sitting in this folder.",
+    "Raw-file resolution is a shortest-path rglob tiebreak, not a fixed path. find_one collects every rglob match and returns the one with the shortest string: SRC:127-129 `candidates = sorted(candidates, key=lambda p: len(str(p)))` / `return candidates[0]`. Which physical copy of train_activity.csv / val_sleep.csv is read is therefore unpinned if the raw tree has duplicates; only the two label files carry disambiguating filters ('라벨링데이터', '1.걸음걸이'). The reader listed the six logical files but not this rule.",
+    "The subject-level cohort breakdown is verifiable from the shipped outputs, not just from the Korean doc. The reader cited only KO:131-138. Aggregating outputs/final/dementia_risk_scores.csv by subject gives 174 subjects = CN 111 / MCI 51 / Dem 12, i.e. 111 CN vs 63 impaired subjects behind 7,737 vs 4,446 daily rows — so the daily rows average ~70 per subject, which is what makes the record-level split leaky.",
+    "SHAP scope at the final stage is the 40 selected features only, never the 86. scripts/04:126-130 passes `X[selected_features]` and `feature_cols=selected_features` into final_shap_and_drs, so the DRS at SRC:816 `drs = np.maximum(shap_pos, 0).sum(axis=1)` is a sum of positive SHAP over exactly 40 columns, and shap_importance_positive.csv ranks only those 40. The reader described the DRS as in-sample but never pinned its feature scope.",
+    "The daily t-test is pseudo-replicated. SRC:841-843 runs ttest_1samp over 4,446 daily rows drawn from 63 impaired subjects, against the CN daily mean treated as a known constant rather than an estimate — hence t=448.8 and p=0.0. The subject-mean variant (SRC:844-851, 63 impaired vs 111 CN subjects, t=80.3) is the only version with independent units. The reader flagged the in-sample SHAP but not the independence/df problem, which inflates the daily statistic on its own.",
+    "The Decision-Tree row reproduces the paper's diagnostic identity ROC-AUC == recall_macro. outputs/reproduction_report.md:51 gives DT roc_auc 0.6707 and recall_macro 0.6707 — the exact signature ASSUMPTIONS A11 uses to infer that the paper macro-averages and thresholds hard predictions. This is positive evidence that the metric convention matches the paper, and it belonged in the reader's 'statistics' section.",
+    "The Table-1 agreement is not like-for-like. The reproduced LightGBM 0.9004 vs the paper's 0.9010 is computed on the 86-feature universe (preprocess_summary.json:12), not the paper's 72, so the headline 'baseline reproduces' claim in KO:596 compares two different feature sets. Same for the forward-selection curve: shap_importance_full.csv ranks 86 features, so 'paper_top40' is the top 40 of 86, which cannot be the paper's top 40 of 72.",
+    "The audit contains no performance check against the paper at all. scripts/06 verifies row/subject/class counts, feature-count consistency, the presence of seven models, the 40-feature count, the Table-2 parameter values, and DRS ordering plus p<0.05 — but the only gate touching the final metric is a warning if roc_auc < 0.8 (scripts/06:153-154). Nothing compares 0.9004/0.9478 to 0.9010/0.9492, so `\"passed\": true` in reproduction_audit.json is a structural check, not a reproduction verdict. The reader noted the p<0.05 gate but not this larger gap.",
+    "Two of the reader's factual assertions had no evidence behind them and I checked both. (a) 'sleep_time_from_timestamp equals sleep_duration exactly' — true: identical in all 12,150 rows where both are present. (b) 'the code never reports how many NaN cells exist' — true, but the actual count is 39 columns × 33 rows = 1,287 cells, all sleep-derived, zero from coercion failures. Also verifiable and unreported by the reader: 12,150 of 12,183 rows carry sleep data, matching the 'inner merge rows 12,150' figure in KO:106."
+  ]
+}

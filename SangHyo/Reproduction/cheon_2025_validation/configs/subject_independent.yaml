@@ -1,0 +1,19 @@
+# Experiment G - R + subject-independent StratifiedGroupKFold; learned steps fit on the training fold only
+experiment: subject_independent
+output_dir: results/subject_independent
+seeds: [42, 43, 44, 45, 46]
+n_splits: 5
+split_unit: subject                  # group = hashed subject id
+shuffle: true
+n_threads: 1                         # LightGBM is fastest single-threaded on this data (tuned fit 4 s vs 14 s at 8 threads); runs are parallelised across processes instead
+threshold_rule: model_default
+base_models:
+  enabled: true
+  repeats: 5
+feature_selection:
+  scope: train_fold                  # A17: SHAP ranking fit on the training fold only
+  max_k: 72                          # diagnostic curve only (k is NOT chosen from it)
+  k_fixed: 40                        # paper's outcome, fixed a priori
+final_model:
+  params: paper_table2
+  also_evaluate_all_features: true   # tuned model on all 72 (isolates the selection step)

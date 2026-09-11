@@ -1,0 +1,41 @@
+{
+  "contract_version": "v1_aihub_oura_2020",
+  "purpose": "Input schema the sealed B0 scorer enforces. Units are fixed by the vendor export documentation, never inferred from similarity to the 174-subject reference.",
+  "layout": {
+    "discovery": "recursively glob '*activity*.csv' and '*sleep*.csv' under the data root; paths containing 'LabelingData' or '3.CognitiveFunction' are never opened",
+    "manifest": "manifest.csv with a single column 'sid' (steward-supplied, label-free); subjects not in the manifest are ignored, manifest sids without data are reported as 'no_data'"
+  },
+  "activity": {
+    "required_columns": ["EMAIL", "activity_day_start", "activity_low", "activity_medium", "activity_non_wear", "activity_total", "CONVERT(activity_met_1min USING utf8)"],
+    "EMAIL": {"dtype": "string", "role": "subject id (sid after strip)"},
+    "activity_day_start": {"dtype": "string ISO8601 'YYYY-MM-DDTHH:MM:SS+09:00'", "assert": "first 19 chars parse with '%Y-%m-%dT%H:%M:%S'; zero NaT; hour == 4 for 100% of rows (04:00 local anchor)"},
+    "activity_low": {"dtype": "integer minutes/day", "unit": "minutes", "range": [0, 1440], "assert": "no NaN for scoreable subjects; NaN -> subject refused (feature_unavailable)"},
+    "activity_medium": {"dtype": "integer minutes/day", "unit": "minutes", "range": [0, 1440], "role": "QC only"},
+    "activity_non_wear": {"dtype": "integer minutes/day", "unit": "minutes", "range": [0, 1440], "role": "QC only (known to miss MET==0.0 no-data days); never a model input"},
+    "activity_total": {"dtype": "integer minutes/day", "unit": "minutes", "role": "tie-break key for duplicate (sid,date) activity rows"},
+    "CONVERT(activity_met_1min USING utf8)": {"dtype": "string", "format": "1440 '/'-separated decimal values with exactly one trailing '/'", "assert": "after removing one trailing '/', split gives exactly 1440 finite tokens; 0 <= MET <= 25", "sentinels": {"0.1": "non-wear fill", "0.0": "no-data (rare, long runs); worn floor 0.9"}, "role": "QC only for B0 (coverage, sentinel runs); B0 features use activity_low"}
+  },
+  "sleep": {
+    "required_columns": ["EMAIL", "sleep_bedtime_start", "sleep_bedtime_end", "sleep_duration", "sleep_total"],
+    "sleep_bedtime_end": {"dtype": "string ISO8601", "assert": "parses; zero NaT", "role": "join key date (date of bedtime_end)"},
+    "sleep_bedtime_start": {"dtype": "string ISO8601", "role": "secondary tie-break"},
+    "sleep_duration": {"dtype": "integer seconds", "unit": "seconds", "range": [0, 86400], "role": "dedup key (keep longest per sid,date)"},
+    "sleep_total": {"dtype": "integer seconds", "role": "QC only"}
+  },
+  "join_and_window": {
+    "activity_date": "date of activity_day_start (naive local)",
+    "sleep_date": "date of sleep_bedtime_end (naive local)",
+    "sleep_dedup": "per (sid, date) keep the row with the largest sleep_duration; tie -> earliest sleep_bedtime_start",
+    "activity_dedup": "per (sid, date) keep the row with the earliest activity_day_start then largest activity_total (verified identical to the AI-Hub keep-first rule, CT9b)",
+    "join": "inner merge on (sid, date)",
+    "window": "first 35 joined rows per subject after sorting by (sid, date); calendar gaps allowed and reported as gap_days = span - 35",
+    "min_days": 35,
+    "refusal_codes": {"insufficient_days": "< 35 joined days", "feature_unavailable": "activity_low NaN inside the window", "schema_fail": "any assert above failed for this subject", "no_data": "manifest sid absent from data"}
+  },
+  "qc_report_only": {
+    "met_coverage": "share of minutes with MET >= 0.5 per day; reference median 0.999, p1 0.811",
+    "zero_run_gt_60": "days with a MET == 0.0 run longer than 60 min; reference 24/12150",
+    "psi_vs_reference": "PSI and KS of low_SD, low_MED, nonwear_mean, gap_days vs the 174 reference quantiles in b0_frozen_v1.json; flag PSI > 0.25 as domain shift; scores are never altered"
+  },
+  "forbidden_inputs": "any column whose name matches the FEATURE_GUARD pattern (mmse, q\\d+, diag, doctor, email-as-feature, non_wear-as-feature, n_days, span, coverage, gap_, missfrac, valid_days) or the covariate block list (age, sex, gender, edu, education, gait, moca, cdr, label) is never read into a feature matrix by the sealed scorer"
+}

@@ -1,0 +1,58 @@
+{
+  "subject_split": "StratifiedKFold(5, shuffle, random_state=100+r) on 3-class label; train∩test=∅ asserted for all repeats",
+  "mmse": "3.CognitiveFunction 경로 미접근 + 컬럼명 fail-closed 가드 (모든 arm 특징에 적용)",
+  "preprocessing": "SimpleImputer+StandardScaler inside Pipeline, fit on outer-train only; A3 feature-set selection uses inner CV on outer-train only; permutation replays A3 selection",
+  "feature_independence": "90-subject subset rebuild bit-identical for all subject-level columns (cell 5). Day-level rules (cells 3-4) are fixed constants + row-wise ops and are NOT covered by the rebuild test",
+  "ids": "outputs use SHA-256[:16] hashed ids only (AGENTS.md §6)",
+  "contract_tests": {
+    "CT_F_feature_matrix": {
+      "b0_fingerprint": "b4307676be9a249e",
+      "b0_fingerprint_expected": "3bc37d120081437d",
+      "b0_fingerprint_match": false,
+      "run4_feature_matrix": null,
+      "pass": "SKIPPED",
+      "note": "SYNTHETIC 모드 → 비교 생략 (경로 해석만 실행)"
+    },
+    "b0_a1_reproduction": {
+      "checked": false,
+      "reason": "QUICK/SYNTHETIC 모드"
+    },
+    "run4_P_reproduction": {
+      "checked": false,
+      "reason": "QUICK/SYNTHETIC 모드"
+    },
+    "prereg_code_sha256": "97306e3706565d14082b5809d0347cfecd116aab64f35569290d66c7974be6a6",
+    "prereg_code_sha256_expected": null,
+    "prereg_code_match": null
+  },
+  "failed_folds_main": {
+    "B0 (동결 D블록, 35일)": 0,
+    "A1 B0_all (전체일)": 0,
+    "A2 MAXFIX (B0_all + longest_w_SD_all)": 0,
+    "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0
+  },
+  "determinism": {
+    "B0 (동결 D블록, 35일)": {
+      "hash": "26d7480ed9f3bbd2",
+      "recheck": "26d7480ed9f3bbd2",
+      "match": true
+    },
+    "A1 B0_all (전체일)": {
+      "hash": "5be0555512668f4c",
+      "recheck": "5be0555512668f4c",
+      "match": true
+    },
+    "A2 MAXFIX (B0_all + longest_w_SD_all)": {
+      "hash": "2b8984593a7d1669",
+      "recheck": "2b8984593a7d1669",
+      "match": true
+    },
+    "A3 MAXSEL (B0_all + inner 선택 ≤1)": {
+      "hash": "2b8984593a7d1669",
+      "recheck": "2b8984593a7d1669",
+      "match": true
+    },
+    "null_max_hash": "da76959b330aa1c0",
+    "null_dmax_hash": "42ecfb31ba067993"
+  }
+}

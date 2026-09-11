@@ -1,0 +1,19 @@
+{
+  "b_sleep_dedup": {
+    "dup_keys": 12,
+    "rows_rule_longest": 12171,
+    "rows_rule_flag": 12171,
+    "keys_where_choice_differs": 4,
+    "note": "sleep_is_longest is 1 on every row in this release, so the flag cannot disambiguate duplicates; the 'longest duration' rule is the only deterministic choice"
+  },
+  "e_window_definition": {
+    "subjects": 174,
+    "subjects_same_dayset": 32,
+    "cal_window_days_min": 16,
+    "cal_window_days_median": 32.0,
+    "spearman_low_SD_rows_vs_cal": 0.9794754975938951,
+    "spearman_low_MED_rows_vs_cal": 0.9921678691279693,
+    "rank_moves_gt10_low_SD": 25,
+    "note": "B0 is defined on the first 35 joined ROWS; the calendar-35 window would score 25-34 rows for gapped subjects and is not the frozen estimand"
+  }
+}

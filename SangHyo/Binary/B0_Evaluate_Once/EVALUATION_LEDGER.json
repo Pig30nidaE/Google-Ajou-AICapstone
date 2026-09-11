@@ -1,0 +1,7 @@
+{
+  "schema": "EVALUATION_LEDGER v1",
+  "rule": "exactly one real evaluation per (label file, cohort); a second real evaluation voids the one-shot claim; the first scoring that passed SCHEMA_CONTRACT is the one evaluated; every ledger increment needs two signatories (analyst, steward)",
+  "scorings": [],
+  "evaluations": [],
+  "n_real_evaluations": 0
+}

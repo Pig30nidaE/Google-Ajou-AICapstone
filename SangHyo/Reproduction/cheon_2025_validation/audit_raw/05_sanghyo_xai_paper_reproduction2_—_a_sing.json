@@ -1,0 +1,193 @@
+{
+  "implementation": "sanghyo_xai_paper_reproduction2 — a single Colab notebook (Drive mount at PaperExact_Colab.py:53-54, pip install with unpinned ranges at :57) that runs preprocessing, 7 baselines, OOF-SHAP ranking + forward selection, a Table-2 LightGBM final model, a Dementia-Risk-Score (DRS) stage, and a self-audit. Shorthand below: 'Colab.py:N' = /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/XAI_Paper_Reproduction2_PaperExact_Colab.py line N; 'README:N' = README_KO.md; 'REVIEW:N' = RESULTS_REVIEW_KO.md (RESULTS_REVIEW_KO_XAI_PAPER_REPRODUCTION2.md is a byte-identical 474-line copy). Outputs referenced are under Training/outputs_paper_exact/. It is a paper-style record-level (R-arm-like) reproduction only: there is no subject-grouped arm and no nested arm; StratifiedGroupKFold is imported (Colab.py:145) and wired behind a `grouped` flag (Colab.py:547-550) that is never set True (all call sites default/explicit grouped=False: Colab.py:626, 729, 733, 782, 812).",
+  "is_cheon_reproduction": true,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/XAI_Paper_Reproduction2_PaperExact_Colab.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/XAI_Paper_Reproduction2_PaperExact_Colab.ipynb",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/README_KO.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/RESULTS_REVIEW_KO.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/outputs_paper_exact/paper_exact_audit.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/outputs_paper_exact/paper_fidelity_summary.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction2/Training/outputs_paper_exact/final/final_cv_metrics.json"
+  ],
+  "cohort": "Both AI-Hub partitions are pooled: six CSVs only — train_activity/train_sleep/training_label and val_activity/val_sleep/val_label (Colab.py:82, 248-259). Labels from each partition are concatenated (Colab.py:452-454) and activity/sleep frames from both partitions are concatenated with a `split` tag (Colab.py:456-463). The label file is chosen by a path heuristic that prefers the gait ('걸음걸이'/activity/gait/walk) label copy (Colab.py:228-246; README:153,156,158). No MMSE / cognitive-function file is ever read (only the six filenames above are searched; `check_raw_files` Colab.py:248-259). Subject count is asserted == 174 (Colab.py:508) and reported as 174 with 9,705 Training + 2,478 Validation rows (preprocess_summary.json:3,8-11). The Validation partition (33 subjects) is not held out; it is folded into the CV pool. `split` is kept only as a merge key/metadata and excluded from features (Colab.py:480).",
+  "record_count": "12,183 daily rows, asserted equal to the paper (Colab.py:507-509; preprocess_summary.json:2). The count is the number of activity daily rows (9,705 + 2,478): activity is the LEFT side of the merge (`merge_policy='left_activity'`, Colab.py:466-467, 500), so every activity day survives regardless of whether a sleep row matches (README:243-250 states inner join would reduce the count, hence left join is 'fixed'). Sleep rows are first de-duplicated per (patient_id, wake-date) keeping the longest end−start duration (Colab.py:404-408), so duplicate sleep records are dropped and sleep rows whose wake date matches no activity day are discarded by the left join. Class counts 7,737 / 4,446 come from the subject label joined on (patient_id, split) (Colab.py:474, 490). No row filter other than the label-presence check (Colab.py:475-476). The code prints no count of activity days that received no sleep match; README:250 acknowledges such days exist and are median-imputed.",
+  "label": "Binary: DIAG_NM mapped {'CN':0, 'MCI':1, 'Dem':1, 'DEM':1, 'Dementia':1}; unmapped values raise (Colab.py:359-362). Positive class = impaired; ROC-AUC uses the class-1 probability (Colab.py:552-559, 565). One label per subject per split via drop_duplicates('patient_id') (Colab.py:364). Matches the paper's CN=0 vs MCI+Dem=1.",
+  "record_construction": "Date join, not row-wise pairing. Activity `sample_date` = calendar date of `activity_day_start` (Colab.py:370); sleep `sample_date` = calendar date of `sleep_bedtime_end` (wake date) (Colab.py:396-398). Duplicate sleep records for the same (patient_id, wake-date) are resolved by sorting on end−start seconds descending and keeping the first (Colab.py:401-408; README:230). Then `activity.merge(sleep, on=['patient_id','sample_date','split'], how='left')` (Colab.py:465-467); any overlapping column names from sleep are dropped via the '_sleepdup' suffix (Colab.py:473). Rows are then sorted by (split, patient_id, sample_date) (Colab.py:479). Consequence (cf. ASSUMPTIONS A03: date join matches 99.7 % and leaves 12 duplicate sleep rows): roughly 0.3 % of the 12,183 activity days carry all-NaN sleep features, and the 12 duplicate sleep rows are collapsed by the longest-duration rule — the record set is not the paper's implied one-to-one pairing even though the row count matches.",
+  "missing_values": "Median imputation inside every model pipeline: `SimpleImputer(strategy='median')` is the first step of both `scaled()` and `tree_pipe()` (Colab.py:515-527), including the LightGBM pipeline (Colab.py:540-545). Because the pipeline is cloned and fitted per fold on the training indices only (Colab.py:584-585, 691, 815), the imputer is fold-internal (README:250 claims this avoids CV leakage; correct). For SHAP, the fold-fitted imputer transforms the validation rows (Colab.py:666-668, 692, 822). The final full-data model fits the imputer on all 12,183 rows (Colab.py:877-878) but that model is used only for the joblib file, the in-sample ROC plot and the SHAP summary plot (Colab.py:883-900, 953-978). NaN sources: activity days without a sleep match (left join), empty sequences (`numeric_stats` returns NaN, Colab.py:308-309; ratios NaN when total==0, Colab.py:333), and `pd.to_numeric(errors='coerce')` on every feature (Colab.py:482-483). Columns that are all-NaN or have ≤1 unique non-NaN value are dropped on the WHOLE dataset before CV (Colab.py:427-436, 484) — label-agnostic, so not leakage. Note LightGBM handles NaN natively; the imputer is an added, unreported step (paper reports no imputation). StandardScaler is additionally applied (in-fold) for LR/KNN/SVM/MLP (Colab.py:523-524, 531-535).",
+  "features": "86 features (preprocess_summary.json:12; feature_columns.json lists them; README:261 says 90 candidates → 86 after constant removal). Versus the paper's 72: all 24 raw activity scalars present (feature_columns.json:2-25); all 27 raw sleep scalars present, with bedtime start/end as `sleep_bedtime_start_hour` / `sleep_bedtime_end_hour` (feature_columns.json:49-76). Derived: sleep_time is `sleep_time_from_timestamp` = (end − start).dt.total_seconds() from the raw timestamps, in SECONDS (Colab.py:396-401; README:225-228) — this equals `sleep_duration` and its OOF SHAP importance is exactly 0.0 (shap_importance_full.csv:86), i.e. it is a dead duplicate. Clock conversion: `timestamp_hour` = hour + minute/60 + second/3600 via pd.to_datetime (Colab.py:276-278) — local-offset hour as float. 1-min MET statistics via numpy on the parsed series after dropping non-finite values and values == −1 (Colab.py:301-322): mean, std (np.std, ddof=0), var (np.var, ddof=0), min, max, median, q25/q75 (np.percentile, linear), iqr, count (count later removed as constant, README:268). ABSENT from the paper's 12 MET stats: activity_met_1min_kurtosis, activity_met_1min_skewness, activity_met_1min_autocorrelation, activity_met_1min_quantile_50 (only `median` exists). Note the paper's Figure 6 top-20 contains activity_met_1min_kurtosis (#10) and activity_met_1min_autocorrelation (#20), which therefore cannot appear here. 5-min activity classes: counts for classes 0-5 (paper: 1-4 only) plus ratio_0..5, valid_count and transition_count (Colab.py:324-335, 380; README:194-200). Hypnogram: counts 1-4 (as paper) plus ratio_1..4, valid_count, transition_count (Colab.py:415; README:234-239). Sequence parsing splits on '/', skips empty/'...' tokens (Colab.py:283-299). Extra features not in the paper (18): sleep_temperature_deviation (kept; paper dropped it), activity_class_5min_count_0, count_5, ratio_0-5 (6), activity_class_5min_valid_count, activity_class_5min_transition_count, activity_met_1min_iqr, sleep_hypnogram_5min_ratio_1-4 (4), sleep_hypnogram_5min_valid_count, sleep_hypnogram_5min_transition_count. Reconciliation: 72 − 4 absent = 68 present + 18 extra = 86. Removed as constants: activity_day_start_hour, activity_day_end_hour, activity_met_1min_count (README:265-269); sleep_is_longest is also absent (presumably constant after dedup). 5-min HR / RMSSD raw logs and raw sequences dropped (Colab.py:386-389, 419-423). Five of the final top-40 are non-paper features: sleep_hypnogram_5min_ratio_3, activity_class_5min_transition_count, sleep_hypnogram_5min_transition_count, sleep_hypnogram_5min_ratio_2, sleep_hypnogram_5min_ratio_1, activity_class_5min_ratio_3 (final_cv_metrics.json:25,26,36,43,47,48).",
+  "feature_selection": "Explainer: `shap.TreeExplainer(lgbm)` with no background data (tree_path_dependent), `explainer.shap_values(...)`, positive-class slice via `positive_class_shap` (Colab.py:670-680, 695-697). Ranking model: LightGBM with the paper's Table-2 params (`ranking_params = PAPER_FINAL_PARAMS.copy()`, Colab.py:728-729; README:324) — i.e. the TUNED model ranks features, not the default one. Ranking data: 5-fold OOF — for each of the same StratifiedKFold(5, seed 42) folds, fit on the training fold (random_state=42+fold, Colab.py:690) and explain the VALIDATION fold rows (Colab.py:689-698); importance = mean |SHAP| over all 12,183 pooled OOF rows (Colab.py:699-703). This is one global ranking computed once on all data, not a fold-internal ranking. Forward path: for k = 1..80 (max_features=80, Colab.py:733; only 86 features exist), evaluate the top-k with a DEFAULT LightGBM (`params=None`, Colab.py:711, 733) by the same 5-fold record CV (same seed 42 → identical folds as the ranking), recording pooled-OOF AUC (Colab.py:705-725). k*: `best_row` = argmax pooled AUC over k (Colab.py:736) = 39 (AUC 0.9053, forward_selection_metrics.csv:40), but `STRICT_PAPER_TOP40=True` (Colab.py:190) forces the final feature set to the top 40 of the ranking regardless (Colab.py:738-739, 986); k=40 pooled AUC = 0.9026 (forward_selection_metrics.csv:41). An optional 'fidelity search' over seeds 0-14 that scores seeds by how close best-k is to 40 exists but is disabled by default (Colab.py:192-194, 777-798).",
+  "split": "Record-level, `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` on `np.zeros(len(y)), y` (Colab.py:155-156, 547-550; README:275-278, 402). Subject ids are passed as `groups` at every call site (Colab.py:618, 626, 729, 733, 855) but ignored because `grouped=False` everywhere (Colab.py:582, 688, 712, 782, 812); StratifiedGroupKFold is never exercised. Same subject's days can therefore appear in both train and validation folds (README:450 acknowledges). Single seed 42, no repeats, no hold-out (the 33-subject Validation partition is pooled), not nested. Because every stage calls `make_cv` with the same y ordering and random_state=42, the baseline comparison, SHAP ranking, forward-selection path and final CV all use the identical 5 folds.",
+  "model_and_hyperparameters": "Seven baselines (Colab.py:529-538; README:300-308): Logistic regression `max_iter=3000, solver='lbfgs'` (non-default max_iter) with imputer+StandardScaler; Decision tree default; KNN k=5 default with scaler; SVC rbf `probability=True` (Platt) with scaler; MLP `hidden_layer_sizes=(100,), max_iter=500, early_stopping=True` (non-default) with scaler; Random forest `n_estimators=500, n_jobs=-1` (non-default, default 100); LightGBM library defaults with `random_state=42, n_jobs=-1, verbosity=-1`. Final model: `PAPER_FINAL_PARAMS = {min_child_samples: 41, num_leaves: 330, n_estimators: 1000, learning_rate: 0.08}` (Colab.py:175-180), used verbatim for the final CV/full fit (Colab.py:988; final_cv_metrics.json:2-7) and ALSO for the SHAP-ranking model (Colab.py:728). Alias min_data_in_leaf ≡ min_child_samples (README:334-339). All other LightGBM params default. No grid search is re-run (README:407 'strict reproduction uses paper params directly'); the forward-selection path uses default LightGBM (Colab.py:733). Optional seed search (off) is the only search present (Colab.py:193, 777-798).",
+  "statistics": "Headline metrics are POOLED out-of-fold: predictions/probabilities of all 5 validation folds are concatenated and a single accuracy / ROC-AUC / macro precision / macro recall / macro F1 / positive-class P-R-F1 is computed (Colab.py:579-595 `overall = metrics_dict(y, pred, prob)`; Colab.py:808-826 for the final model; README:281). Per-fold metrics are stored alongside (`fold_metrics`, Colab.py:590, 820; final_cv_metrics.json:61-117) but not used for the headline or the audit (Colab.py:1041, 1068 use `cv_metrics['roc_auc']` = pooled). The paper's Figure-3 fold-mean is thus not the reported number (for the final model: pooled 0.94788 vs fold-mean 0.94795; forward-selection and baseline tables are pooled only). No repeats, no SD, no CI, no bootstrap. Decision threshold 0.5 on the positive probability (Colab.py:587, 817, 884). Audit tolerances: |ΔAUC| ≤ 0.01, DRS mean ≤ 0.5, DRS range ≤ 3.5 (Colab.py:186-187, 1062-1072). DRS stage: sum of positive OOF SHAP per row (Colab.py:904), one-sided one-sample t-test of impaired daily DRS vs CN mean (scipy ttest_1samp alternative='greater', Colab.py:917-919) plus a subject-mean variant (Colab.py:920-923).",
+  "reported_results": "All pooled-OOF 5-fold record-level CV, seed 42, 86 candidate features (paper_fidelity_summary.json; paper_exact_reproduction_report.md; REVIEW:38-50). Stage 1 baselines (all features, model_comparison.csv:2-8): LightGBM AUC 0.8995 / acc 0.8293 (paper 0.9010 / 0.8262); Random forest 0.8897; MLP 0.8849 (paper 0.6348); SVM 0.8731 (paper 0.6249); KNN 0.8524 (paper 0.6595); Logistic regression 0.6952 (paper 0.6067); Decision tree 0.6707 (paper 0.6806). Stage 2 forward selection (default LGBM, global OOF-SHAP ranking, forward_selection_metrics.csv): top-40 AUC 0.9026 (paper 0.9037); local best k=39 AUC 0.9053; curve to k=80. Stage 3 final LightGBM (Table-2 params, top 40 forced): pooled AUC 0.9479 (paper 0.9492), acc 0.8816, macro-F1 0.8688, fold AUCs 0.9464/0.9419/0.9459/0.9497/0.9557 (final_cv_metrics.json:52-117; REVIEW:257-278). In-sample ROC of the full-fit model is plotted only (Colab.py:953-963; README:346). DRS (OOF SHAP): CN mean 7.424 (paper 7.59), impaired 15.6235 (paper 15.71); daily t p=0.0; subject-level t p=3.4e-29 (paper_fidelity_summary.json:64-101; dementia_risk_score_summary.json). Audit `passed=false` with one FAIL (`paper_forward_best_k_40`: 39 ≠ 40) (paper_exact_reproduction_report.md:28; REVIEW:25-32). Top-3 SHAP features match the paper's Figure-6 ordering (sleep_breath_average, sleep_hr_lowest, sleep_hr_average — paper: breath, hr_average, hr_lowest) (shap_importance_full.csv:2-4).",
+  "deviations_from_paper": [
+    {
+      "item": "Feature set is 86, not the paper's 72",
+      "existing_choice": "68 of the paper's 72 plus 18 extra columns (class-0/5 counts, six class ratios, valid/transition counts for activity and hypnogram, four hypnogram ratios, MET iqr, sleep_temperature_deviation); four paper features are missing: activity_met_1min_kurtosis, _skewness, _autocorrelation, _quantile_50",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md 'Feature engineering': Figure 2 lists exactly 72 variables incl. the 12 MET statistics (kurtosis, skewness, autocorrelation, quantile_25/50/75); classes 0/5, sleep_temperature_deviation and ratios are not features; Figure 6 top-20 includes kurtosis (#10) and autocorrelation (#20)",
+      "evidence": "Colab.py:301-335 (numeric_stats keys, categorical_counts extras), Colab.py:380, 415 (labels [0..5] and [1..4]); feature_columns.json:26-48, 73, 78-87; preprocess_summary.json:12 feature_count 86; README:192-216, 232-239 admits ratio/transition/MET stats are 'explicit reproduction settings' beyond the paper",
+      "severity": "high"
+    },
+    {
+      "item": "Record construction by date join + longest-sleep dedup + left join",
+      "existing_choice": "activity day = date(activity_day_start), sleep day = date(sleep_bedtime_end); duplicates per (subject, wake-date) collapsed to the longest; activity LEFT JOIN sleep; unmatched activity days keep NaN sleep features",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md Preprocessing items 12-13: matching rule and duplicate handling NOT REPORTED; record total 12,183 equals the raw activity/sleep row totals, and ASSUMPTIONS A03 shows only the row-wise pairing reproduces the count without dropping/NaN rows; sleep_period_id is kept as a feature, implying no dedup",
+      "evidence": "Colab.py:370, 396-408, 465-467; README:243-250 ('inner join reduces count, so left_activity is fixed')",
+      "severity": "medium"
+    },
+    {
+      "item": "Median imputation and StandardScaler added",
+      "existing_choice": "SimpleImputer(median) in every pipeline incl. LightGBM; StandardScaler for LR/KNN/SVM/MLP",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md Preprocessing 7 and 9: imputation and scaling NOT REPORTED; only removal of the unhandleable 5-min HR log is stated",
+      "evidence": "Colab.py:515-538; README:250, 302-306, 401",
+      "severity": "medium"
+    },
+    {
+      "item": "Non-default baseline hyperparameters",
+      "existing_choice": "LogisticRegression max_iter=3000; MLP max_iter=500 + early_stopping=True; RandomForest n_estimators=500; SVC probability=True (Platt)",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md 'Model': hyperparameters of the 7 base models NOT REPORTED (presumably defaults)",
+      "evidence": "Colab.py:531-536; README:302-307",
+      "severity": "low"
+    },
+    {
+      "item": "SHAP ranking computed with the tuned (Table-2) LightGBM and on OOF validation rows",
+      "existing_choice": "ranking model = PAPER_FINAL_PARAMS; SHAP on each held-out fold, pooled over all 12,183 rows into one ranking; forward path then uses default LightGBM",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md 'Feature selection': FS is done on the selected model before tuning (select → FS → tune); explainer type, data used and aggregation NOT REPORTED",
+      "evidence": "Colab.py:728-729 (ranking_params = PAPER_FINAL_PARAMS), 689-703 (OOF SHAP), 733 (params=None for the path); README:322-324",
+      "severity": "medium"
+    },
+    {
+      "item": "k fixed to 40 instead of the best-performing set; path length 80",
+      "existing_choice": "STRICT_PAPER_TOP40=True overrides the local argmax (k=39, AUC 0.9053) and uses the top 40 (AUC 0.9026); curve computed for k=1..80 over 86 features",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md: 'the feature set of the best-performing model among the constructed ones is chosen'; curve runs to ≈72",
+      "evidence": "Colab.py:189-190, 733, 736-739, 986; REVIEW:127-176",
+      "severity": "medium"
+    },
+    {
+      "item": "Pooled-OOF aggregation instead of fold mean",
+      "existing_choice": "concatenate OOF predictions of the 5 folds and compute one AUC/accuracy; fold metrics saved but not used for the headline or the audit",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md 'Validation design': Performance = (1/5) Σ Performance_i (Figure 3)",
+      "evidence": "Colab.py:591, 826, 1041, 1068; README:281",
+      "severity": "low"
+    },
+    {
+      "item": "sleep_time defined from raw timestamps in seconds",
+      "existing_choice": "sleep_time_from_timestamp = (end − start).total_seconds(); it duplicates sleep_duration exactly (OOF SHAP importance 0.0), so the paper's derived variable contributes nothing",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md Preprocessing 4-5: clock values converted to a 24-h real number, then sleep time = end − start; unit and whether from converted values NOT REPORTED",
+      "evidence": "Colab.py:396-401; README:225-228; shap_importance_full.csv:86",
+      "severity": "low"
+    },
+    {
+      "item": "MET statistics: numpy ddof=0, −1 values dropped, no kurtosis/skew/autocorr",
+      "existing_choice": "np.std/np.var (population), np.percentile linear, values == −1 removed before statistics; iqr added",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md: kurtosis convention, autocorrelation lag and quantile interpolation NOT REPORTED; the 12 statistics themselves are named in Figure 2",
+      "evidence": "Colab.py:301-322",
+      "severity": "low"
+    },
+    {
+      "item": "'Paper-exact' framing and audit tolerances",
+      "existing_choice": "README/REVIEW call the run paper-exact and the audit checks feature COUNT (40) and |ΔAUC| ≤ 0.01, not feature identity; the review concludes 'reproduction success' on most items",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md defines the 72-feature list and the FS stopping rule explicitly; the top-40 here contains six non-paper features and lacks two Figure-6 top-20 features",
+      "evidence": "Colab.py:1058-1075 (check definitions), README:133-141, REVIEW:457-473; final_cv_metrics.json:25-26,36,43,47-48",
+      "severity": "medium"
+    },
+    {
+      "item": "Optional seed 'fidelity search' toward best-k = 40",
+      "existing_choice": "code path (disabled by default) that scans seeds 0-14 and ranks them by |best_k − 40| and closeness of top-40 AUC to 0.9037",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md: single 5-fold run, seed NOT REPORTED; choosing a seed on the outcome is not a paper step",
+      "evidence": "Colab.py:192-194, 777-798; README:442",
+      "severity": "low"
+    },
+    {
+      "item": "DRS SHAP source chosen because it is closer to the paper's numbers",
+      "existing_choice": "DRS uses OOF SHAP (not full-fit SHAP) explicitly because the full-fit variant diverged from the paper's CN/impaired means",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md 'Dementia risk score': source of SHAP values NOT REPORTED; DRS is outside the three experiments",
+      "evidence": "README:352-357, 386; Colab.py:854-858, 904",
+      "severity": "low"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "Raw subject e-mail identifiers are carried as `patient_id` without hashing and written into repository output CSVs (data/daily_binary_lifelog.csv, final/dementia_risk_scores.csv) and into the joblib/metadata flow",
+      "evidence": "Colab.py:353-356 (SAMPLE_EMAIL/EMAIL → patient_id), 369, 395 (rename EMAIL → patient_id), 485 + 502 (daily_df incl. patient_id → to_csv), 905-911 (risk = meta incl. patient_id → to_csv). Files exist under Training/outputs_paper_exact/ (not opened in this audit)",
+      "confidence": "high"
+    },
+    {
+      "description": "Feature-selection leakage: the SHAP ranking is one global ranking built from all 12,183 rows (OOF SHAP pooled), and the forward path is then scored on the very same 5 folds (identical seed/ordering), so every evaluation fold's rows influenced the ranking used to score it; the final 'tuned' CV also reuses those folds with the top-40 chosen from them → optimistic selection bias for the 0.9026 / 0.9479 numbers",
+      "evidence": "Colab.py:688-703 (ranking over all folds), 582 and 712 (same make_cv, random_state=RANDOM_STATE=42), 812 (final CV, same splitter), 155 (RANDOM_STATE=42), 479 (fixed row order)",
+      "confidence": "high"
+    },
+    {
+      "description": "Subject overlap across folds: record-level StratifiedKFold puts days of the same subject in train and validation folds; the paper is day-level, so this is faithful, but none of the reported AUCs (0.8995 / 0.9026 / 0.9479) is a subject-generalisation estimate, and no grouped arm exists to quantify the inflation; `groups` is passed everywhere but ignored",
+      "evidence": "Colab.py:547-550, 618, 626, 729, 733, 812 (grouped=False); README:294, 450",
+      "confidence": "high"
+    },
+    {
+      "description": "The 'top 40' feature set is not comparable with the paper's: four paper features (kurtosis, skewness, autocorrelation, quantile_50) do not exist, six of the selected 40 are non-paper features, and the audit only checks that the count equals 40",
+      "evidence": "feature_columns.json (no kurtosis/skewness/autocorrelation/quantile_50); final_cv_metrics.json:25,26,36,43,47,48; Colab.py:1065-1066 (count-only checks)",
+      "confidence": "high"
+    },
+    {
+      "description": "sleep_time_from_timestamp is an exact duplicate of sleep_duration (seconds), so the paper's added sleep-time variable is effectively absent (OOF mean |SHAP| = 0.0); similarly activity_met_1min_var and sleep_temperature_deviation receive 0.0",
+      "evidence": "Colab.py:401; shap_importance_full.csv:84-87; ASSUMPTIONS.md A07 (timestamp difference equals sleep_duration/3600 exactly)",
+      "confidence": "high"
+    },
+    {
+      "description": "Sleep de-duplication silently drops duplicate sleep records per wake date (keeping the longest) and the left join silently drops sleep rows with no activity day and leaves ~0.3 % activity days with all-NaN sleep features to be median-imputed; no diagnostic count of unmatched/dropped rows is printed, so the 12,183 match hides a different record set",
+      "evidence": "Colab.py:404-408, 465-473, 487-496 (summary has no match statistics); README:250; ASSUMPTIONS.md A03 (date join 99.7 %, 12 duplicates)",
+      "confidence": "medium"
+    },
+    {
+      "description": "Headline metric mismatch: the audit compares the paper's fold-mean AUC against a pooled-OOF AUC; numerically close here but a different estimator (and the forward-selection best-k decision is made on pooled AUC)",
+      "evidence": "Colab.py:591, 736, 826, 1062-1068",
+      "confidence": "medium"
+    },
+    {
+      "description": "numeric_stats and categorical_counts drop every value equal to −1 before computing statistics/counts; if −1 is not a sentinel in the MET/class/hypnogram logs this silently biases the statistics; the paper reports no such filter",
+      "evidence": "Colab.py:304, 327",
+      "confidence": "low"
+    },
+    {
+      "description": "DRS daily one-sample t-test treats 12,183 subject-clustered days as independent (t = 109.9, p = 0.0); the subject-level test is provided only as a secondary check. Not part of the three core experiments",
+      "evidence": "Colab.py:917-919 vs 920-923; REVIEW:387-405",
+      "confidence": "medium"
+    },
+    {
+      "description": "Environment is not pinned (pip ranges only; Colab runtime), so LightGBM/scikit-learn defaults used for the baselines and forward path are version-dependent and the run is not exactly reproducible",
+      "evidence": "Colab.py:57; README:46-60",
+      "confidence": "low"
+    },
+    {
+      "description": "README states 4 features were removed as constants but lists only 3 (activity_day_start_hour, activity_day_end_hour, activity_met_1min_count); sleep_is_longest is the likely fourth but is undocumented",
+      "evidence": "README:261-269; feature_columns.json (no sleep_is_longest)",
+      "confidence": "low"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "A01/A24 seeds & repeats: single run, seed 42 only (Colab.py:155); new implementation runs seeds 42-46 with repeat-level SD/CI.",
+    "A02 cohort: same — both AI-Hub partitions pooled, 174 subjects, 12,183 rows (Colab.py:452-463, 507-509).",
+    "A03 record matching: DIFFERENT — date join on wake date with longest-sleep dedup and activity LEFT JOIN (Colab.py:396-408, 465-467) vs row-wise pairing; leaves ~0.3 % rows without sleep data and drops 12 duplicate sleep rows.",
+    "A04 label file: same in spirit (gait label copy, DIAG_NM, no MMSE) (Colab.py:228-259, 359-360); Sleep-copy identity is not asserted here.",
+    "A05 identifiers: DIFFERENT — raw EMAIL kept as patient_id and written to output CSVs (Colab.py:369, 395, 502, 911) vs salted SHA-256 prefix.",
+    "A06 clock conversion: same formula h + m/60 + s/3600 (Colab.py:276-278).",
+    "A07 sleep_time: DIFFERENT — timestamp difference in seconds (the new implementation's non-default 'timestamp_difference' variant, and in seconds not hours) (Colab.py:401), a pure duplicate of sleep_duration; new default is clock_difference.",
+    "A08 MET statistics: DIFFERENT — numpy ddof=0 std/var, −1 filtering, iqr added, no kurtosis/skewness/autocorrelation/quantile_50 (Colab.py:301-322) vs pandas defaults (ddof=1, Fisher kurtosis, bias-corrected skew, autocorr lag 1, both median and quantile_50).",
+    "A09 series counts: DIFFERENT — classes 0-5 with ratios, valid_count and transition_count for activity; ratios/valid/transition for hypnogram (Colab.py:324-335, 380, 415) vs exactly classes 1-4 / states 1-4; sleep_temperature_deviation kept.",
+    "Feature count: 86 (preprocess_summary.json:12) vs 72.",
+    "A10 CV: same as the R arm (StratifiedKFold(5, shuffle=True, seed 42), record level) (Colab.py:547-550); no G (StratifiedGroupKFold) or N (nested) arms exist — `grouped` flag never enabled.",
+    "A11 metrics: same macro averaging and 0.5 threshold (Colab.py:561-572, 587); SVC ROC uses Platt predict_proba (probability=True, Colab.py:534, 552-559) instead of decision_function.",
+    "A12 baseline hyperparameters: DIFFERENT — LR max_iter=3000, MLP max_iter=500 + early_stopping, RF 500 trees, n_jobs=-1 (Colab.py:531-537) vs pure library defaults with n_jobs=1; this plus scaling explains KNN/SVM/MLP AUCs of 0.85-0.88 here vs the paper's 0.62-0.66.",
+    "A13 preprocessing: DIFFERENT — fold-internal median imputer in every pipeline and StandardScaler for LR/KNN/SVM/MLP (Colab.py:515-538) vs no imputer/no scaler (0 NaN cells with row-wise pairing).",
+    "A14 SHAP: same explainer (TreeExplainer, path-dependent) and aggregation (mean |SHAP|, positive class) (Colab.py:695-700), but explained on OOF validation rows of a Table-2-tuned LightGBM rather than on the fitted rows of the default LightGBM.",
+    "A15/A17 ranking scope: neither — a single global ranking from pooled OOF SHAP over all rows (Colab.py:682-703), reused across the same folds; new R arm fits+explains on all rows in-sample, new G arm ranks on the training fold only.",
+    "A16 forward path / k*: default LightGBM along the path (same) but k forced to 40 via STRICT_PAPER_TOP40 (Colab.py:190, 738, 986) instead of argmax (local argmax was 39); path to k=80 not 72.",
+    "A18 Table-2 values: same — fixed constants, no grid re-run (Colab.py:175-180, 988).",
+    "A19/A20 nested selection and 16-config grid: absent.",
+    "A21 aggregation: DIFFERENT — pooled-OOF metrics as the headline (Colab.py:591, 826) vs per-repeat fold mean with SD and t-CI (pooled only as sensitivity).",
+    "A22 alias: same (min_child_samples) (Colab.py:176; README:336).",
+    "A23 versions: unpinned pip ranges on Colab (Colab.py:57) vs pinned environment.txt.",
+    "A25/A26 smoke run & execution layout: not applicable; README:75 warns local smoke tests are not results.",
+    "Extra stages not in the new implementation: DRS computation with daily and subject-level one-sided t-tests (Colab.py:903-949), in-sample ROC/SHAP summary plots from a full-data fit (Colab.py:876-900, 953-978), a self-audit with tolerance checks (Colab.py:1054-1079), and an optional outcome-driven seed search (Colab.py:777-798)."
+  ]
+}

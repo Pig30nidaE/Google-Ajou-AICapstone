@@ -1,0 +1,80 @@
+{
+  "implementation": "taehyun_xai_dirs — /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai and /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/previous/xai. The two directories are byte-identical apart from __pycache__ (diff -rq --exclude=__pycache__ reports no differences), so all citations below refer to Taehyun/xai and apply equally to previous/xai. Contents: __init__.py (16 lines), analyzer.py (320), detect.py (74), aggregation.py (55), explainers.py (84), outputs.py (125), USAGE.md (251). It is a reusable SHAP post-hoc explanation utility (\"ML4 SHAP 분석 패키지\", __init__.py:1; \"ML4 프로젝트의 SHAP 분석 공용 패키지\", USAGE.md:3) that accepts an ALREADY-TRAINED model plus a feature-name list (analyzer.py:59-72), runs shap.TreeExplainer (explainers.py:39) or shap.GradientExplainer for Keras sequence models (explainers.py:65), aggregates the time axis for 3-D sequence SHAP (aggregation.py:24-55), and emits a mean-|SHAP| importance DataFrame (outputs.py:19-64) and summary/bar/beeswarm/violin PNGs (outputs.py:67-125). It contains no data loading, no label construction, no CV, no model training, no feature engineering, no forward selection and no hyperparameters (grep over both dirs for read_csv/KFold/fit(/roc_auc/forward/num_leaves/MMSE/activity_/sleep_ returns only the example feature name at USAGE.md:172,179).",
+  "is_cheon_reproduction": false,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/analyzer.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/__init__.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/USAGE.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/previous/xai/analyzer.py"
+  ],
+  "cohort": "Not applicable. No file under either directory reads AI-Hub data, partitions, subjects, or MMSE/cognitive files (grep for read_csv/Training/Validation/MMSE/CIST/DIAG: no hits in .py/.md). The package only receives X and a fitted model from a caller (analyzer.py:112-129). USAGE.md:69 and :109 name the intended callers as LightGBM_RF_Model.py and train_lstm_colab.py, which are outside the audited directories.",
+  "record_count": "Not applicable — no records are constructed; N is whatever the caller passes to explain(X) (analyzer.py:112-116).",
+  "label": "Not applicable, but note the package's default framing is 3-class, not the paper's binary CN vs MCI+Dem: task defaults to \"multiclass\" with n_classes=3 (analyzer.py:65-66) and USAGE.md:41-42, 78-79, 118-119 show class_names=[\"CN\",\"MCI\",\"Dementia\"].",
+  "record_construction": "Not applicable — no activity/sleep pairing, date join or dedup exists anywhere in the target.",
+  "missing_values": "Not applicable — no imputation, dropping or scaling code; X is coerced to ndarray/DataFrame unchanged at analyzer.py:283-296. USAGE.md:120,125 assume the caller has already scaled inputs (X_train_scaled / X_test_scaled) for the Keras path.",
+  "features": "Not applicable — no feature definitions. feature_names is a caller-supplied list (analyzer.py:36-37, 82). The only concrete hints about the caller's feature set are: a 71-feature, 7-timestep input \"(N, 7, 71)\" for the LSTM path (USAGE.md:109, 115, 248) and an example column named raw_sleep_score_rem (USAGE.md:172, 179), i.e. a \"raw_\" prefix naming scheme that is not the paper's Figure-2 naming, and 71 rather than 72 features. None of sleep_time, bedtime clock conversion, 1-min MET statistics, 5-min class counts or hypnogram counts is defined here.",
+  "feature_selection": "No forward selection or any selection procedure exists. What the package does implement is the SHAP importance primitive: explainer = shap.TreeExplainer(model) with no background data, i.e. default tree_path_dependent perturbation (explainers.py:39); values via explainer.shap_values(X) (explainers.py:42); importance = mean |SHAP| over samples per feature plus mean signed SHAP (outputs.py:49-52), sorted descending (outputs.py:64); per-class long-form or class-averaged ranking (analyzer.py:161-186); Keras path uses shap.GradientExplainer with a caller-supplied or seeded 100-row random background (explainers.py:65; analyzer.py:251-264). The data on which the ranking is computed is whatever X the caller passes; USAGE.md:45, 82, 125 recommend X_test. No k is chosen.",
+  "split": "Not applicable — no KFold/StratifiedKFold/GroupKFold/train_test_split, no seeds for splitting, no repeats, no hold-out (grep: no hits). The only random_state (analyzer.py:71, 259) seeds the Keras background subsample.",
+  "model_and_hyperparameters": "No model is trained or configured. detect.py:16-31 merely whitelists class names (LGBMClassifier, RandomForestClassifier, XGBClassifier, ...) to route to TreeExplainer; none of the Table 2 values (min_data_in_leaf 41, num_leaves 330, n_estimators 1000, learning_rate 0.08) or any grid search appears (grep: no hits).",
+  "statistics": "Not applicable — no fold/repeat aggregation, CI or threshold. The only statistics are mean |SHAP| / mean signed SHAP per feature (outputs.py:50-52) and time-axis mean/sum/last aggregations for sequence SHAP (aggregation.py:44-53).",
+  "reported_results": "None. No README, report, result files or numbers are present in either directory; the only files are the six .py sources, USAGE.md, and __pycache__. The importance values in USAGE.md:172,179 (0.0421, -0.0103, 0.0398) are illustrative table placeholders, not results.",
+  "deviations_from_paper": [
+    {
+      "item": "Scope: not a reproduction",
+      "existing_choice": "Generic post-hoc SHAP explainer wrapper for any trained tree or Keras model; no cohort, label, CV, LightGBM training, forward selection or tuning",
+      "paper_or_protocol_says": "PAPER_PROTOCOL.md: full pipeline (174 subjects, 12,183 day-records, binary label, 72 features, 5-fold CV, SHAP-ordered forward selection, Table 2 LightGBM)",
+      "evidence": "__init__.py:1-16; analyzer.py:1-13, 59-72, 112-129; grep for read_csv/KFold/fit(/roc_auc/forward/num_leaves returns no hits in either directory",
+      "severity": "high"
+    },
+    {
+      "item": "Class framing",
+      "existing_choice": "Defaults to multiclass with n_classes=3 and class_names CN/MCI/Dementia",
+      "paper_or_protocol_says": "Binary CN=0 vs MCI+Dem=1 (p.164 §3.1)",
+      "evidence": "analyzer.py:65-66; USAGE.md:41-42, 78-79, 118-119",
+      "severity": "low"
+    },
+    {
+      "item": "Data on which SHAP importance is computed",
+      "existing_choice": "Whatever X the caller passes; documented usage explains X_test (held-out rows)",
+      "paper_or_protocol_says": "NOT REPORTED by the paper (PAPER_PROTOCOL.md 'Feature selection' row: data used for SHAP not reported)",
+      "evidence": "analyzer.py:112-122; USAGE.md:45, 82, 125",
+      "severity": "low"
+    },
+    {
+      "item": "Feature naming / count hinted for the caller",
+      "existing_choice": "71 features with a raw_ prefix (e.g. raw_sleep_score_rem), 7-day sequences for the LSTM path",
+      "paper_or_protocol_says": "72 features with Figure-2 names (activity_*, sleep_*, derived activity_met_1min_*, *_count_*), day-level rows",
+      "evidence": "USAGE.md:109, 115, 172, 179, 248",
+      "severity": "low"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "task='binary' or 'regression' with the default n_classes=3 raises IndexError in per_class_values(): _slice_classes returns a 1-element list, but the dict comprehension enumerates the 3 default class_names and indexes sliced[1].",
+      "evidence": "analyzer.py:65-66 (defaults n_classes=3), analyzer.py:93-97 (3 default names), analyzer.py:147-148 (sliced[i] for i in enumerate(class_names)), analyzer.py:306-307 (returns [raw] for non-multiclass)",
+      "confidence": "high"
+    },
+    {
+      "description": "For binary sklearn RandomForest/ExtraTrees with shap>=0.45 the TreeExplainer output is (N, F, 2); with task='binary' the class axis is never sliced, so aggregate_time_axis treats the 3-D array as a sequence and collapses axis=1 (the FEATURE axis), then importance_dataframe fails on a feature-count mismatch (or silently produces a 2-column result if plots are skipped).",
+      "evidence": "analyzer.py:306-307 (no slicing for binary); aggregation.py:36-47 (ndim==3 -> mean over axis=1); outputs.py:43-47 (mismatch check)",
+      "confidence": "medium"
+    },
+    {
+      "description": "Class-averaged plot for multiclass (per_class=False) averages SIGNED SHAP across classes; for probability-output models (e.g. sklearn RF) per-sample class SHAP values sum to ~0, so the averaged plot is near-degenerate. to_dataframe(combine_classes=False) correctly averages mean_abs_shap instead, so the two 'class-average' outputs are inconsistent.",
+      "evidence": "analyzer.py:214-223 (np.mean of stacked signed values) vs analyzer.py:178-186 (mean of mean_abs_shap)",
+      "confidence": "low"
+    },
+    {
+      "description": "Leakage risk is delegated to the caller: the documented recipe computes the importance ranking on X_test. If a caller (e.g. LightGBM_RF_Model.py, outside this audit) uses that ranking to select features and then reports performance on the same X_test, the selection is fit on evaluation rows. The package itself performs no split, so this is a usage hazard, not a bug in the target.",
+      "evidence": "USAGE.md:45, 82, 125; analyzer.py:112-122",
+      "confidence": "low"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "Purpose: the new implementation (PAPER_PROTOCOL.md / ASSUMPTIONS.md) is an end-to-end R/G/N reproduction pipeline; the target is only a SHAP explanation utility with no data, split, model or selection logic (analyzer.py:1-13; grep: no read_csv/KFold/fit(/forward).",
+    "SHAP explainer: both use shap.TreeExplainer with default tree_path_dependent perturbation and mean |SHAP| aggregation (target: explainers.py:39, outputs.py:50; new: A14), so the importance primitive is equivalent for a binary LightGBM. Difference: the new implementation explains on the rows used for fitting (A14) and restricts to the positive class; the target explains whatever X is passed (documented as X_test, USAGE.md:45/82) and, for multiclass, ranks per class or by class-mean (analyzer.py:161-186).",
+    "Class framing: target defaults to 3-class CN/MCI/Dementia (analyzer.py:65-66; USAGE.md:41-42); new implementation is binary CN vs MCI+Dem per the paper.",
+    "Features: target hints at a caller-side 71-feature raw_-prefixed set and 7-day sequences (USAGE.md:109, 172); new implementation uses the paper's 72 Figure-2 features on single-day rows (A06-A09).",
+    "Nothing corresponding to A01-A03, A05, A10-A13, A15-A26 (seeds, partition pooling, row-wise pairing, hashing, CV design, thresholds, forward-selection scoping, Table 2 constants, nested loop, aggregation rule) exists in the target."
+  ]
+}

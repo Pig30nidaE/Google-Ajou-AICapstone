@@ -1,0 +1,87 @@
+{
+  "CT9b_explicit_tiebreak_identical": {
+    "gate": true,
+    "pass": true,
+    "activity_dup_rows": 0,
+    "sleep_dup_rows": 12
+  },
+  "CT9a_strict_parser_identical": {
+    "gate": true,
+    "pass": true,
+    "n_days": 12150,
+    "len_counts": {
+      "1440": 12150
+    }
+  },
+  "CT1_feature_fingerprint_and_exact_match": {
+    "gate": true,
+    "fingerprint": "3bc37d120081437d",
+    "expected": "3bc37d120081437d",
+    "pass": true,
+    "max_abs_diff_low_SD_vs_run4": 1.4210854715202004e-14,
+    "max_abs_diff_low_MED_vs_run4": 0.0,
+    "csv_tolerance": 1e-12
+  },
+  "CT2_subject_independence": {
+    "gate": true,
+    "pass": true,
+    "n_subset": 90,
+    "n_columns": 5
+  },
+  "CT3_nested_B0_reproduction": {
+    "gate": true,
+    "pass": true,
+    "subject_mean_auc": 0.6490776490776491,
+    "auc_cn_vs_mci": 0.6053700759583113,
+    "auc_cn_vs_dem": 0.8348348348348348,
+    "max_abs_per_repeat_diff": 0.0,
+    "abs_subject_mean_diff": 0.0,
+    "chosen_C_counts": {
+      "0.1": 93,
+      "0.03": 4,
+      "0.003": 2,
+      "0.01": 1
+    },
+    "hanley_se": 0.04435533403219239,
+    "seconds": 7.9
+  },
+  "CT4a_numpy_reimplementation": {
+    "gate": true,
+    "pass": true,
+    "max_abs_diff": 0.0
+  },
+  "CT8_contrast_signs_report_only": {
+    "gate": false,
+    "pass": null,
+    "contrasts": {
+      "low_SD": {
+        "MCI_minus_CN": -0.3598860680207846,
+        "Dem_minus_CN": -0.7811819481812736,
+        "globally_monotone": true,
+        "direction": "higher feature -> lower score"
+      },
+      "low_MED": {
+        "MCI_minus_CN": 0.2891017003446315,
+        "Dem_minus_CN": -0.33819765996723156,
+        "globally_monotone": false,
+        "direction": "not globally monotone (contrast signs differ)"
+      }
+    },
+    "low_SD_score_monotone_decreasing_at_median_low_MED": true
+  },
+  "CT10_C_sensitivity_report_only": {
+    "gate": false,
+    "pass": null,
+    "spearman_vs_frozen": {
+      "0.01": 0.9793570431959906,
+      "0.03": 0.9943825279763092,
+      "1.0": 0.9967789515646799
+    }
+  },
+  "CT4b_subprocess_joblib_roundtrip": {
+    "gate": true,
+    "pass": true,
+    "max_abs_diff": 0.0,
+    "stderr": ""
+  }
+}

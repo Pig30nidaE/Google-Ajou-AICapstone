@@ -1,0 +1,23 @@
+# Experiment R - paper-faithful reproduction (PAPER_PROTOCOL.md; assumptions ASSUMPTIONS.md)
+experiment: reproduction
+output_dir: results/reproduction
+seeds: [42, 43, 44, 45, 46]          # A10: repeat 0 (seed 42) is the single paper-style run; 5 repeats for stability
+n_splits: 5                          # paper p.164-165 §3.2(1)
+split_unit: record                   # paper: day-level records, no subject grouping mentioned
+shuffle: true                        # A10
+n_threads: 1                         # LightGBM is fastest single-threaded on this data (tuned fit 4 s vs 14 s at 8 threads); runs are parallelised across processes instead
+threshold_rule: model_default        # A11: model.predict() -> 0.5 on probability
+base_models:
+  enabled: true                      # Table 1 (7 algorithms, library defaults A12, no scaling A13)
+  repeats: 5                         # 7-model comparison on every seed (~35 s per repeat)
+feature_selection:
+  scope: dataset                     # A15: SHAP ranking on all records (paper gives no fold scoping)
+  max_k: 72
+  k_fixed: null                      # k chosen as argmax of the CV curve (paper: 40)
+final_model:
+  params: paper_table2               # min_data_in_leaf 41, num_leaves 330, n_estimators 1000, lr 0.08
+  also_evaluate_paper_k: 40          # tuned model at the paper's k as well as at our selected k
+paper_reference:
+  baseline_lightgbm: {accuracy: 0.8262, roc_auc: 0.9010, precision_macro: 0.8276, recall_macro: 0.7904, f1_macro: 0.8025}
+  feature_selection: {k: 40, roc_auc: 0.9037}
+  tuned_final: {roc_auc: 0.9492}

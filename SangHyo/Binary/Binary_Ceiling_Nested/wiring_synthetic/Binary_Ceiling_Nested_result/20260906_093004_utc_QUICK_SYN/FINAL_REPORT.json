@@ -1,0 +1,791 @@
+{
+  "run_id": "20260906_093004_utc_QUICK_SYN",
+  "experiment": "Binary_Ceiling_Nested",
+  "task": "CN(0) vs MCI+Dem(1), 피험자 단위, MMSE 제외, nested CV",
+  "quick_mode": true,
+  "synthetic_data": true,
+  "status": "ceiling experiment — 사용자 지시(2026-09-05)로 STRICT3 §10 stop rule 뒤에 1회 실행; §10.4 두 항목(새 특징 정의·fold-local pool 스크린) 이 노트북 1회 예외; 확인 실험이 아니라 상한 측정",
+  "exposure_status": {
+    "record": "exploratory-record",
+    "B0": "reproduction (run 2/3/4, 0.6491 known)",
+    "A1": "reproduction of run-4 S1 (0.6577 known; STRICT3 §8 #18)",
+    "D1": "reproduction of run-4 P (0.6589 known; §8 #17)",
+    "A2": "re-test of two known levers (#17 + #18) on all valid days; label value never computed before this run",
+    "longest_w_SD_all": "construct exposed (run 4, 35-day)",
+    "onset_SD_all": "onset used in run-2/3 coupling features; onset SD label value never computed",
+    "clsH_SD_all": "class_5min stream had variants in Training-141 label-aware screens (§8 #8, §9.2); this definition never computed",
+    "low_lag1_all": "never computed",
+    "steps_SD": "EXCLUDED from library — 174-cohort Dem-axis AUC 0.6219 recorded in run 2 (STRICT3 §6)",
+    "label_aware_arms": "main 4 + diagnostics 5 + reduced-protocol 4 = 13; decision on max of 3 candidate arms only (Holm 3)"
+  },
+  "verdict_tier": "G− 점추정 ≥ 0.70 이나 증분 미확정 (0.70 주장 불가)",
+  "ceiling_statement": "엄격 3조건(피험자 분할·nested CV·MMSE 제외) 아래 174명 코호트에서 합법적 레버를 전부 건 상한은 0.896 [0.844, 0.935] (A2 MAXFIX (B0_all + longest_w_SD_all); 후보 3 arm 의 max-over-3 승자 편향 -0.002 보정 시 0.898) 이며, B0 0.649 대비 최고 후보 Δ +0.059 [+0.019, +0.104] (Holm p_Δ 0.429). 프로그램 headline 은 B0 0.649 로 유지된다 (STRICT3 §10.2).",
+  "best_candidate_arm": "A2 MAXFIX (B0_all + longest_w_SD_all)",
+  "ceiling_arm": "A2 MAXFIX (B0_all + longest_w_SD_all)",
+  "baseline_run": "Binary_DaytimeVariety_Nested 20260902_140024_utc (B0 arm); run 3·4 및 본 run 에서 비트 재현",
+  "cohort": {
+    "n": 174,
+    "CN": 111,
+    "MCI": 51,
+    "Dem": 12,
+    "window_days_B0": 35,
+    "wear_gate": 0.8,
+    "nonwear_met": 0.5,
+    "sed_met": 1.5,
+    "min_window_min": 240,
+    "zero_run_max_min": 60,
+    "cls_len_gate": 288,
+    "epoch_worn_min": 3,
+    "min_worn_epoch": 12,
+    "min_trans": 6,
+    "min_days_detrend": 8,
+    "min_pairs_lag1": 10,
+    "cls_parse_min": 0.95,
+    "nan_max_library": 0.1
+  },
+  "protocol": {
+    "outer_folds": 5,
+    "outer_repeats": 2,
+    "inner_folds": 4,
+    "inner_repeats": 2,
+    "C_grid": [
+      0.003,
+      0.01,
+      0.03,
+      0.1
+    ],
+    "tolerance": 0.005,
+    "seed": 20260903,
+    "stratify": "3-class",
+    "K_arms": 4,
+    "n_boot": 300,
+    "seeds": {
+      "fold": "100+r",
+      "inner": "7000+37r+f+rr",
+      "boot_ci": 20260903,
+      "paired_boot": 20260904,
+      "winner_bias_boot": 20260905,
+      "perm": "SeedSequence(20260903).spawn(20)",
+      "colperm": "SeedSequence(20260910).spawn(10)"
+    },
+    "estimator": "multinomial L2 LR (lbfgs), score = 1 - P(CN)",
+    "A3_selection": "inner CV mean AUC over {base, base+c (c in LIBRARY)} x C_grid; tie within tol → fewer features → smaller C → earlier set",
+    "fold_membership": "not saved; reproducible from sorted(SIDS) + y3 + StratifiedKFold(5, shuffle, random_state=100+r)"
+  },
+  "features": {
+    "B0": [
+      "low_SD",
+      "low_MED"
+    ],
+    "A1": [
+      "low_SD_all",
+      "low_MED_all"
+    ],
+    "A2": [
+      "low_SD_all",
+      "low_MED_all",
+      "longest_w_SD_all"
+    ],
+    "A3_base": [
+      "low_SD_all",
+      "low_MED_all"
+    ],
+    "A3_library": [
+      "longest_w_SD_all",
+      "onset_SD_all",
+      "clsH_SD_all",
+      "low_lag1_all"
+    ],
+    "fingerprints": {
+      "B0": "b4307676be9a249e",
+      "A1": "31750be35b2e963f",
+      "A2": "4092b0543db2f443",
+      "A3lib": "ad7fe92e5f1ff765"
+    },
+    "correlation_spearman": {
+      "low_SD": {
+        "low_SD": 1.0,
+        "low_MED": -0.0656,
+        "low_SD_all": 0.9555,
+        "low_MED_all": -0.0645,
+        "longest_w_SD_all": 0.3304,
+        "onset_SD_all": 0.1932,
+        "clsH_SD_all": 0.196,
+        "low_lag1_all": 0.0813
+      },
+      "low_MED": {
+        "low_SD": -0.0656,
+        "low_MED": 1.0,
+        "low_SD_all": -0.0696,
+        "low_MED_all": 0.9863,
+        "longest_w_SD_all": 0.097,
+        "onset_SD_all": 0.0779,
+        "clsH_SD_all": 0.0223,
+        "low_lag1_all": 0.0276
+      },
+      "low_SD_all": {
+        "low_SD": 0.9555,
+        "low_MED": -0.0696,
+        "low_SD_all": 1.0,
+        "low_MED_all": -0.0688,
+        "longest_w_SD_all": 0.3282,
+        "onset_SD_all": 0.2155,
+        "clsH_SD_all": 0.1953,
+        "low_lag1_all": 0.0661
+      },
+      "low_MED_all": {
+        "low_SD": -0.0645,
+        "low_MED": 0.9863,
+        "low_SD_all": -0.0688,
+        "low_MED_all": 1.0,
+        "longest_w_SD_all": 0.0911,
+        "onset_SD_all": 0.0855,
+        "clsH_SD_all": 0.0307,
+        "low_lag1_all": 0.0322
+      },
+      "longest_w_SD_all": {
+        "low_SD": 0.3304,
+        "low_MED": 0.097,
+        "low_SD_all": 0.3282,
+        "low_MED_all": 0.0911,
+        "longest_w_SD_all": 1.0,
+        "onset_SD_all": 0.4771,
+        "clsH_SD_all": 0.5731,
+        "low_lag1_all": 0.1329
+      },
+      "onset_SD_all": {
+        "low_SD": 0.1932,
+        "low_MED": 0.0779,
+        "low_SD_all": 0.2155,
+        "low_MED_all": 0.0855,
+        "longest_w_SD_all": 0.4771,
+        "onset_SD_all": 1.0,
+        "clsH_SD_all": 0.2282,
+        "low_lag1_all": 0.0748
+      },
+      "clsH_SD_all": {
+        "low_SD": 0.196,
+        "low_MED": 0.0223,
+        "low_SD_all": 0.1953,
+        "low_MED_all": 0.0307,
+        "longest_w_SD_all": 0.5731,
+        "onset_SD_all": 0.2282,
+        "clsH_SD_all": 1.0,
+        "low_lag1_all": 0.029
+      },
+      "low_lag1_all": {
+        "low_SD": 0.0813,
+        "low_MED": 0.0276,
+        "low_SD_all": 0.0661,
+        "low_MED_all": 0.0322,
+        "longest_w_SD_all": 0.1329,
+        "onset_SD_all": 0.0748,
+        "clsH_SD_all": 0.029,
+        "low_lag1_all": 1.0
+      }
+    },
+    "reliability_split_half": {
+      "low_SD": {
+        "split_half_rho": 0.607,
+        "spearman_brown": 0.755,
+        "n": 174,
+        "mode": "parity"
+      },
+      "low_SD_all": {
+        "split_half_rho": 0.662,
+        "spearman_brown": 0.797,
+        "n": 174,
+        "mode": "parity"
+      },
+      "longest_w_SD_all": {
+        "split_half_rho": 0.606,
+        "spearman_brown": 0.755,
+        "n": 174,
+        "mode": "parity"
+      },
+      "onset_SD_all": {
+        "split_half_rho": 0.151,
+        "spearman_brown": 0.263,
+        "n": 174,
+        "mode": "parity"
+      },
+      "clsH_SD_all": {
+        "split_half_rho": 0.113,
+        "spearman_brown": 0.204,
+        "n": 174,
+        "mode": "parity"
+      },
+      "low_lag1_all": {
+        "split_half_rho": 0.011,
+        "spearman_brown": 0.022,
+        "n": 174,
+        "mode": "halves"
+      }
+    }
+  },
+  "contract_tests": {
+    "CT_F_feature_matrix": {
+      "b0_fingerprint": "b4307676be9a249e",
+      "b0_fingerprint_expected": "3bc37d120081437d",
+      "b0_fingerprint_match": false,
+      "run4_feature_matrix": null,
+      "pass": "SKIPPED",
+      "note": "SYNTHETIC 모드 → 비교 생략 (경로 해석만 실행)"
+    },
+    "b0_a1_reproduction": {
+      "checked": false,
+      "reason": "QUICK/SYNTHETIC 모드"
+    },
+    "run4_P_reproduction": {
+      "checked": false,
+      "reason": "QUICK/SYNTHETIC 모드"
+    },
+    "prereg_code_sha256": "97306e3706565d14082b5809d0347cfecd116aab64f35569290d66c7974be6a6",
+    "prereg_code_sha256_expected": null,
+    "prereg_code_match": null
+  },
+  "arms": {
+    "B0 (동결 D블록, 35일)": {
+      "repeat_mean": 0.8362648362648362,
+      "repeat_sd": 0.0031460031460031623,
+      "subject_mean_auc": 0.8362648362648363,
+      "auc_cn_vs_mci": 0.8035682741565094,
+      "auc_cn_vs_dem": 0.9752252252252253,
+      "identity_gap": 0.0,
+      "hanley_se": 0.03422401257079475,
+      "pr_auc": 0.7340177545413339,
+      "per_repeat": [
+        0.8331188331188331,
+        0.8394108394108394
+      ],
+      "ci_low": 0.7803550669844271,
+      "ci_high": 0.8926288841807909,
+      "p_boot_le_070": 0.0,
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      }
+    },
+    "A1 B0_all (전체일)": {
+      "repeat_mean": 0.8366223366223365,
+      "repeat_sd": 0.007936507936507908,
+      "subject_mean_auc": 0.8385528385528385,
+      "auc_cn_vs_mci": 0.8086910439851617,
+      "auc_cn_vs_dem": 0.9654654654654654,
+      "identity_gap": 0.0,
+      "hanley_se": 0.03402186009206702,
+      "pr_auc": 0.7174191032670882,
+      "per_repeat": [
+        0.8445588445588444,
+        0.8286858286858286
+      ],
+      "ci_low": 0.7787741432042903,
+      "ci_high": 0.8917149611001656,
+      "p_boot_le_070": 0.0,
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 8,
+        "0.01": 2
+      }
+    },
+    "A2 MAXFIX (B0_all + longest_w_SD_all)": {
+      "repeat_mean": 0.8965393965393966,
+      "repeat_sd": 0.0019305019305018711,
+      "subject_mean_auc": 0.8957528957528957,
+      "auc_cn_vs_mci": 0.8728139904610493,
+      "auc_cn_vs_dem": 0.9932432432432433,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.028027799214523114,
+      "pr_auc": 0.8201957782727668,
+      "per_repeat": [
+        0.8984698984698984,
+        0.8946088946088947
+      ],
+      "ci_low": 0.8435035237666816,
+      "ci_high": 0.9353819023491242,
+      "p_boot_le_070": 0.0,
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      }
+    },
+    "A3 MAXSEL (B0_all + inner 선택 ≤1)": {
+      "repeat_mean": 0.8965393965393966,
+      "repeat_sd": 0.0019305019305018711,
+      "subject_mean_auc": 0.8957528957528957,
+      "auc_cn_vs_mci": 0.8728139904610493,
+      "auc_cn_vs_dem": 0.9932432432432433,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.028027799214523114,
+      "pr_auc": 0.8201957782727668,
+      "per_repeat": [
+        0.8984698984698984,
+        0.8946088946088947
+      ],
+      "ci_low": 0.8435035237666816,
+      "ci_high": 0.9353819023491242,
+      "p_boot_le_070": 0.0,
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      },
+      "chosen_set": {
+        "base+longest_w_SD_all": 10
+      }
+    }
+  },
+  "deltas_vs_b0": {
+    "A1 B0_all (전체일)": {
+      "merged": [
+        0.002288002288002189,
+        -0.027951018946411454,
+        0.02791061256338517,
+        0.002541883135836853
+      ],
+      "cn_vs_mci": [
+        0.005122769828652229,
+        -0.02589217847370022,
+        0.0378679772347535,
+        0.005787603085964573
+      ],
+      "cn_vs_dem": [
+        -0.009759759759759845,
+        -0.03980230230230231,
+        0.01808997050147488,
+        -0.009772546810767275
+      ],
+      "note": "tuple = (observed delta, ci_low, ci_high, bootstrap mean delta)",
+      "mean": 0.0003575003575003177,
+      "sd": 0.01108251108251107,
+      "n_pos": 1
+    },
+    "A2 MAXFIX (B0_all + longest_w_SD_all)": {
+      "merged": [
+        0.059488059488059464,
+        0.019489428699955038,
+        0.10365934996553111,
+        0.059116590638518665
+      ],
+      "cn_vs_mci": [
+        0.0692457163045399,
+        0.02027880727762811,
+        0.11867086860507908,
+        0.06808288464252758
+      ],
+      "cn_vs_dem": [
+        0.018018018018018056,
+        -0.0022245346736825683,
+        0.047155756018869274,
+        0.017719437457504122
+      ],
+      "note": "tuple = (observed delta, ci_low, ci_high, bootstrap mean delta)",
+      "mean": 0.06027456027456035,
+      "sd": 0.0050765050765050335,
+      "n_pos": 2
+    },
+    "A3 MAXSEL (B0_all + inner 선택 ≤1)": {
+      "merged": [
+        0.059488059488059464,
+        0.019489428699955038,
+        0.10365934996553111,
+        0.059116590638518665
+      ],
+      "cn_vs_mci": [
+        0.0692457163045399,
+        0.02027880727762811,
+        0.11867086860507908,
+        0.06808288464252758
+      ],
+      "cn_vs_dem": [
+        0.018018018018018056,
+        -0.0022245346736825683,
+        0.047155756018869274,
+        0.017719437457504122
+      ],
+      "note": "tuple = (observed delta, ci_low, ci_high, bootstrap mean delta)",
+      "mean": 0.06027456027456035,
+      "sd": 0.0050765050765050335,
+      "n_pos": 2
+    }
+  },
+  "a3_selection_frequency": {
+    "base+longest_w_SD_all": 10
+  },
+  "acceptance": {
+    "primary_statistic": "Holm-adjusted permutation p_delta of BEST (argmax subject-mean AUC over A1/A2/A3), family = 3 candidate arms",
+    "A_point_ge_070": {
+      "value": 0.8957528957528957,
+      "pass": true
+    },
+    "C_delta_ci_low_gt_0_and_holm_p_lt_005": {
+      "delta_ci_low": 0.019489428699955038,
+      "holm_p": 0.42857142857142855,
+      "raw_p": 0.14285714285714285,
+      "mc_interval": [
+        0.012348527170294808,
+        0.31698271401908235
+      ],
+      "pass": false
+    },
+    "tier": "G− 점추정 ≥ 0.70 이나 증분 미확정 (0.70 주장 불가)",
+    "null_center_ok": true,
+    "null_valid_ok": true,
+    "sign_agreement_reduced_vs_full": {
+      "A1 B0_all (전체일)": true,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": true,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": true
+    },
+    "dem_channel_collapse": false,
+    "p_boot_auc_le_070_best": 0.0,
+    "ci_low_vs_070_best": 0.14350352376668163,
+    "ceiling_raw": 0.8957528957528957,
+    "ceiling_bias_corrected": 0.8975945699260265,
+    "shortfall_to_070": -0.19575289575289578,
+    "shortfall_in_SE": -6.984240690987356,
+    "winner_bias_bootstrap": -0.0018416741731307057,
+    "winner_bias_perm_heuristic": 0.02433862433862434,
+    "selection_cost_A1_minus_A3": -0.057200057200057275
+  },
+  "permutation": {
+    "n_perm": 20,
+    "n_valid": 20,
+    "n_dropped_dead": 0,
+    "K": 4,
+    "reduced": {
+      "outer_repeats": 2,
+      "inner_folds": 4,
+      "inner_repeats": 1,
+      "C_grid": [
+        0.01,
+        0.1
+      ]
+    },
+    "observed_reduced": {
+      "B0 (동결 D블록, 35일)": 0.8346918346918347,
+      "A1 B0_all (전체일)": 0.843986843986844,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.8957528957528957,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.8957528957528957
+    },
+    "observed_delta_reduced": {
+      "A1 B0_all (전체일)": 0.00929500929500926,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.06106106106106102,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.06106106106106102
+    },
+    "observed_dmax_reduced": 0.06106106106106102,
+    "p_delta": {
+      "A1 B0_all (전체일)": 0.38095238095238093,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.14285714285714285,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.19047619047619047
+    },
+    "p_delta_holm": {
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.42857142857142855,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.42857142857142855,
+      "A1 B0_all (전체일)": 0.42857142857142855
+    },
+    "p_delta_mc95": {
+      "A1 B0_all (전체일)": [
+        0.15390920478454118,
+        0.5921885345328282
+      ],
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": [
+        0.012348527170294808,
+        0.31698271401908235
+      ],
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": [
+        0.0320709371854637,
+        0.37892682654531396
+      ]
+    },
+    "p_dmax": 0.19047619047619047,
+    "p_arm": {
+      "B0 (동결 D블록, 35일)": 0.047619047619047616,
+      "A1 B0_all (전체일)": 0.047619047619047616,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.047619047619047616,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.047619047619047616
+    },
+    "p_max": 0.047619047619047616,
+    "null_delta_mean": {
+      "A1 B0_all (전체일)": -0.0036250536250536426,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": -0.0007579007579007618,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.0013799513799513691
+    },
+    "null_delta_sd": {
+      "A1 B0_all (전체일)": 0.02249084841715669,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.06846174372674142,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.05643676469519788
+    },
+    "null_dmax_mean": 0.023337623337623327,
+    "null_dmax_p95": 0.15201630201630204,
+    "null_arm_mean": {
+      "B0 (동결 D블록, 35일)": 0.4918489918489919,
+      "A1 B0_all (전체일)": 0.4882239382239383,
+      "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.49109109109109095,
+      "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.4932289432289432
+    },
+    "null_max_p95": 0.5987844987844989,
+    "null_center": {
+      "B0": 0.4918489918489919,
+      "A3": 0.4932289432289432
+    },
+    "column_permutation": {
+      "n": 10,
+      "n_valid": 10,
+      "p_col": {
+        "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.09090909090909091,
+        "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.09090909090909091
+      },
+      "null_mean": {
+        "A2 MAXFIX (B0_all + longest_w_SD_all)": -0.003103103103103133,
+        "A3 MAXSEL (B0_all + inner 선택 ≤1)": -0.0003718003718004015
+      },
+      "null_sd": {
+        "A2 MAXFIX (B0_all + longest_w_SD_all)": 0.0036732113572390335,
+        "A3 MAXSEL (B0_all + inner 선택 ≤1)": 0.005836508398831148
+      },
+      "note": "co-statistic; 판정 미사용; A1 은 대응물 없음"
+    }
+  },
+  "diagnostics": {
+    "D1 run 4 P (35일 B0 + longest_w_SD) 재현": {
+      "repeat_mean": 0.8881738881738881,
+      "repeat_sd": 0.0011440011440010944,
+      "subject_mean_auc": 0.8893178893178892,
+      "auc_cn_vs_mci": 0.866278042748631,
+      "auc_cn_vs_dem": 0.9872372372372373,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.028807187406583452,
+      "pr_auc": 0.800836789327198,
+      "per_repeat": [
+        0.8893178893178892,
+        0.887029887029887
+      ],
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      },
+      "delta_vs_b0": {
+        "merged": [
+          0.05305305305305297,
+          0.011703096878196598,
+          0.0945721561933794,
+          0.05275366033567514
+        ],
+        "cn_vs_mci": [
+          0.06270976859212152,
+          0.020968660968661006,
+          0.11836805555555562,
+          0.062159898327046256
+        ],
+        "cn_vs_dem": [
+          0.012012012012012074,
+          -0.008327996544739605,
+          0.037075996450996504,
+          0.011670885950236161
+        ]
+      },
+      "promotion": "forbidden (PREREGISTRATION §9)"
+    },
+    "D2 B0_all + longest_w_SD_all": {
+      "repeat_mean": 0.8965393965393966,
+      "repeat_sd": 0.0019305019305018711,
+      "subject_mean_auc": 0.8957528957528957,
+      "auc_cn_vs_mci": 0.8728139904610493,
+      "auc_cn_vs_dem": 0.9932432432432433,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.028027799214523114,
+      "pr_auc": 0.8201957782727668,
+      "per_repeat": [
+        0.8984698984698984,
+        0.8946088946088947
+      ],
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      },
+      "delta_vs_b0": {
+        "merged": [
+          0.059488059488059464,
+          0.019489428699955038,
+          0.10365934996553111,
+          0.059116590638518665
+        ],
+        "cn_vs_mci": [
+          0.0692457163045399,
+          0.02027880727762811,
+          0.11867086860507908,
+          0.06808288464252758
+        ],
+        "cn_vs_dem": [
+          0.018018018018018056,
+          -0.0022245346736825683,
+          0.047155756018869274,
+          0.017719437457504122
+        ]
+      },
+      "promotion": "forbidden (PREREGISTRATION §9)"
+    },
+    "D3 B0_all + onset_SD_all": {
+      "repeat_mean": 0.8332618332618332,
+      "repeat_sd": 0.004290004290004257,
+      "subject_mean_auc": 0.8408408408408408,
+      "auc_cn_vs_mci": 0.8116940469881646,
+      "auc_cn_vs_dem": 0.9647147147147147,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.03381720527293463,
+      "pr_auc": 0.7513928296498488,
+      "per_repeat": [
+        0.8375518375518375,
+        0.828971828971829
+      ],
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 5,
+        "0.01": 3,
+        "0.03": 1,
+        "0.1": 1
+      },
+      "delta_vs_b0": {
+        "merged": [
+          0.004576004576004489,
+          -0.027681527681527696,
+          0.03482241337430804,
+          0.0055686748337442004
+        ],
+        "cn_vs_mci": [
+          0.008125772831655165,
+          -0.027277594492153362,
+          0.04553006879548709,
+          0.009264785567578784
+        ],
+        "cn_vs_dem": [
+          -0.010510510510510551,
+          -0.03988638868226031,
+          0.019514547952047923,
+          -0.010684053441176499
+        ]
+      },
+      "promotion": "forbidden (PREREGISTRATION §9)"
+    },
+    "D4 B0_all + clsH_SD_all": {
+      "repeat_mean": 0.8537108537108538,
+      "repeat_sd": 0.0010010010010009784,
+      "subject_mean_auc": 0.8544258544258544,
+      "auc_cn_vs_mci": 0.8251192368839427,
+      "auc_cn_vs_dem": 0.978978978978979,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.032548349032155734,
+      "pr_auc": 0.7381663254343893,
+      "per_repeat": [
+        0.8547118547118547,
+        0.8527098527098528
+      ],
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 10
+      },
+      "delta_vs_b0": {
+        "merged": [
+          0.018161018161018117,
+          -0.01321767422886618,
+          0.04805934189309336,
+          0.01826792339048402
+        ],
+        "cn_vs_mci": [
+          0.021550962727433287,
+          -0.018340018626233533,
+          0.06498062668463613,
+          0.021441748922592183
+        ],
+        "cn_vs_dem": [
+          0.0037537537537537524,
+          -0.02212389380530977,
+          0.0304181104181104,
+          0.003638095780888649
+        ]
+      },
+      "promotion": "forbidden (PREREGISTRATION §9)"
+    },
+    "D5 B0_all + low_lag1_all": {
+      "repeat_mean": 0.8285428285428285,
+      "repeat_sd": 0.006864006864006844,
+      "subject_mean_auc": 0.8292578292578292,
+      "auc_cn_vs_mci": 0.7980922098569156,
+      "auc_cn_vs_dem": 0.9617117117117118,
+      "identity_gap": 1.1102230246251565e-16,
+      "hanley_se": 0.034827917980501714,
+      "pr_auc": 0.713036605284792,
+      "per_repeat": [
+        0.8354068354068354,
+        0.8216788216788217
+      ],
+      "failed_folds": 0,
+      "inner_failed": 0,
+      "chosen_C": {
+        "0.003": 8,
+        "0.03": 2
+      },
+      "delta_vs_b0": {
+        "merged": [
+          -0.007007007007007071,
+          -0.04042867666771188,
+          0.025618817346758378,
+          -0.006840332623199323
+        ],
+        "cn_vs_mci": [
+          -0.005476064299593797,
+          -0.048593824518737894,
+          0.02990228492297036,
+          -0.004811883974835564
+        ],
+        "cn_vs_dem": [
+          -0.013513513513513487,
+          -0.04424778761061954,
+          0.01235775248933136,
+          -0.012851829784268772
+        ]
+      },
+      "promotion": "forbidden (PREREGISTRATION §9)"
+    }
+  },
+  "environment": {
+    "colab": false,
+    "sklearn": "1.9.0",
+    "numpy": "2.5.0",
+    "pandas": "2.3.3",
+    "n_cpu": 8,
+    "python": "3.12.8"
+  },
+  "determinism": {
+    "B0 (동결 D블록, 35일)": {
+      "hash": "26d7480ed9f3bbd2",
+      "recheck": "26d7480ed9f3bbd2",
+      "match": true
+    },
+    "A1 B0_all (전체일)": {
+      "hash": "5be0555512668f4c",
+      "recheck": "5be0555512668f4c",
+      "match": true
+    },
+    "A2 MAXFIX (B0_all + longest_w_SD_all)": {
+      "hash": "2b8984593a7d1669",
+      "recheck": "2b8984593a7d1669",
+      "match": true
+    },
+    "A3 MAXSEL (B0_all + inner 선택 ≤1)": {
+      "hash": "2b8984593a7d1669",
+      "recheck": "2b8984593a7d1669",
+      "match": true
+    },
+    "null_max_hash": "da76959b330aa1c0",
+    "null_dmax_hash": "42ecfb31ba067993"
+  },
+  "elapsed_min": 1.5
+}

@@ -1,0 +1,30 @@
+{
+  "subject_split": "StratifiedKFold(5, shuffle, random_state=100+r) on 3-class label; train∩test=∅ asserted for all repeats",
+  "mmse": "3.CognitiveFunction 경로 미접근 + 컬럼명 fail-closed 가드 (모든 arm 특징에 적용)",
+  "preprocessing": "SimpleImputer+StandardScaler inside Pipeline, fit on outer-train only; residualisation fit on outer-train only",
+  "feature_independence": "90-subject subset rebuild bit-identical for all columns",
+  "b0_reproduction": {
+    "checked": true,
+    "max_abs_per_repeat_diff": 0.0,
+    "abs_subject_mean_diff": 0.0,
+    "pass": true
+  },
+  "failed_folds_main": {
+    "P (B0 + cpl_wake2onset_slope v0)": 0,
+    "B0 (동결 D블록)": 0
+  },
+  "determinism": {
+    "P (B0 + cpl_wake2onset_slope v0)": {
+      "hash": "e6c9d12eab5b636b",
+      "recheck": "e6c9d12eab5b636b",
+      "match": true
+    },
+    "B0 (동결 D블록)": {
+      "hash": "63b6b69249bbe9c6",
+      "recheck": "63b6b69249bbe9c6",
+      "match": true
+    },
+    "null_max_hash": "e786a6058464ce20",
+    "null_delta_hash": "2ac1c753682d98a1"
+  }
+}

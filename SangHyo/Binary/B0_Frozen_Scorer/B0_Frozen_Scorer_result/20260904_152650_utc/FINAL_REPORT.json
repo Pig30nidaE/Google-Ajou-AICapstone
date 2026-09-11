@@ -1,0 +1,103 @@
+{
+  "run_id": "20260904_152650_utc",
+  "experiment": "B0_Frozen_Scorer",
+  "artifact": "b0_frozen_v1",
+  "artifact_json_sha256": "efac45e3d291966757713041dcae2c2a88d53dfe962772fd6e5a7aa98731e12d",
+  "artifact_joblib_sha256": "eeab3f29a74ffb3658176c004cad6471df4744cb4226de44ab5af423ba0369b3",
+  "frozen_C": 0.1,
+  "C_audit_rule_choice": 0.1,
+  "contract_tests_gates": {
+    "CT9b_explicit_tiebreak_identical": true,
+    "CT9a_strict_parser_identical": true,
+    "CT1_feature_fingerprint_and_exact_match": true,
+    "CT2_subject_independence": true,
+    "CT3_nested_B0_reproduction": true,
+    "CT4a_numpy_reimplementation": true,
+    "CT4b_subprocess_joblib_roundtrip": true
+  },
+  "all_gates_pass": true,
+  "report_only": {
+    "CT8_contrast_signs_report_only": {
+      "gate": false,
+      "pass": null,
+      "contrasts": {
+        "low_SD": {
+          "MCI_minus_CN": -0.3598860680207846,
+          "Dem_minus_CN": -0.7811819481812736,
+          "globally_monotone": true,
+          "direction": "higher feature -> lower score"
+        },
+        "low_MED": {
+          "MCI_minus_CN": 0.2891017003446315,
+          "Dem_minus_CN": -0.33819765996723156,
+          "globally_monotone": false,
+          "direction": "not globally monotone (contrast signs differ)"
+        }
+      },
+      "low_SD_score_monotone_decreasing_at_median_low_MED": true
+    },
+    "CT10_C_sensitivity_report_only": {
+      "gate": false,
+      "pass": null,
+      "spearman_vs_frozen": {
+        "0.01": 0.9793570431959906,
+        "0.03": 0.9943825279763092,
+        "1.0": 0.9967789515646799
+      }
+    }
+  },
+  "nested_reference": {
+    "gate": true,
+    "pass": true,
+    "subject_mean_auc": 0.6490776490776491,
+    "auc_cn_vs_mci": 0.6053700759583113,
+    "auc_cn_vs_dem": 0.8348348348348348,
+    "max_abs_per_repeat_diff": 0.0,
+    "abs_subject_mean_diff": 0.0,
+    "chosen_C_counts": {
+      "0.1": 93,
+      "0.03": 4,
+      "0.003": 2,
+      "0.01": 1
+    },
+    "hanley_se": 0.04435533403219239,
+    "seconds": 7.9
+  },
+  "in_sample_diagnostic": {
+    "WARNING": "full-fit in-sample values; NOT a performance number (nested headline is 0.6491)",
+    "merged_auc": 0.6778206778206778,
+    "auc_cn_vs_mci": 0.6332803391626921,
+    "auc_cn_vs_dem": 0.8671171171171173,
+    "scores_sha256": "5ccf48243c7495a15181a327ddcc62ef21d833097bab5299ee6e5f718361ea9d"
+  },
+  "notebook_code_sha256": "953e8794525b5fbdc70d1c0f144cb57340bdbc6e291b127ce0ef98baf00ff338",
+  "environment": {
+    "name": "b0_frozen_v1",
+    "experiment": "B0_Frozen_Scorer",
+    "created_utc": "2026-09-04T15:27:01+00:00",
+    "task": "CN(0) vs MCI+Dem(1); 3-class multinomial fit on CN/MCI/Dem labels; score = 1 - P(CN)",
+    "training_cohort": "AI-Hub lifelog pooled 174 (CN 111 / MCI 51 / Dem 12), first 35 joined activity-sleep days",
+    "source_runs": [
+      "Binary_DaytimeVariety_Nested/20260902_140024_utc (B0 arm, nested headline)",
+      "Binary_WakeOnsetCoupling_Nested/20260903_152601_utc",
+      "Binary_SedentaryBout_Nested/20260904_041546_utc"
+    ],
+    "nested_headline": {
+      "subject_mean_auc": 0.6490776490776491,
+      "ci95": [
+        0.562,
+        0.731
+      ],
+      "auc_cn_vs_mci": 0.6053700759583113,
+      "auc_cn_vs_dem": 0.8348348348348348,
+      "note": "expected performance of the PROCEDURE (100 models on ~139 subjects); this artifact is ONE function fit on 174"
+    },
+    "python": "3.12.8",
+    "sklearn": "1.9.0",
+    "numpy": "2.5.0",
+    "pandas": "2.3.3",
+    "notebook_code_sha256": "953e8794525b5fbdc70d1c0f144cb57340bdbc6e291b127ce0ef98baf00ff338",
+    "joblib_sha256": "eeab3f29a74ffb3658176c004cad6471df4744cb4226de44ab5af423ba0369b3"
+  },
+  "elapsed_min": 0.22
+}

@@ -1,0 +1,193 @@
+{
+  "implementation": "taehyun_paper_reproduction — /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/Paper_Reproduction/Cheon_LGBM.py (295 lines, single script, stdout-only) plus README.md (47 lines). Launched via the repo-root base.ipynb with USER_FOLDER=\"Taehyun\", RUN_FILE=\"Paper_Reproduction/Cheon_LGBM.py\" (README.md:37-41). Below, \"Cheon_LGBM.py:N\" and \"README.md:N\" refer to these two files. A separate, different script Taehyun/Paper_Reproduction_Nested/Cheon_LGBM.py (StratifiedGroupKFold + Optuna) exists but was out of scope and is not audited here.",
+  "is_cheon_reproduction": true,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/Paper_Reproduction/Cheon_LGBM.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/Paper_Reproduction/README.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/README.md (lines 34-38, 64-69: description/launch only)"
+  ],
+  "cohort": "Both AI-Hub partitions are pooled. The script reads flat copies train_activity.csv / val_activity.csv / train_sleep.csv / val_sleep.csv from Taehyun/data/ (Cheon_LGBM.py:19-32 DATA_DIR resolution; :159-162 reads) and label files training_label.csv (fallback training_label_activity.csv) and val_label.csv (fallback val_label_activity.csv) (:164-168). Training and Validation are processed separately (:171-172) and concatenated (:174). Number of subjects: never computed, asserted or printed anywhere in the script (no nunique on EMAIL); the label table is deduplicated on EMAIL (:58) and left-merged (:148), so subjects without a label would end with NaN label and crash at :186 (astype(int)) rather than be counted. MMSE/cognitive files: never read — only DIAG_NM is used (:57); a Taehyun/data/mmse/ folder exists locally but is not referenced by this script. Missing raw files are silently turned into empty DataFrames (:34-40 catches FileNotFoundError), so nothing guards cohort completeness. In this checkout Taehyun/data/ contains only training_label_activity.csv, training_label_sleep.csv, mmse/, processed/ (no activity/sleep/val-label CSVs), so the run depends on an external Colab/Drive layout (README.md:23, :29).",
+  "record_count": "Not asserted and not reported; only printed at runtime (:182 'Data shape before dropping NaNs', :184 after, :189 class counts). The count arises from: per-partition numeric coercion (:130-131); activity date = calendar date of activity_day_start (:133, :138); sleep date = calendar date of sleep_bedtime_end (wake-up date, :136, :139); sleep rows deduplicated per (EMAIL, date) keeping the longest bedtime_end−bedtime_start interval (:141-144); INNER merge of activity × sleep on (EMAIL, date) (:146); label left-merge (:148); then, after pooling both partitions, listwise deletion of any row with a NaN in ANY of the ~107 numeric feature columns (:183). The comment at :180-181 says the intent is 'to try and hit exactly 7737 / 4446' but there is no check. By construction a wake-date join cannot yield the paper's 12,183 (ASSUMPTIONS A03: date join matches 99.7% of rows and leaves 12 duplicate (subject, wake-date) sleep rows, which :144 would collapse), and the dropna removes further rows whenever an HR/RMSSD 5-min series is empty after zero-removal (:75-77 → NaN stats) or a hypnogram/class series is empty (:89, :105 → NaN ratio). Activity rows are NOT deduplicated per (EMAIL, date), so a duplicated activity day would be paired twice with the same sleep row (:146). Final N is therefore unknown and unverifiable from the repo.",
+  "label": "binary_label_map = {\"CN\": 0, \"MCI\": 1, \"Dem\": 1, \"Dementia\": 1} applied to DIAG_NM (:56-57) → CN = 0 vs MCI + Dem = 1, which matches the paper (p.164 §3.1). However the documentation misdescribes it: README.md:12 says '이진 분류 (CN vs MCI)' and the runtime print at :189 labels class 1 as 'MCI(1)', although Dem rows are positives. Unmapped diagnosis strings would become NaN and crash at :186 (no guard). DIAG_NM is dropped from the feature table (:152-153, :177).",
+  "record_construction": "Date join, not row-wise pairing. activity.date = activity_day_start_dt.dt.date (:138); sleep.date = sleep_bedtime_end_dt.dt.date (:139); duplicate sleep records for the same (EMAIL, date) resolved by sorting on (EMAIL, date, _sleep_duration_seconds desc) and drop_duplicates keep='first' (:141-144), i.e. keep the longest sleep episode; activity.merge(sleep, on=[\"EMAIL\",\"date\"], how=\"inner\", suffixes=(\"\", \"_sleep\")) (:146). Activity-side duplicates are not handled. Sequence features are computed after the merge (:150) by iterating rows (:113). Timestamps are parsed with pd.to_datetime(errors=\"coerce\") without utc=True (:133-136); all-+09:00 strings give a tz-aware series so .dt.date is the local (KST) date.",
+  "missing_values": "No imputer and no scaler. Everything is read as str (:37) and coerced with pd.to_numeric(errors=\"coerce\") (:46), so unparsable cells become NaN; columns that never parse stay str and are excluded from features by is_numeric_dtype (:178). ±inf → NaN (:154). Empty parsed series produce NaN statistics (:76-77) and NaN ratios (:89, :105). Then the whole pooled dataset is subjected to all_daily.dropna(subset=features) (:183) BEFORE any CV split, i.e. complete-case deletion at dataset level. Because deletion is not a fitted transform there is no fit-scope leakage, but the deletion criterion includes ~42 non-paper columns (HR/RMSSD 5-min stats, ratios), so rows the paper kept may be discarded. LightGBM's native NaN handling is never exercised.",
+  "features": "Selection rule: every numeric column of the merged table except EMAIL/label/DIAG_NM/date (:176-178); no explicit feature list exists, and the chosen/selected names are never printed or saved (:245-246 only prints the count). Inferred composition against the AI-Hub raw schema (activity: 24 scalars + day_start/day_end + 2 series + 2 CONVERT copies; sleep: 27 scalars + is_longest + temperature_deviation + 3 series + 3 CONVERT copies):\n(a) Raw activity scalars: all 24 of the paper's present (coerced at :130; activity_day_start/end dropped at :152).\n(b) Raw sleep scalars: 25 of the paper's 27 present; sleep_bedtime_start and sleep_bedtime_end are kept as strings (:131), parsed to datetime (:135-136) and then DROPPED together with their _dt columns (:152) — no 24-h clock conversion exists. No sleep_time feature: end−start is computed in seconds only for dedup (:143) and dropped (:152). Two raw sleep scalars NOT in the paper's 72 are swept in: sleep_is_longest and sleep_temperature_deviation (numeric after :131, not in :152 drop list).\n(c) 1-min MET statistics (:72-79 via :118, remove_zero=False, tokens == -1 discarded at :74): mean, std = np.std (ddof=0, population), var = np.var (ddof=0), min, max, median, q25/q75 = np.percentile (linear interpolation), plus EXTRA iqr and valid_count. ABSENT: kurtosis, skewness, autocorrelation (no lag defined because none exists), and quantile_50 as a separate column (median carries the same value). So 8 of the paper's 12 MET stats are present.\n(d) 5-min activity class (:81-94, -1 removed): counts for ALL levels 0..5 named activity_class_{k}_count (paper: classes 1-4 only), 6 ratio columns, activity_rest_ratio (= class_1_ratio), activity_inactive_ratio (= class_2_ratio), activity_active_ratio (= ratio 3+4+5), activity_class_valid_count → 16 columns, of which 4 correspond to the paper's activity_class_5min_count_{1..4}.\n(e) Hypnogram (:96-108, tokens -1 and 0 removed): counts for stages 1..4 named sleep_{deep,light,rem,awake}_count_5min (= the paper's 4 sleep_hypnogram_5min_count_{1..4}), plus 4 ratios, sleep_stage_transition_count, sleep_hypnogram_valid_count → 10 columns.\n(f) EXTRA, contradicting the paper's removal of the 5-min heart-rate log: 10 statistics of CONVERT(sleep_hr_5min) and 10 of CONVERT(sleep_rmssd_5min) (:119-122, zeros removed by remove_zero=True at :75).\nTotals: ≈107 features (24+25+2+10+16+10+20); 65 of the paper's 72 present, 7 absent (sleep_bedtime_start, sleep_bedtime_end, sleep_time, activity_met_1min_kurtosis, _skewness, _autocorrelation, _quantile_50), ≈42 extra. Naming differs from Figure 2 for all derived features. The exact count is only observable from the runtime print at :246; any additional numeric raw column (e.g. an index column) would also be swept in.",
+  "feature_selection": "Step 2 (:258-274): a default LGBMClassifier(random_state=42, verbose=-1) is fit on the FULL pooled X, y (:259-260) — all records, including every row that later serves as a CV validation row; explainer = shap.TreeExplainer(explainer_model) with default feature_perturbation=\"tree_path_dependent\" (:262); shap_values(X) on all rows (:263); if a list is returned the positive-class array [1] is taken (:264-265); importance = mean |SHAP| over records (:267); descending argsort (:268). There is NO forward-selection path: k = 40 is hard-coded (top_40_idx = sorted_idx[:40], :270) and X_top40 is evaluated once with a default LGBM (:271-274). No per-k curve, no argmax over k, no Figure 4 reproduction despite README.md:12 ('Figure 4') and :258 print. The single all-data ranking (computed once, seed 42) is reused unchanged for all 5 repeats × 5 folds of Steps 2 and 3 (:274, :288). Selected feature names are never printed or saved (feature_names at :245 is unused afterwards).",
+  "split": "Record-level. StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat) (:204), iterated for n_repeats=5 (:196, :203) → split seeds 42, 43, 44, 45, 46; stratified on the record label y only; no groups (EMAIL is dropped from features at :177 and never passed as groups), so the same subject's days appear in both training and validation folds. No hold-out: the 33-subject Validation partition is pooled with Training (:174). Not nested: the SHAP ranking (:259-263) and the Table-2 hyperparameters (:280-287) are fixed outside the CV. The model's own random_state is fixed at 42 for every fit (:252, :259, :273, :285); only the fold assignment changes across repeats. The same evaluate_model is run three times (baseline :253, top-40 :274, tuned :288).",
+  "model_and_hyperparameters": "LightGBM only; the paper's other six Table-1 models (LR, DT, KNN, SVM, MLP, RF) are not run, although README.md:12 bills Step 1 as 'Table 1'. Steps 1 and 2: LGBMClassifier(random_state=42, verbose=-1) → library defaults (n_estimators=100, num_leaves=31, learning_rate=0.1, min_child_samples=20; version-dependent, no version pin or requirements file) (:252, :259, :273). Step 3: LGBMClassifier(min_child_samples=41, num_leaves=330, n_estimators=1000, learning_rate=0.08, random_state=42, verbose=-1) (:280-287) — exactly the paper's Table 2 values with min_data_in_leaf mapped to the sklearn alias min_child_samples. No grid search of any kind; the paper's iterative coarse-to-fine grid search (num_leaves 100-1000 → 220-380 → 310-330) is not re-run. n_jobs left at default.",
+  "statistics": "All 25 fold scores (5 repeats × 5 folds) of each metric are appended to one flat list (:197-214). compute_stats (:216-221): mean = np.mean, SD = np.std (ddof=0), and '95% CI' = mean ± 1.96 · SD / √25 — a normal approximation that treats the 25 overlapping fold scores as independent samples (folds within a repeat share training data, repeats share all data). No per-repeat fold-mean (the paper's Figure 3 aggregation), no pooled out-of-fold AUC, no t-CI. Decision threshold: 0.5 on predict_proba[:, 1] (:207-208). AUC from predict_proba (:210). Precision, Recall and F1 use sklearn defaults average='binary' on the positive class with zero_division=0 (:212-214) — NOT macro, so not comparable with the paper's F1-macro column. Results are printed only (:231-235); the stats dict is returned but discarded by main (:253, :274, :288); nothing is written to disk; matplotlib is imported (:7) but never used.",
+  "reported_results": "None. README.md (1-47) reports no numbers, only the three-step design (README.md:12). Taehyun/README.md:38 describes the script without results. The script writes no files, logs, figures or CSVs, and a repo-wide grep for its stdout banners ('Reproduction Complete', 'Label Distribution', 'Total Features') and for 0.9492 / 0.9037 / 0.9010 finds nothing outside SangHyo/Reproduction/cheon_2025_validation (base.ipynb has no saved output). The only claims are the banner 'Cheon et al. (2025) Exact Reproduction (5 Repeats x 5-Fold)' (:241) and README.md:3 '최종 및 완전 재현(Exact Reproduction & Leakage Proof)'. Moreover, in this checkout the script cannot run: Taehyun/data/ lacks train_activity.csv etc., read_csv_flexible would return empty frames (:40), make_daily_table returns an empty frame (:129), and :186 raises KeyError('label'). If run on a complete data folder, the three printed blocks correspond to: Step 1 = Table 1 LightGBM row (all ~107 features, defaults), Step 2 = Figure 4 at k=40 (all-data SHAP ranking), Step 3 = tuned model (Table 2 values) on the same top-40 — each as pooled 25-fold means.",
+  "deviations_from_paper": [
+    {
+      "item": "5-minute heart-rate and RMSSD logs used as features",
+      "existing_choice": "20 statistics (mean/std/var/min/max/median/q25/q75/iqr/valid_count) of CONVERT(sleep_hr_5min) and CONVERT(sleep_rmssd_5min) are added to the feature table",
+      "paper_or_protocol_says": "p.164 §3.1: the 5-minute heart-beat log was removed because missing-value handling was impossible; neither log is among the 72 features of Figure 2",
+      "evidence": "Cheon_LGBM.py:119-122 (numeric_sequence_stats on both CONVERT columns, remove_zero=True); only the raw string columns are dropped at :152, the derived stats survive into features (:178)",
+      "severity": "high"
+    },
+    {
+      "item": "sleep_bedtime_start / sleep_bedtime_end clock conversion and sleep_time",
+      "existing_choice": "Bedtime columns are parsed only to build the join date and the dedup key, then dropped; no 24-h real-valued clock feature and no sleep_time = end − start feature exist",
+      "paper_or_protocol_says": "p.164 §3.1: timestamp columns converted to a real number on the 24-h clock and a sleep-time variable added; both are in Figure 2; sleep_bedtime_end is the 4th most important feature in Figure 6",
+      "evidence": "Cheon_LGBM.py:131 (kept as str), :135-136 (parsed), :143 (seconds used only for dedup), :152 (sleep_bedtime_start, sleep_bedtime_end, *_dt, _sleep_duration_seconds all dropped)",
+      "severity": "high"
+    },
+    {
+      "item": "1-minute MET statistics",
+      "existing_choice": "numpy mean/std/var (ddof=0)/min/max/median/q25/q75 + extra iqr, valid_count; −1 tokens removed; no kurtosis, skewness, autocorrelation or quantile_50",
+      "paper_or_protocol_says": "Figure 2 lists 12 MET statistics incl. kurtosis, skewness, autocorrelation, quantile_50; activity_met_1min_kurtosis (#10) and _autocorrelation (#20) are in the Figure 6 top-20",
+      "evidence": "Cheon_LGBM.py:72-79 (stat set), :74 (arr != -1), :118 (call)",
+      "severity": "medium"
+    },
+    {
+      "item": "Feature space size and extra derived columns",
+      "existing_choice": "≈107 features: activity-class counts for classes 0 and 5, six class ratios plus three duplicate ratio columns, hypnogram ratios/transition count, valid-count columns, sleep_is_longest, sleep_temperature_deviation",
+      "paper_or_protocol_says": "72 features exactly (Figure 2); classes 0 and 5, sleep_is_longest and sleep_temperature_deviation are not among them",
+      "evidence": "Cheon_LGBM.py:86-93 (levels 0..5 + ratios), :104-107 (ratios, transitions), :176-178 (all numeric columns become features), :152 (drop list does not include sleep_is_longest / sleep_temperature_deviation)",
+      "severity": "medium"
+    },
+    {
+      "item": "Forward selection",
+      "existing_choice": "No forward path; k = 40 hard-coded from the paper's result; single top-40 evaluation",
+      "paper_or_protocol_says": "p.165 §3.2(2): features added one at a time in SHAP order, best-performing set kept; Figure 4 shows the whole curve and 40 is the outcome, not an input",
+      "evidence": "Cheon_LGBM.py:270 (sorted_idx[:40]), :273-274; README.md:12 calls this 'Figure 4'",
+      "severity": "medium"
+    },
+    {
+      "item": "Record construction and record count",
+      "existing_choice": "Wake-date join of activity and sleep with longest-episode dedup, then complete-case deletion over all ~107 columns; no check of 12,183 / 7,737 / 4,446",
+      "paper_or_protocol_says": "12,183 daily records, CN 7,737 / impaired 4,446 (p.164 §3.1); matching rule not reported, but the count is; ASSUMPTIONS A03 verified that a date join cannot reproduce it",
+      "evidence": "Cheon_LGBM.py:138-146, :183; comment :180-181 acknowledges the target count without asserting it",
+      "severity": "medium"
+    },
+    {
+      "item": "Precision / Recall / F1 averaging",
+      "existing_choice": "sklearn default average='binary' on class 1",
+      "paper_or_protocol_says": "Table 1 reports F1-macro (p.166); Decision-Tree row implies macro recall",
+      "evidence": "Cheon_LGBM.py:212-214",
+      "severity": "medium"
+    },
+    {
+      "item": "Table 1 model comparison",
+      "existing_choice": "Only LightGBM is evaluated",
+      "paper_or_protocol_says": "Seven candidate models compared by ROC-AUC (p.165-166, Table 1)",
+      "evidence": "Cheon_LGBM.py:252-253; README.md:12 'Step 1: Baseline LGBM 평가 (Table 1)'",
+      "severity": "low"
+    },
+    {
+      "item": "Complete-case row deletion",
+      "existing_choice": "Rows with any NaN among all numeric columns (incl. non-paper HR/RMSSD stats) are dropped from the pooled table",
+      "paper_or_protocol_says": "Only column removal is described (§3.1); no row deletion or imputation is reported",
+      "evidence": "Cheon_LGBM.py:183",
+      "severity": "medium"
+    },
+    {
+      "item": "CV repeats and aggregation",
+      "existing_choice": "5 repeats × 5 folds pooled into 25 scores; mean ± 1.96·SD/√25",
+      "paper_or_protocol_says": "One 5-fold run; performance = mean of the 5 fold scores (Figure 3, p.165)",
+      "evidence": "Cheon_LGBM.py:196, :203-204, :216-221",
+      "severity": "low"
+    },
+    {
+      "item": "Hyperparameter search",
+      "existing_choice": "Table 2 values used as constants; no grid search",
+      "paper_or_protocol_says": "Iterative coarse-to-fine grid search with CV (p.165 §3.2(3))",
+      "evidence": "Cheon_LGBM.py:280-287",
+      "severity": "low"
+    },
+    {
+      "item": "Label description",
+      "existing_choice": "Documentation says CN vs MCI although Dem is mapped to 1",
+      "paper_or_protocol_says": "CN vs MCI + Dem (p.164 §3.1)",
+      "evidence": "README.md:12; Cheon_LGBM.py:56 (Dem → 1) vs :189 print 'MCI(1)'",
+      "severity": "low"
+    },
+    {
+      "item": "Series token filtering",
+      "existing_choice": "−1 tokens removed from MET/class/hypnogram series, 0 removed from hypnogram, zeros removed from HR/RMSSD before statistics",
+      "paper_or_protocol_says": "Not reported; Figure 2 counts are plain per-class counts",
+      "evidence": "Cheon_LGBM.py:74, :75, :83, :98",
+      "severity": "low"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "Feature-selection leakage: the SHAP importance ranking that defines the top-40 is fit and explained on ALL pooled records (every later validation fold included) and then reused for every fold of Steps 2 and 3, so the Step 2/3 ROC-AUCs are optimistic by construction. The script has no train-fold-only variant.",
+      "evidence": "Cheon_LGBM.py:259-260 (explainer_model.fit(X, y)), :263 (shap_values(X)), :270-271, :274, :288",
+      "confidence": "high"
+    },
+    {
+      "description": "Subject overlap across folds: record-level StratifiedKFold with shuffle=True on day-level rows from subjects with 35-122 days each puts the same subject in training and validation folds; ROC-AUC then measures subject re-identification rather than generalisation. This mirrors the paper's day-level CV but contradicts the README's 'Leakage Proof' claim.",
+      "evidence": "Cheon_LGBM.py:204-205 (no groups argument; EMAIL never used as group), :177; README.md:3",
+      "confidence": "high"
+    },
+    {
+      "description": "Metric mismatch: Precision/Recall/F1 are binary-averaged on class 1, so the printed values are not comparable with the paper's F1-macro (Table 1); Accuracy and ROC-AUC are the only comparable metrics.",
+      "evidence": "Cheon_LGBM.py:212-214 (no average= argument → 'binary')",
+      "confidence": "high"
+    },
+    {
+      "description": "Invalid confidence interval: 25 pooled fold scores (correlated within and across repeats) are treated as i.i.d. with a z=1.96 normal CI and population SD (ddof=0); the reported '95% CI' is far too narrow.",
+      "evidence": "Cheon_LGBM.py:216-221",
+      "confidence": "high"
+    },
+    {
+      "description": "The 'top 40' cannot be the paper's set: three Figure-6 top-20 features are absent (sleep_bedtime_end, activity_met_1min_kurtosis, activity_met_1min_autocorrelation), 20 forbidden HR/RMSSD statistics compete for rank, and duplicate columns (activity_rest_ratio == activity_class_1_ratio, activity_inactive_ratio == activity_class_2_ratio, median == quantile) split SHAP mass; the selected names are never logged, so the discrepancy is unauditable.",
+      "evidence": "Cheon_LGBM.py:152 (bedtime dropped), :72-79 (no kurtosis/autocorr), :90-91 (duplicate ratios), :119-122 (HR/RMSSD stats), :245-271 (names unused)",
+      "confidence": "high"
+    },
+    {
+      "description": "Cohort and record count are unverified: no assertion of 174 subjects or 12,183 / 7,737 / 4,446 records; the wake-date inner join drops unmatched days, sleep dedup collapses duplicate wake-dates, activity-side duplicates are not deduplicated (possible many-to-one duplication), and dropna over ~107 columns removes any row whose HR/RMSSD/hypnogram series is empty. The analysed table is therefore a different record set from the paper's, of unknown size.",
+      "evidence": "Cheon_LGBM.py:138-146, :183, :180-181 (intent stated, no check), :189 (only a runtime print)",
+      "confidence": "high"
+    },
+    {
+      "description": "Silent data-loading failure modes: FileNotFoundError is swallowed and an empty DataFrame returned; a missing val label file leaves Validation rows without a 'label' column (label merge skipped at :147), which becomes NaN after concat and crashes at :186 (astype(int)); in this checkout the required CSVs are absent from Taehyun/data/, so the script cannot have produced results locally.",
+      "evidence": "Cheon_LGBM.py:34-40, :55, :147-148, :174, :186; Taehyun/data listing (training_label_activity.csv, training_label_sleep.csv, mmse/, processed/ only)",
+      "confidence": "medium"
+    },
+    {
+      "description": "Label table deduplicated by keeping the first row per EMAIL, silently discarding a conflicting second diagnosis if one existed; no consistency check between the Gait and Sleep label copies.",
+      "evidence": "Cheon_LGBM.py:58 (drop_duplicates('EMAIL')), :164-168 (single copy read)",
+      "confidence": "low"
+    },
+    {
+      "description": "Repeat variance is understated: the SHAP ranking is computed once (seed 42) and the LightGBM random_state is fixed at 42 for every fit, so the five repeats vary only the fold assignment; the reported SD does not include selection or model randomness.",
+      "evidence": "Cheon_LGBM.py:259 (single explainer fit), :252/:273/:285 (random_state=42), :204 (only the split seed changes)",
+      "confidence": "medium"
+    },
+    {
+      "description": "np.std / np.var use ddof=0 while the paper (and pandas defaults) would be ddof=1; harmless for trees on complete 1,440-sample days (constant rescaling) but not for the 172 shorter series, where the two conventions are no longer proportional.",
+      "evidence": "Cheon_LGBM.py:79 (np.std(arr), np.var(arr))",
+      "confidence": "low"
+    },
+    {
+      "description": "pd.to_datetime is called without utc=True on ISO strings carrying an offset; with pandas ≥ 2 this works only while every timestamp carries the same offset — otherwise the column becomes object dtype and .dt.date at :138-139 raises. All +09:00 in this dataset, so latent only.",
+      "evidence": "Cheon_LGBM.py:133-136, :138-139",
+      "confidence": "low"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "A02 (pool Training+Validation): SAME — target concatenates both partitions (Cheon_LGBM.py:159-162, :174); but the target never verifies 174 subjects / 12,183 records, whereas the new implementation asserts them.",
+    "A03 (activity–sleep pairing): DIFFERENT — target uses a wake-date join with longest-episode sleep dedup and inner merge (:138-146); new implementation pairs the tables row-wise and asserts the 12,183 count.",
+    "A04 (label file): DIFFERENT layout — target reads a single flat training_label.csv / training_label_activity.csv and val_label.csv / val_label_activity.csv (:164-168) with no cross-check against the Sleep copy; both never open MMSE files.",
+    "A05 (subject id): DIFFERENT — target keeps the raw EMAIL column in the merged frame and only excludes it from features (:177); no hashing (never printed).",
+    "A06/A07 (bedtime clock conversion, sleep_time): DIFFERENT — target has neither feature; bedtime columns are dropped after building the join key (:131, :135-136, :152); new implementation converts to KST clock hours and adds sleep_time (clock difference).",
+    "A08 (MET statistics): DIFFERENT — target: numpy ddof=0 std/var, no kurtosis/skewness/autocorrelation/quantile_50, extra iqr and valid_count, −1 tokens dropped (:72-79); new implementation: pandas defaults, all 12 statistics.",
+    "A09 (series parsing, classes 0/5): DIFFERENT — target counts classes 0..5 plus ratios and valid counts, hypnogram ratios and transitions, and adds 20 HR/RMSSD statistics (:81-122); new implementation counts classes 1-4 and hypnogram 1-4 only and never touches the HR/RMSSD logs.",
+    "A10 (fold scheme): SAME as the new implementation's R arm — StratifiedKFold(5, shuffle=True, random_state=seed) on records (:204); the target has no G (StratifiedGroupKFold) or N (nested) arm in this file.",
+    "A11 (metric averaging, threshold): DIFFERENT — target uses binary-averaged Precision/Recall/F1 (:212-214); same 0.5 threshold on predict_proba (:208).",
+    "A12 (seven base models): DIFFERENT — target runs LightGBM only (:252); no Table 1 comparison.",
+    "A13 (missing values): DIFFERENT — target performs dataset-level listwise deletion over ~107 columns (:183) instead of asserting zero NaN in the 72 paper features; still no imputer/scaler in either.",
+    "A14 (SHAP explainer): SAME — shap.TreeExplainer on a default LightGBM, mean |SHAP| of the positive class, explained on the fitting rows (:262-267).",
+    "A15 (SHAP scope in R): SAME leaky scope (all records, :259-263), but the target computes it once with seed 42 and reuses it for all 5 repeats, whereas the new implementation recomputes per repeat.",
+    "A16 (forward path, k*): DIFFERENT — target hard-codes k=40 (:270) and evaluates no path; new implementation scores k=1..72 and takes the argmax.",
+    "A17/A19/A20 (train-fold ranking, nested inner loop, 2^4 grid): NOT PRESENT in the target.",
+    "A18 (Table 2 constants): SAME — min_child_samples=41, num_leaves=330, n_estimators=1000, learning_rate=0.08 (:280-287).",
+    "A21 (aggregation): DIFFERENT — target pools 25 fold scores with ddof=0 SD and a 1.96 normal CI (:216-221); new implementation uses per-repeat fold means, then mean/SD/95% t-CI across repeats, with pooled folds only as a sensitivity.",
+    "A22 (parameter alias): SAME — min_child_samples used for min_data_in_leaf (:281).",
+    "A23 (software versions): DIFFERENT — target pins nothing; LightGBM/shap defaults are version-dependent (shap list-vs-array branch at :264-265).",
+    "A24 (repeats/seeds): SAME seed set — 5 repeats with split seeds 42..46 (:196, :204); model random_state is 42 throughout rather than the repeat seed.",
+    "A25/A26 (smoke run, execution layout): NOT PRESENT — single in-memory script, no outputs or manifest."
+  ]
+}

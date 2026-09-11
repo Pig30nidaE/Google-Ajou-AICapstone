@@ -1,0 +1,148 @@
+{
+  "verdicts": [
+    {
+      "claim": "Deviation — Feature set: all numeric raw columns + 57 derived (classes 0-5 counts+ratios, MET mean/std/var/min/max/median/q25/q75/iqr/valid_count, 5-min HR and RMSSD stats, hypnogram counts/ratios/transitions); no sleep_time, no bedtime clock conversion, no MET kurtosis/skewness/autocorrelation. Paper: exactly 72 features.",
+      "verdict": "confirmed",
+      "reason": "Every sub-claim is literally in the code. numeric_sequence_stats returns exactly the 10 named keys and contains no kurtosis/skewness/autocorrelation; activity_class_features loops range(6) giving 12 count+ratio columns plus 5 more (17); sleep_hr_5min and sleep_rmssd_5min each get the 10-stat block; hypnogram gives 4 counts + 4 ratios + transition + valid_count (10). 17+10+10+10+10 = 57, matching the reader's count. Both bedtime columns, their datetime versions and _sleep_duration_seconds are in drop_cols, so no clock feature and no sleep_time survives. The feature list is not a fixed 72 but 'every numeric column not in DROP_COLS'. Caveat: the sub-claim that specific paper-excluded raw columns (sleep_is_longest, sleep_temperature_deviation) are present is data-dependent and cannot be checked without opening the CSVs — the reader hedged it with 'if present', so the deviation itself still stands.",
+      "evidence": "Cheon_LGBM.py:85 `return {f\"{prefix}_mean\": ..., f\"{prefix}_iqr\": float(q75 - q25), f\"{prefix}_valid_count\": int(len(arr))}` (no kurtosis/skew/autocorr); :92 `for level in range(6):`; :127 `numeric_sequence_stats(..., \"sleep_hr_5min\", remove_zero=True)`; :129 `... \"sleep_rmssd_5min\", remove_zero=True`; :159 drop_cols contains `\"sleep_bedtime_start\", \"sleep_bedtime_end\", \"sleep_bedtime_start_dt\", \"sleep_bedtime_end_dt\", \"_sleep_duration_seconds\"`; :185 `features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]`"
+    },
+    {
+      "claim": "Deviation — Record construction: inner date join (activity_day_start date = sleep_bedtime_end date), duplicate sleep periods per (EMAIL, date) collapsed to the longest. Paper/A03: row-wise pairing yielding 12,183.",
+      "verdict": "confirmed",
+      "reason": "The join keys, the longest-period dedup and the inner merge are all explicit. The dedup mechanism the reader described (sort by duration descending, keep='first') is exactly what the code does.",
+      "evidence": "Cheon_LGBM.py:145-146 `activity[\"date\"] = activity[\"activity_day_start_dt\"].dt.date` / `sleep[\"date\"] = sleep[\"sleep_bedtime_end_dt\"].dt.date`; :151 `sleep.sort_values([\"EMAIL\", \"date\", \"_sleep_duration_seconds\"], ascending=[True, True, False]).drop_duplicates([\"EMAIL\", \"date\"], keep=\"first\")`; :153 `daily = activity.merge(sleep, on=[\"EMAIL\", \"date\"], how=\"inner\", suffixes=(\"\", \"_sleep\"))`"
+    },
+    {
+      "claim": "Deviation — Subject count: README states 142 + 34 = 176 subjects; code never asserts a count. Paper: 174 (141 + 33).",
+      "verdict": "confirmed",
+      "reason": "The README line is verbatim as quoted, and a grep for `assert` over the whole 395-line script returns nothing — there is no cohort, record or subject-count check anywhere. The only subject-level operation is the per-EMAIL label dedup. (Whether the local data actually yields 176 is data-dependent and unverified here; the confirmed fact is the documented contradiction plus the absent assertion.)",
+      "evidence": "README.md:50 `* **피험자 규모**: Train 142명 + Validation 34명 = **총 176명**`; Cheon_LGBM.py:64 `return label_df[[\"EMAIL\", \"DIAG_NM\", \"original_label\", \"label\"]].drop_duplicates(\"EMAIL\")`; `grep -n \"assert\" Cheon_LGBM.py` → no matches"
+    },
+    {
+      "claim": "Deviation — Missing values: column-median imputation fit on the whole pooled dataset before CV; README claims per-fold handling.",
+      "verdict": "confirmed",
+      "reason": "The fillna is a single statement inside process_raw_to_daily_level, which returns already-imputed arrays; run_scenario receives X post-imputation and never refits an imputer. The README sentence does say the missing-value handling happens in each fold's training step.",
+      "evidence": "Cheon_LGBM.py:187 `all_daily[features] = all_daily[features].fillna(all_daily[features].median())`; :379-390 `X, y, groups, feature_names = process_raw_to_daily_level()` … `run_scenario(X, y, groups, ...)`; README.md:67 `문자열로 압축된 슬래시(/) 시계열은 각 Fold의 학습 단계에서 파싱되어 … 결측치를 처리합니다.`"
+    },
+    {
+      "claim": "Deviation — Forward selection: ranking = mean |SHAP| over 5 fold-models explained on training rows; path scored with a 50-tree LightGBM; early stop after 15 non-improving additions; k = argmax under that stop, not the paper's 40.",
+      "verdict": "confirmed",
+      "reason": "All four elements are in the code. One correction of detail, not of substance: the stopping condition is `> 15`, so the loop breaks on the 16th non-improving addition, not the 15th. The SHAP model is the 100-tree default; the path model is explicitly 50 trees; selection is strict-improvement argmax.",
+      "evidence": "Cheon_LGBM.py:226-233 `model = LGBMClassifier(n_estimators=100, random_state=42, verbose=-1)` … `mean_abs_shap += np.abs(shap_values).mean(axis=0)`; :248 `m = LGBMClassifier(n_estimators=50, random_state=42, verbose=-1)`; :254 `if avg_auc > best_auc:`; :259-260 `if len(current_features) - len(best_features) > 15: break`"
+    },
+    {
+      "claim": "Deviation — Hyperparameter tuning (S2/S4): Optuna TPE, 10 trials, continuous space lr[0.01,0.3] x num_leaves[20,500] x min_child_samples[10,100], 150 trees during search, 500 in the final model. Paper: iterative grid search, Table 2 values.",
+      "verdict": "confirmed",
+      "reason": "The search space, trial count, search-time tree count and the final-model override are all literal. n_estimators is fixed rather than suggested, so it never appears in best_params and is overwritten afterwards, exactly as described.",
+      "evidence": "Cheon_LGBM.py:304-307 `'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True), 'num_leaves': trial.suggest_int('num_leaves', 20, 500), 'min_child_samples': trial.suggest_int('min_child_samples', 10, 100), 'n_estimators': 150`; :321 `study.optimize(objective, n_trials=10)`; :323 `best_params['n_estimators'] = 500`"
+    },
+    {
+      "claim": "Deviation — Table 2 hyperparameters hard-coded in S1/S3, no grid search re-run.",
+      "verdict": "confirmed",
+      "reason": "The single non-nested model line carries all four Table 2 values as constants; no grid-search code exists in the file.",
+      "evidence": "Cheon_LGBM.py:328 `model = LGBMClassifier(min_child_samples=41, num_leaves=330, n_estimators=1000, learning_rate=0.08, random_state=42, verbose=-1)`"
+    },
+    {
+      "claim": "Deviation — 7-model Table 1 comparison absent; only LightGBM is run.",
+      "verdict": "confirmed",
+      "reason": "LGBMClassifier is the only estimator imported or instantiated anywhere in the file. Line 11 imports SelectKBest/f_classif (a feature-selection utility, never used), not a model.",
+      "evidence": "Cheon_LGBM.py:12 `from lightgbm import LGBMClassifier` — the only estimator import; the file contains no LogisticRegression/DecisionTree/KNN/SVM/MLP/RandomForest instantiation"
+    },
+    {
+      "claim": "Deviation — Metrics: precision/recall/F1 binary-averaged on class 1, sensitivity/specificity added, threshold 0.5. Paper: F1-macro; averaging and threshold not reported.",
+      "verdict": "confirmed",
+      "reason": "The three sklearn calls pass no `average` argument, so they default to average='binary', pos_label=1. Sensitivity/specificity are computed by hand from the confusion matrix and the threshold is an explicit 0.5 cut on predict_proba.",
+      "evidence": "Cheon_LGBM.py:201-203 `prec = precision_score(y_true, y_pred, zero_division=0)` / `rec = recall_score(...)` / `f1 = f1_score(...)` (no `average=`); :205-206 `sens = tp / (tp + fn) ...` / `spec = tn / (tn + fp) ...`; :332 `pred = np.where(prob >= 0.5, 1, 0)`"
+    },
+    {
+      "claim": "Deviation — Aggregation: 25 pooled fold scores -> mean, population SD, t-CI with n = 25. Paper: mean of the 5 fold scores of a single 5-fold run.",
+      "verdict": "confirmed",
+      "reason": "Metrics are appended to flat lists inside the fold loop (which is nested inside the repeat loop) and get_stats is applied once to the pooled list; no per-repeat mean is ever computed. np.std defaults to ddof=0 while st.sem defaults to ddof=1.",
+      "evidence": "Cheon_LGBM.py:335-341 `all_acc.append(acc)` … inside `for fold, (train_idx, test_idx) in enumerate(cv_split, 1):` (:289) inside `for repeat in range(n_repeats):` (:276); :212-215 `std = np.std(arr)` … `ci = st.t.interval(0.95, len(arr)-1, loc=mean, scale=st.sem(arr))`"
+    },
+    {
+      "claim": "Deviation — README describes the task as CN vs MCI (Label 1 = MCI); the code follows the paper (Dem -> 1).",
+      "verdict": "confirmed",
+      "reason": "The mapping dict sends both Dem and Dementia to 1, which is the paper's CN vs MCI+Dem encoding; the README table row and the label-definition bullet both say CN vs MCI only.",
+      "evidence": "Cheon_LGBM.py:61 `binary_label_map = {\"CN\": 0, \"MCI\": 1, \"Dem\": 1, \"Dementia\": 1}`; README.md:11 `• **이진 분류 (CN vs MCI)**`; README.md:53-54 `- Label 0: CN (정상군)` / `- Label 1: MCI (경도 인지 장애 고위험군)`"
+    },
+    {
+      "claim": "Deviation — S1 uses StratifiedKFold(5, shuffle=True, rs=42+repeat) at record level with 5 repeats (seeds 42-46); paper reports none of this.",
+      "verdict": "confirmed",
+      "reason": "Both lines are literal; range(5) over `42 + repeat` gives seeds 42 through 46.",
+      "evidence": "Cheon_LGBM.py:278 `cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat)`; :276 `for repeat in range(n_repeats):`; :390 `run_scenario(X, y, groups, sc[\"name\"], sc[\"leak\"], sc[\"nested\"], n_repeats=5)`"
+    },
+    {
+      "claim": "Error — Whole-dataset median imputation is fit on all records before the CV split, so test-fold statistics enter training in the 'Zero-Leakage' scenarios 3/4; README claims per-fold handling.",
+      "verdict": "confirmed",
+      "reason": "Imputation happens inside the data-loading function, before main() ever calls run_scenario, and the medians are taken over the concatenated train+val frame. Nothing inside run_scenario recomputes them. The leak is mild but real, and it is the one preprocessing step the 'Zero-Leakage' label would need to cover.",
+      "evidence": "Cheon_LGBM.py:181 `all_daily = pd.concat([train_daily, val_daily], ignore_index=True)`; :187 `all_daily[features] = all_daily[features].fillna(all_daily[features].median())`; :379 `X, y, groups, feature_names = process_raw_to_daily_level()` precedes :390 `run_scenario(...)`"
+    },
+    {
+      "claim": "Error — In Scenario 4 the inner Optuna CV is record-level StratifiedKFold(3), not group-aware, so subjects are shared between inner train and inner validation.",
+      "verdict": "confirmed",
+      "reason": "The inner splitter takes no groups argument and is a plain StratifiedKFold; it splits X_tr/y_tr, which in the no-leakage branch are the rows of a StratifiedGroupKFold outer training fold. Subjects within that training fold are therefore split across inner train/validation. Outer test subjects are still held out, so the reader's scoping of the consequence is also correct.",
+      "evidence": "Cheon_LGBM.py:311 `inner_cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)`; :313 `for inner_tr, inner_val in inner_cv.split(X_tr, y_tr):`; :285-286 `cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42 + repeat)` / `cv_split = list(cv.split(X, y, groups))`"
+    },
+    {
+      "claim": "Error — The SHAP ranking and forward-selection scoring CV inside shap_forward_selection are record-level StratifiedKFold even when called on the outer training fold in S3/S4, so k and the selected set are chosen by a subject-leaky criterion.",
+      "verdict": "confirmed",
+      "reason": "shap_forward_selection has signature (X, y) only — it never receives groups and cannot be group-aware. In the no-leakage branch it is called with the outer training fold's rows, and the same record-level kf is used both for the SHAP ranking and for scoring every candidate set along the path.",
+      "evidence": "Cheon_LGBM.py:218 `def shap_forward_selection(X, y):` (no groups parameter); :222 `kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)`, used at :225 `for tr, va in kf.split(X, y):` and :247 `for tr, va in kf.split(X_sub, y):`; :295 `best_features = shap_forward_selection(X_tr_raw, y[train_idx])`"
+    },
+    {
+      "claim": "Error — In S1/S2 the forward-selection CV splits (rs=42) are identical to the outer repeat-0 test folds (rs=42+0), so the feature subset is chosen to maximise AUC on exactly the folds reported as repeat-0 test performance.",
+      "verdict": "confirmed",
+      "reason": "This survives the strongest refutation attempt I could mount. StratifiedKFold.split ignores the values of X and depends only on n_samples, y and random_state, so the FS folds (:222, splitting X and the column-subset X_sub, both with the same n_samples and the same y) are bitwise the same partition as the outer folds at repeat=0 (:278-279, random_state = 42 + 0 = 42). Combined with the fact that FS runs on the full X and is reused for all repeats, repeat 0's reported scores are computed on the very folds the feature set was selected to maximise.",
+      "evidence": "Cheon_LGBM.py:222 `kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` vs :278 `cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42 + repeat)`; :281-283 `if repeat == 0:` / `best_features = shap_forward_selection(X, y)` / `X_used = X[:, best_features]`"
+    },
+    {
+      "claim": "Error — Optuna study is created without a seeded sampler, so S2/S4 are non-reproducible run-to-run despite random_state=42 elsewhere.",
+      "verdict": "confirmed",
+      "reason": "create_study is called with only `direction`; no sampler argument is passed, so Optuna instantiates a TPESampler with a random seed. Every other stochastic component in the file is seeded, making this the single unseeded source.",
+      "evidence": "Cheon_LGBM.py:320 `study = optuna.create_study(direction=\"maximize\")`"
+    },
+    {
+      "claim": "Error — Hyperparameters are tuned at n_estimators=150 but the final model is refit at n_estimators=500 with the tuned lr/num_leaves, a configuration never evaluated; no early stopping.",
+      "verdict": "confirmed",
+      "reason": "The objective fixes 150 trees; best_params (which contains only the three suggested parameters) is then mutated to 500 and fitted directly. No callbacks, eval_set or early_stopping_rounds appear anywhere in the fit call.",
+      "evidence": "Cheon_LGBM.py:307 `'n_estimators': 150,`; :323 `best_params['n_estimators'] = 500`; :330 `model.fit(X_tr, y_tr)` (no eval_set / early stopping)"
+    },
+    {
+      "claim": "Error — The 95% CI treats 25 pooled fold scores as independent (n=25); the reported ± uses population SD (ddof=0) while the CI uses sem (ddof=1); the pooled confusion matrix counts every record 5 times.",
+      "verdict": "confirmed",
+      "reason": "np.std defaults to ddof=0 and scipy.stats.sem defaults to ddof=1, so the two dispersion figures printed side by side are computed under different conventions. all_y_true/all_y_pred are extended once per outer fold across all 5 repeats, and every record is a test record exactly once per repeat, so the pooled matrix contains each record 5 times.",
+      "evidence": "Cheon_LGBM.py:212 `std = np.std(arr)` and :215 `ci = st.t.interval(0.95, len(arr)-1, loc=mean, scale=st.sem(arr))`; :343-344 `all_y_true.extend(y_te)` / `all_y_pred.extend(pred)` inside the fold loop inside the repeat loop; :365 `cm = confusion_matrix(all_y_true, all_y_pred)`; :358 prints `{auc_m:.4f} ± {auc_s:.4f} (95% CI: ...)`"
+    },
+    {
+      "claim": "Error — Label merge is how='left' and y is cast with .astype(int) without dropping unlabeled rows; an unlabeled subject would raise on NaN->int, and a silently-empty label frame would give a KeyError.",
+      "verdict": "confirmed",
+      "reason": "All three code facts hold: the merge is a left join, there is no dropna anywhere in the file (grep confirms), and read_csv_flexible returns a bare empty DataFrame on FileNotFoundError. If the label frame is empty the merge at :155 is skipped by the `if not label.empty` guard, so 'label' never exists and :190 raises KeyError. The failure trigger itself (an ID-set mismatch in the local CSVs) is data-dependent and cannot be verified from code — the reader correctly phrased the claim conditionally and rated it medium.",
+      "evidence": "Cheon_LGBM.py:44 `return pd.DataFrame()`; :154-155 `if not label.empty:` / `daily = daily.merge(label, on=\"EMAIL\", how=\"left\")`; :190 `y = all_daily[TARGET_COL].astype(int).values`; `grep -n \"dropna\" Cheon_LGBM.py` → no matches"
+    },
+    {
+      "claim": "Error — Activity rows are not deduplicated per (EMAIL, date) before the inner merge, so duplicate activity days would be multiplied against the single kept sleep row; the record count is never checked against 12,183.",
+      "verdict": "confirmed",
+      "reason": "Only the sleep frame is sorted and deduplicated; the activity frame goes into the merge untouched, and a many-to-one merge would fan out. There is no validate= argument on the merge and no record-count assertion in the file. Whether activity duplicates actually exist is data-dependent, which is why the reader's 'low' confidence is the right rating — but the asymmetry and the absent check are unambiguous in the code.",
+      "evidence": "Cheon_LGBM.py:151 `sleep = sleep.sort_values(...).drop_duplicates([\"EMAIL\", \"date\"], keep=\"first\").reset_index(drop=True)` (no equivalent for `activity`); :153 `daily = activity.merge(sleep, on=[\"EMAIL\", \"date\"], how=\"inner\", suffixes=(\"\", \"_sleep\"))` (no `validate=`)"
+    },
+    {
+      "claim": "Error — Feature list includes every numeric raw column surviving the drop list, with no guard against identifier-like or constant columns; label-derived columns and EMAIL are correctly excluded.",
+      "verdict": "confirmed",
+      "reason": "The list comprehension applies only a name blacklist and a dtype test — there is no variance filter, no cardinality filter and no all-identical-column removal (the paper's preprocessing item 2). The second half of the claim also checks out: EMAIL, original_label, label and DIAG_NM are all in DROP_COLS, and DIAG_NM/date were already dropped at :159. Whether an identifier-like column actually survives is data-dependent, matching the reader's 'low' rating.",
+      "evidence": "Cheon_LGBM.py:184-185 `DROP_COLS = [\"EMAIL\", \"original_label\", TARGET_COL, \"DIAG_NM\", \"date\"]` / `features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]`"
+    }
+  ],
+  "missed_items": [
+    "FEATURE COUNT — three of the 57 derived features are exact duplicates of other derived features, which corrupts the paper's central SHAP-ranking step. Cheon_LGBM.py:96-99: `out[\"activity_rest_ratio\"] = out.get(\"activity_class_1_ratio\", np.nan)`, `out[\"activity_inactive_ratio\"] = out.get(\"activity_class_2_ratio\", np.nan)`, `out[\"activity_not_worn_ratio\"] = out.get(\"activity_class_0_ratio\", np.nan)` — each is a bitwise copy of a column that is already in the matrix. The reader counted these five extra columns toward 17 but never flagged the duplication. Perfectly collinear pairs split mean|SHAP| mass between the copies, so both members are pushed down the ranking that drives forward selection; the same applies more weakly to the 6 class ratios (which sum to 1) and to count = ratio x valid_count (:94-95, :100). The nominal feature count therefore overstates the effective rank.",
+    "HYPERPARAMETERS — the Optuna search never leaves its random-startup phase. Cheon_LGBM.py:320-321 `study = optuna.create_study(direction=\"maximize\")` / `study.optimize(objective, n_trials=10)`. Optuna's default TPESampler uses n_startup_trials=10, so with exactly 10 trials every single trial is drawn by the independent random sampler and the TPE model is never fitted. Scenarios 2 and 4 are 10-point random search, not TPE. The reader reported the missing sampler seed (E5) but not that the trial budget makes the sampler choice moot — which also means the '내부 3-Fold Optuna 동적 튜닝' claim in README.md:11 overstates what runs.",
+    "SHAP SCOPE — the paper's entire explainability half has no counterpart in the code, and the selected feature set is never recorded. SHAP appears only as an internal ranking inside shap_forward_selection (:229-233); there is no summary plot, no top-20 importance table (paper Figure 6), and no dementia-risk score / one-sample t-test (paper Eq. 2, §4.3). The selected columns are never mapped back to names or saved: `feature_names` is used exactly once, for a count — Cheon_LGBM.py:380 `print(f\"\\nData Loaded. Shape: {X.shape}, Features: {len(feature_names)}\")`, and :262 prints only `Selected {len(best_features)} features`. So even the k that forward selection chose per fold is unrecoverable after the run.",
+    "STATISTICS / SHAP — the SHAP accumulation is version-fragile and would crash on newer shap releases. Cheon_LGBM.py:231-233 `if isinstance(shap_values, list): shap_values = shap_values[1]` then `mean_abs_shap += np.abs(shap_values).mean(axis=0)`. Only the legacy list-of-two-arrays return is handled. Recent shap versions return a 3-D ndarray (n_samples, n_features, n_classes) for some tree binary classifiers, which is not a list, so `.mean(axis=0)` yields shape (n_features, n_classes) and the `+=` into a (n_features,) accumulator raises a broadcast error. No environment.txt / requirements pin exists in the folder (only Cheon_LGBM.py, Choi_Ensemble.py, KimPark_LR.py, README.md), so the run is not reproducible against a known shap/lightgbm/sklearn version — a direct contrast with ASSUMPTIONS A23.",
+    "PREPROCESSING — a near-textual column can be silently promoted to a numeric feature and then filled with a constant. Cheon_LGBM.py:50-51 `converted = pd.to_numeric(df[col], errors=\"coerce\")` / `if not converted.isna().all(): df[col] = converted` — the column is kept as numeric if even one cell parses. Such a column becomes almost entirely NaN, is then filled wholesale by the global median at :187, passes the `is_numeric_dtype` test at :185, and enters the model as a near-constant. This interacts with the missing all-identical-column removal (paper Preprocessing item 2), which the reader noted only in passing as 'no all-identical-column removal beyond the explicit timestamp drops'.",
+    "HYPERPARAMETERS — no class-imbalance handling and no thread/determinism control. Despite the paper's 1.74:1 record ratio (PAPER_PROTOCOL Classification task), no `class_weight`, `is_unbalance` or `scale_pos_weight` appears anywhere; and `n_jobs` is never set on any LGBMClassifier (:226, :248, :314, :326, :328), so LightGBM defaults to all cores. ASSUMPTIONS A12/A26 deliberately fix n_jobs=1 to make per-seed results deterministic; this script gives up that guarantee, so even the seeded scenarios 1/3 may not reproduce bitwise across machines.",
+    "STATISTICS — two reporting defects beyond the n=25 CI. (a) Cheon_LGBM.py:213-214 `if std == 0 or len(arr) == 1: return mean, std, mean, mean` — a metric that is constant across all 25 folds (e.g. specificity = 0 in a degenerate scenario) is printed with a zero-width 95% CI rather than flagged. (b) :365 `cm = confusion_matrix(all_y_true, all_y_pred)` is called WITHOUT `labels=[0,1]`, unlike the per-fold call at :204 which does pass them; if the pooled predictions were single-class the heatmap would silently be 1x1 rather than raising.",
+    "ROBUSTNESS / SPLIT TYPE — no guard against a degenerate fold. `roc_auc_score` is called at :200 (per outer fold), :251 (per forward-selection step) and :317 (per Optuna inner fold) with no check that both classes are present. StratifiedGroupKFold (:285) only approximately balances classes because whole subjects move together, so a single-class outer test fold is possible in principle and would abort the whole scenario mid-run — and since every result is printed only after all 25 folds finish (:356-363), nothing computed up to that point survives.",
+    "ARTIFACTS — the only outputs are written relative to the current working directory, not the script. Cheon_LGBM.py:366 `os.makedirs('outputs', exist_ok=True)` and :375 `plt.savefig(f'outputs/{filename}', dpi=300)`. Launched via the repo's base.ipynb pattern (README.md:77-78 `USER_FOLDER = \"Taehyun\"` / `RUN_FILE = \"Paper_Reproduction_Nested/Cheon_LGBM.py\"`), the PNGs land wherever the notebook was started. I independently confirmed the reader's 'no results exist' finding: `find Taehyun -type d -name outputs` returns nothing and the folder contains only the three .py files and README.md. There is no OOF file, no run manifest and no results table (contrast ASSUMPTIONS A25/A26), so no number produced by this script is attributable to a specific code state.",
+    "DEAD CODE — Cheon_LGBM.py:11 `from sklearn.feature_selection import SelectKBest, f_classif` is imported and never referenced anywhere in the file, a leftover from a different selection method. Minor, but it is the kind of residue that makes a reader assume a filter-based selection stage exists when none does."
+  ]
+}

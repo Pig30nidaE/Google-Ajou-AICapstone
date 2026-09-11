@@ -1,0 +1,180 @@
+{
+  "implementation": "sanghyo_binary_paperlgbm_nommse — /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE. A subject-level (leakage-free) re-run of the paper's Figure-2 feature set with LightGBM, plus a day-level \"leakage diagnostic\". File shorthands used below: paperlib.py / run.py = files in that folder; data.py = /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_Wearable_SequenceFusion_Google/data.py (imported as `D` at paperlib.py:40 and doing all loading, labelling and activity-sleep alignment); FINAL_REPORT.json / eda_summary.json = files under Binary_PaperLGBM_NoMMSE_result/20260725_162719_utc/. Classification: it IS a Cheon-derived pipeline (paper features + LightGBM, Table-2 HP in the diagnostic) but deliberately changes the evaluation unit to subjects; it contains no SHAP forward selection and no grid search, so it reproduces neither the Table 1, Figure 4 nor Table 2 stages of the paper.",
+  "is_cheon_reproduction": true,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/run.py (Colab/base.ipynb entry; run_pipeline() run.py:99-142, main() run.py:145-167)",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/paperlib.py (all modelling: build_daily_frame :128, aggregate_to_subject :166, subject_cv :211, leakage_diagnostic :228, run_experiment :286, _validate :336)",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/__init__.py (docstring only)",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/README_KO.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/requirements_colab.txt",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_Wearable_SequenceFusion_Google/data.py (hard dependency: _prepare_sources :648-767, load_binary_labels :288-318, _LABEL_MAP :96-103, _sequence_from_row :355-359)",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/Binary_PaperLGBM_NoMMSE_result/20260725_162719_utc/training/FINAL_REPORT.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/Binary_PaperLGBM_NoMMSE_result/20260725_162719_utc/eda/eda_summary.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Binary/Binary_PaperLGBM_NoMMSE/Binary_PaperLGBM_NoMMSE_result/20260725_162719_utc/training/oof_predictions_hashed.csv (141 data rows; columns subject_hash,y_true,oof_prob)"
+  ],
+  "cohort": "Partitions are NOT pooled. Cross-validation uses only the AI-Hub Training partition: run.py:123 passes `resolved_data / \"1.Training\"` as training_root and run.py:124 `2.Validation` as validation_root; run_experiment builds `train_daily = build_daily_frame(config.training_root, \"train\", ...)` (paperlib.py:291) and runs subject_cv on it (paperlib.py:302). The 33-subject Validation partition is used only as a one-shot hold-out in `_validate` (paperlib.py:336-357, gated by evaluate_validation, default True at paperlib.py:273 / run.py:100). Subjects: 141 Training (85 CN / 56 MCI+Dem; eda_summary.json:4-9) and 33 Validation (FINAL_REPORT.json:20; data.py:119-120 records the expected 26/7 split but this expectation is only asserted at data.py:866-872 inside build_subject_dataset, which paperlib never calls — so no cohort-size guard exists on this code path). Raw files: SourceData/1.Gait/train_activity.csv and SourceData/2.Sleep/train_sleep.csv (data.py:108-109, read at data.py:650-653), labels from LabelingData/1.Gait/training_label.csv and LabelingData/2.Sleep/training_label.csv, cross-checked for identical subject sets and diagnoses (data.py:305-318). MMSE / CognitiveFunction files: a reader exists (`_mmse_features`, paperlib.py:112-125, reads SourceData/3.CognitiveFunction/train_mmse.csv, drops DIAG_NM etc. per MMSE_FORBIDDEN paperlib.py:73) but it is called only when include_mmse is True (paperlib.py:157-158); this experiment sets INCLUDE_MMSE = False (run.py:27, propagated at run.py:125), so no cognitive file is opened. Subject ids are exported only as unsalted sha256[:16] hashes (paperlib.py:282-283, 304).",
+  "record_count": "9,673 Training subject-days (eda_summary.json:5, `n_subject_days`), then 141 subject rows for the primary model (eda_summary.json:4; oof_predictions_hashed.csv has 141 data rows). The paper's 12,183 is not reproduced (Training-only, and 32 of the 9,705 raw Training rows are lost). The 9,673 arises in data.py `_prepare_sources`: (a) activity rows kept only if activity_day_start/end parse and the interval is 23-25 h (data.py:690-705); (b) activity deduplicated on (subject, local date of activity_day_start) keeping the last by timestamp (data.py:706-710); (c) sleep rows kept only if sleep_bedtime_end parses and 0 < sleep_duration <= 86,400 s (data.py:714-723); (d) sleep deduplicated on (subject, local date of sleep_bedtime_end) keeping the longest duration (data.py:725-733); (e) inner merge on (subject, local_date) with validate=\"one_to_one\" (data.py:735-741), so days lacking a partner row are dropped. The audit dict itemising these losses is returned (data.py:753-766) but discarded by paperlib (`aligned, _audit = D._prepare_sources(...)`, paperlib.py:133) and never written, so the 9,705 -> 9,673 loss is not documented in outputs. The Validation daily count is not written anywhere (only n_subjects=33, FINAL_REPORT.json:20). The leakage diagnostic runs on the same 9,673 Training days (paperlib.py:310).",
+  "label": "Binary CN vs MCI+Dem, identical to the paper's encoding. `_LABEL_MAP` (data.py:96-103): CN/NORMAL -> 0, MCI/DEM/DEMENTIA/AD -> 1, applied to the upper-cased DIAG_NM column (data.py:262-271); any unmapped value raises (data.py:272-273); conflicting duplicate labels per subject raise (data.py:274-276). Each daily row receives its subject's label (`feats[\"y\"] = int(labels.loc[sid])`, paperlib.py:153); the subject row takes `grouped[\"y\"].first()` (paperlib.py:177). eda_summary.json:6-9 confirms 85 CN / 56 MCI_DEM at subject level. Positive class for ROC = 1 (predict_proba[:,1], paperlib.py:222, 241, 346).",
+  "record_construction": "Date join, not row-wise pairing. Activity key = local (Asia/Seoul, data.py:23, 321-323) calendar date of activity_day_start (data.py:690-692); sleep key = local date of sleep_bedtime_end, i.e. wake-up date (data.py:714-715). Rows are merged `activity.merge(sleep, on=[\"_subject_id\",\"_local_date\"], how=\"inner\", validate=\"one_to_one\")` (data.py:735-741), sorted by subject then date (data.py:742), and a sanity check raises if any sleep end timestamp is later than the paired activity_day_end (data.py:744-752). Duplicate handling: multiple activity rows per (subject, date) -> keep last by activity_day_start timestamp (data.py:706-710); multiple sleep rows per (subject, wake-date) -> keep the longest valid sleep, ties by earliest timestamp (data.py:726-733). Unmatched days on either side are silently dropped by the inner join. Sequence blobs are taken from the `CONVERT(... USING utf8)` columns with fallback to the plain column names (data.py:27-30, 355-359; used at paperlib.py:144, 146, 149).",
+  "missing_values": "NaN passthrough during feature construction, then fold-local median imputation. Scalars that fail float() or are non-finite become NaN (`D._numeric`, data.py:326-331, called at paperlib.py:141); `_hour` returns NaN on unparseable timestamps (paperlib.py:79-80); `_array_stats` returns NaN for all 12 MET stats when the series is empty, for std/var/quantiles when < 2 finite values, for kurtosis/skewness when < 4 values or zero std, for autocorrelation when < 3 values or a constant half (paperlib.py:90-108); subject-level `std` is NaN for single-day subjects (pandas groupby std, paperlib.py:171). Imputation: `_impute_fit` = column-wise np.nanmedian, non-finite medians replaced by 0.0 (paperlib.py:202-204); `_impute` replaces non-finite cells (paperlib.py:207-208). It is fit on the training fold only: `med = _impute_fit(X[tr])` inside every CV fold of subject_cv (paperlib.py:220) and of the day-level diagnostic (paperlib.py:239), and on the full Training matrix for the hold-out (paperlib.py:344), then applied to the test side (paperlib.py:222, 241, 346). No scaler, no outlier handling anywhere. No count of NaN cells is logged.",
+  "features": "Day level = 69 features; subject level = 138 (mean and std of each, paperlib.py:169-172; eda_summary.json:10). Composition: (1) 24 activity scalars, ACTIVITY_SCALARS paperlib.py:44-54 — exactly the paper's 24 (activity_non_wear and activity_inactivity_alerts included). (2) 23 sleep scalars, SLEEP_SCALARS paperlib.py:55-62 = paper's 27 minus sleep_bedtime_end, sleep_bedtime_start, sleep_midpoint_time, sleep_period_id. (3) sleep_bedtime_end_hour and sleep_bedtime_start_hour (paperlib.py:142-143) = the paper's clock conversion of the two raw timestamps. (4) 12 MET statistics activity_met_1min_{std,variance,kurtosis,skewness,mean,median,min,max,autocorrelation,quantile_25,quantile_50,quantile_75} (paperlib.py:88-89, 144-145). (5) activity_class_5min_count_{1..4} (paperlib.py:146-148). (6) sleep_hypnogram_5min_count_{1..4} (paperlib.py:149-151). Present from the paper's 72: 67 verbatim + 2 in converted-clock form = 69. ABSENT (3): sleep_time (no end-minus-start variable exists anywhere in paperlib.py), sleep_midpoint_time (simply not listed at paperlib.py:55-62), sleep_period_id (dropped on purpose as an identifier, comment paperlib.py:42-43). EXTRA vs paper: none at day level; at subject level the 69 `__std` aggregates (and the aggregation itself) are new. Exact definitions: bedtime clock = `pd.to_datetime(value, errors=\"coerce\", utc=True)` -> tz_convert(Asia/Seoul) -> `hour + minute/60` (seconds ignored) (paperlib.py:77-82; timezone data.py:23). MET statistics (`_array_stats`, paperlib.py:85-109): non-finite tokens dropped first (86-87); std = np.std ddof=0 and variance = np.var ddof=0 (98-99, population, NOT ddof=1); kurtosis = scipy.stats.kurtosis defaults = Fisher excess, bias=True (biased, not bias-corrected) (105); skewness = scipy.stats.skew bias=True (106); autocorrelation = np.corrcoef(x[:-1], x[1:])[0,1], i.e. lag-1 Pearson (107-108); quantiles = np.quantile linear interpolation (100-103); median = np.median (94) and quantile_50 (102) are duplicate columns. 5-min class counts = `int(np.sum(cls == code))` for code in (1,2,3,4) only — classes 0 (non-wear) and 5 (high) are never counted (146-148); hypnogram counts likewise for states 1-4 (149-151). Series parsing: split on \"/\" after replacing \",\" with \"/\", empty tokens skipped, unparseable tokens -> NaN (data.py:334-352); no fixed length enforced, so short series are counted as-is. The 5-min HR and RMSSD logs are not used as features (never referenced in paperlib.py).",
+  "feature_selection": "None. There is no SHAP computation, no importance ranking, no forward selection and no k: every model uses all columns — subject_cv receives the full 138-column X (paperlib.py:292, 302, 219-222) and leakage_diagnostic uses `_feature_columns(df)` = all 69 day-level features (paperlib.py:231-232, 162-163). `shap` is not a dependency (requirements_colab.txt:1-7; run.py:68-70). The paper's Figure 4 / top-40 stage therefore has no counterpart in this implementation.",
+  "split": "Primary: subject-level by construction — the data are first aggregated to one row per subject (paperlib.py:166-178), then `StratifiedKFold(n_splits=5, shuffle=True, random_state=seed + r)` for r in range(5) (paperlib.py:217-219; seed = 20260724 at paperlib.py:271; repeats=5, folds=5 set at run.py:121 for mode \"full\"; smoke mode uses repeats=1, folds=3). Because each row is a subject, no subject can appear in both train and test of a fold (no GroupKFold needed). Not nested: nothing is tuned or selected inside folds. OOF handling: the 5 repeats' test-fold probabilities are summed per subject and divided by the number of times seen (paperlib.py:215-224), producing one averaged OOF vector. Hold-out: the 33-subject Validation partition is scored once by a model fit on all 141 Training subjects (paperlib.py:344-350). Day-level leakage diagnostic (Training days only, single seed): (a) `StratifiedKFold(5, shuffle=True, random_state=20260724)` on 9,673 days — record-level, subjects straddle folds, intentionally leaky (paperlib.py:244-245); (b) `GroupKFold(5).split(X, y, groups=subject)` — unshuffled, unstratified (paperlib.py:246-247); (c) a subject-level AUC from the mean of each subject's GroupKFold day probabilities (paperlib.py:249-255). LightGBM random_state is fixed at 0 in every fold and repeat (paperlib.py:192, 199), so repeats differ only through the split.",
+  "model_and_hyperparameters": "Only LightGBM (`lgb.LGBMClassifier(**params)`, paperlib.py:181-183); none of the paper's other six Table-1 models. Two hard-coded parameter sets, no grid search, no early stopping: (1) Primary subject-level model `_subject_hp` (paperlib.py:186-192): n_estimators=400, num_leaves=15, min_child_samples=8, learning_rate=0.03, subsample=0.8, subsample_freq=1, colsample_bytree=0.7, reg_lambda=1.0, class_weight=\"balanced\", random_state=0, n_jobs=-1, verbose=-1 — explicitly NOT the paper's values (comment paperlib.py:187-188: num_leaves=330 \"would not split meaningfully\" on ~141 rows). Used in subject_cv (paperlib.py:221) and in the hold-out fit (paperlib.py:345). (2) Diagnostic model `_paper_hp` (paperlib.py:195-199): the paper's Table 2 values n_estimators=1000, num_leaves=330, min_child_samples=41 (= min_data_in_leaf), learning_rate=0.08, plus class_weight=\"balanced\" (not in the paper), random_state=0, n_jobs=-1; used only in leakage_diagnostic (paperlib.py:240). Other LightGBM parameters are library defaults; lightgbm is unpinned (`lightgbm>=4.0,<5`, requirements_colab.txt:7), so defaults are version-dependent. The paper's iterative grid search (num_leaves 100-1000 -> 220-380 -> 310-330) is not re-run.",
+  "statistics": "Primary metric = one ROC-AUC computed on the repeat-averaged OOF probability vector of the 141 subjects (`roc_auc_score(y, prob_sum/seen)`, paperlib.py:224-225). No per-fold or per-repeat scores are kept, so there is no fold-mean (Figure 3 style), no SD and no confidence interval. Diagnostic: pooled-OOF AUC over the 9,673 days for the random split and for the GroupKFold split, single seed, plus the subject-mean AUC (paperlib.py:253-255). Hold-out: AUC on 33 subjects, accuracy at a fixed 0.5 probability threshold (`pred = (prob >= 0.5)`, paperlib.py:353-354) and the all-CN baseline accuracy (paperlib.py:356). No precision/recall/F1 for any stage; no CI anywhere; no threshold tuning (comment paperlib.py:351-352).",
+  "reported_results": "FINAL_REPORT.json (run 2026-07-25, full mode, 253 s per LAUNCHER_STATUS.json:4): leakage_free_subject_oof_roc_auc = 0.5214 (FINAL_REPORT.json:12; 141 Training subjects, 5x5 repeated stratified K-fold, custom HP, 138 features); leakage_diagnostic: day_random_kfold_roc_auc_LEAKY = 0.9526 (line 14; Table-2 HP + class_weight balanced, all 69 day features, Training days only, one seed — the closest analogue to the paper's tuned stage 0.9492, but without the FS stage and on 9,673 instead of 12,183 records), day_groupkfold_roc_auc_honest = 0.4811 (line 15), subject_from_groupkfold_roc_auc_honest = 0.4582 (line 16); validation (33-subject hold-out): roc_auc = 0.6538, accuracy_threshold_0.5 = 0.6364, all_cn_accuracy = 0.7879 (lines 19-25). Stated target 0.90 AUC / 0.80 accuracy (lines 8-11, paperlib.py:321). eda_summary.json: 141 subjects, 9,673 subject-days, 85/56, 138 features. README_KO.md:20 and :44 state the honest subject-level AUC is \"about 0.71\" — this predates the run and is contradicted by the observed 0.52; the README was not updated. Repo-level documents cite the 0.5214 figure (STRICT3_NESTED_ALL_RESULTS_KO.md:207 lists it as excluded because \"selection inside outer-train undocumented\"; BINARY_EXPERIMENTS_ANALYSIS_KO.md:43 calls it chance-level under subject evaluation; Binary_Google_SensorFM_Nested/sensorfmnested/config.py:85 hard-codes 0.5214 as a baseline). No Table-1-stage (default LightGBM, all features) or Figure-4-stage (top-40) number exists.",
+  "deviations_from_paper": [
+    {
+      "item": "Analysis unit / evaluation split",
+      "existing_choice": "Daily features aggregated to one row per subject (mean+std), then StratifiedKFold over 141 subject rows; day-level random K-fold kept only as a labelled leaky diagnostic",
+      "paper_or_protocol_says": "PAPER_PROTOCOL 'Analysis unit' and 'Validation design': one row = one subject-day; 5-fold CV over 12,183 records; day-level model stated explicitly (p.164, p.169)",
+      "evidence": "paperlib.py:166-178 (aggregate_to_subject), :211-225 (subject_cv), :228-258 (diagnostic); README_KO.md:25-30",
+      "severity": "high"
+    },
+    {
+      "item": "Cohort / partitions",
+      "existing_choice": "Training partition (141 subjects) for CV; Validation (33) as a separate one-shot hold-out; never pooled",
+      "paper_or_protocol_says": "174 subjects, 12,183 records = Training + Validation pooled (PAPER_PROTOCOL Cohort row 'Which AI-Hub partition'); no hold-out set",
+      "evidence": "run.py:123-124; paperlib.py:291, 302, 336-350; eda_summary.json:4-5 (141 / 9,673); FINAL_REPORT.json:20 (33)",
+      "severity": "high"
+    },
+    {
+      "item": "SHAP-ordered forward selection (Figure 4, top-40 -> 0.9037)",
+      "existing_choice": "No SHAP, no ranking, no forward selection; all 138 (subject) / 69 (day) features used",
+      "paper_or_protocol_says": "PAPER_PROTOCOL 'Feature selection': forward selection ordered by SHAP importance, best set kept (40 features)",
+      "evidence": "paperlib.py:219-222, 231-232 use all columns; no 'shap' import in paperlib.py:25-40; requirements_colab.txt:1-7",
+      "severity": "high"
+    },
+    {
+      "item": "Hyperparameters / grid search",
+      "existing_choice": "Primary model uses custom values (n_estimators=400, num_leaves=15, min_child_samples=8, lr=0.03, subsample/colsample/reg_lambda, class_weight=balanced); Table-2 values appear only in the leaky diagnostic and with class_weight=balanced added; no grid search",
+      "paper_or_protocol_says": "PAPER_PROTOCOL 'Hyperparameters': iterative grid search; final min_data_in_leaf=41, num_leaves=330, n_estimators=1000, learning_rate=0.08; class weighting not mentioned",
+      "evidence": "paperlib.py:186-192 (_subject_hp), :195-199 (_paper_hp incl. class_weight), :240 (diagnostic only)",
+      "severity": "high"
+    },
+    {
+      "item": "Activity-sleep record matching and filtering",
+      "existing_choice": "Date join (activity_day_start date = sleep_bedtime_end date), 23-25 h activity-interval filter, 0-24 h sleep-duration filter, keep-last / keep-longest dedup, inner join; 9,673 of 9,705 Training rows survive; losses not logged",
+      "paper_or_protocol_says": "PAPER_PROTOCOL Preprocessing items 12-13: matching rule and duplicate handling NOT REPORTED; the paper's 12,183 count implies no rows were dropped",
+      "evidence": "data.py:690-741; paperlib.py:133 discards the audit dict; eda_summary.json:5",
+      "severity": "medium"
+    },
+    {
+      "item": "Feature set: 69 instead of 72",
+      "existing_choice": "sleep_time (end - start) never computed; sleep_midpoint_time omitted; sleep_period_id dropped as an identifier",
+      "paper_or_protocol_says": "Figure 2 lists all three among the 72 independent variables; sleep_time is the explicitly added variable of §3.1",
+      "evidence": "paperlib.py:55-62 (no sleep_midpoint_time), :42-43 (sleep_period_id dropped), :128-159 (no sleep_time)",
+      "severity": "medium"
+    },
+    {
+      "item": "Subject-level std aggregates",
+      "existing_choice": "69 extra `__std` columns (and 69 `__mean`) that do not exist in the paper",
+      "paper_or_protocol_says": "72 day-level variables only",
+      "evidence": "paperlib.py:170-172; eda_summary.json:10 (138)",
+      "severity": "medium"
+    },
+    {
+      "item": "Seven-model comparison (Table 1)",
+      "existing_choice": "LightGBM only",
+      "paper_or_protocol_says": "PAPER_PROTOCOL 'Model': 7 candidates compared by ROC-AUC",
+      "evidence": "paperlib.py:181-183 only constructs LGBMClassifier",
+      "severity": "medium"
+    },
+    {
+      "item": "Score aggregation",
+      "existing_choice": "One AUC on the repeat-averaged OOF probabilities; no per-fold scores, no SD/CI",
+      "paper_or_protocol_says": "Figure 3: performance = mean of the 5 fold scores",
+      "evidence": "paperlib.py:222-225",
+      "severity": "medium"
+    },
+    {
+      "item": "Missing-value imputation and class weighting (silent additions)",
+      "existing_choice": "Median imputation fit per training fold; class_weight='balanced' in both parameter sets",
+      "paper_or_protocol_says": "Imputation method NOT REPORTED (only 5-min HR log removal); no class weighting mentioned",
+      "evidence": "paperlib.py:202-208, 220-222, 239-241; :191, :198",
+      "severity": "low"
+    },
+    {
+      "item": "Repeats and seeds",
+      "existing_choice": "5 repeats with random_state = 20260724 + r; LightGBM random_state=0 everywhere",
+      "paper_or_protocol_says": "Single 5-fold run; seed NOT REPORTED",
+      "evidence": "paperlib.py:217-218, 271; run.py:121; paperlib.py:192, 199",
+      "severity": "low"
+    },
+    {
+      "item": "Clock conversion and MET statistic conventions",
+      "existing_choice": "hour + minute/60 (seconds dropped); np.std/np.var ddof=0; scipy kurtosis/skew biased; lag-1 Pearson autocorrelation; linear quantiles",
+      "paper_or_protocol_says": "Conversion to a 24-h real value stated; ddof / kurtosis / lag / quantile definitions NOT REPORTED",
+      "evidence": "paperlib.py:77-82, 98-108",
+      "severity": "low"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "Leakage check of the primary path: none found. Imputation is fit on X[tr] only; labels come exclusively from the Gait/Sleep label copies; no MMSE; no feature selection; the hold-out model sees only Training subjects. The subject-level split cannot place a subject in two folds. The only leaky computation is the deliberately labelled day-level random K-fold diagnostic.",
+      "evidence": "paperlib.py:220-222, 239-241, 344-346; data.py:305-318; run.py:27; paperlib.py:244-245 with note :256-257",
+      "confidence": "high"
+    },
+    {
+      "description": "The 'honest' day-level diagnostic (GroupKFold 0.481, subject-mean 0.458) is below chance and should not be read as the honest ceiling of the paper's features: it uses the Table-2 configuration (1,000 trees, num_leaves=330, lr=0.08, no early stopping) on ~7,700-row training folds with 69 features, i.e. a configuration that memorises subjects; with the pattern the README expects (~0.71) any reasonable regularised model would score higher. The diagnostic quantifies leakage inflation for that one configuration only.",
+      "evidence": "paperlib.py:195-199, 240, 246-247; FINAL_REPORT.json:15-16",
+      "confidence": "medium"
+    },
+    {
+      "description": "README_KO.md promises an honest subject-level AUC of about 0.71, but the only recorded run gives 0.5214 (chance level, 141 subjects, 56 positives, no CI). The README was never reconciled with the result, and the reported number carries no uncertainty estimate although the per-repeat OOF AUCs were available before averaging.",
+      "evidence": "README_KO.md:20, 44; FINAL_REPORT.json:12; paperlib.py:222-225 (repeat scores discarded)",
+      "confidence": "high"
+    },
+    {
+      "description": "The record-loss audit from _prepare_sources (invalid intervals, duplicates, unmatched days, 9,705 -> 9,673) is thrown away, so the output folder cannot show why 32 Training days and an unknown number of Validation days are missing; the Validation daily count is never written.",
+      "evidence": "paperlib.py:133 (`_audit` unused); data.py:753-766; FINAL_REPORT.json:19-25 has only n_subjects",
+      "confidence": "high"
+    },
+    {
+      "description": "No cohort-contract assertion is executed on this code path: the expected 141/33 subjects and 85/56 // 26/7 class counts exist in _SPLIT_CONFIG but are checked only inside build_subject_dataset (data.py:866-872), which paperlib does not call. A silently changed label or source file would not be caught (the observed run does show 141 and 85/56).",
+      "evidence": "data.py:105-122, 866-872; paperlib.py:131-134 call only _normalise_split/resolve_split_root/_prepare_sources/load_binary_labels",
+      "confidence": "high"
+    },
+    {
+      "description": "LightGBM random_state is hard-coded to 0 in both parameter sets regardless of the repeat/seed, so the 5 repeats vary only through the split; subsample/colsample randomness is identical across repeats. Not a correctness bug, but it understates run-to-run variance if per-repeat dispersion were ever reported.",
+      "evidence": "paperlib.py:192, 199 vs :218 (seed + r only reaches StratifiedKFold)",
+      "confidence": "high"
+    },
+    {
+      "description": "The day-level GroupKFold diagnostic is unshuffled and unstratified (GroupKFold(5) on subject-sorted rows); with 141 groups of 35-122 days, per-fold class balance can drift, which slightly biases the pooled-OOF AUC. Minor given the diagnostic's purpose.",
+      "evidence": "paperlib.py:246",
+      "confidence": "medium"
+    },
+    {
+      "description": "The _hour conversion parses timestamps with utc=True before converting to Asia/Seoul; this is only correct if every raw string carries its +09:00 offset (a naive string would be shifted by +9 h). ASSUMPTIONS A06 reports all timestamps carry +09:00, so this is a latent rather than an observed bug. Seconds are also discarded.",
+      "evidence": "paperlib.py:77-82; data.py:321-323 uses the same pattern for alignment",
+      "confidence": "low"
+    },
+    {
+      "description": "activity_met_1min_median and activity_met_1min_quantile_50 are identical columns (both computed from the same finite array), and after subject aggregation this yields 4 duplicated columns among the 138; harmless for LightGBM accuracy but doubles that signal's chance of being sampled under colsample_bytree=0.7.",
+      "evidence": "paperlib.py:94, 100-102; :171-172",
+      "confidence": "high"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "A02 (pool Training+Validation, 174 subjects, 12,183 rows): existing uses Training only for CV (141 subjects, 9,673 days) and Validation as a one-shot hold-out (run.py:123-124; paperlib.py:291, 336-350) — the new implementation has no hold-out.",
+    "A03 (row-wise activity-sleep pairing yielding 12,183): existing does a date join on activity_day_start date = sleep_bedtime_end date with interval/duration filters, keep-last/keep-longest dedup and an inner join (data.py:690-741), losing 32 Training rows and discarding the audit (paperlib.py:133).",
+    "A04 (labels from Gait copy, Sleep copy asserted identical, MMSE never opened): same in substance — data.py:305-318 reads both copies and asserts equality; MMSE reader exists (paperlib.py:112-125) but is disabled by INCLUDE_MMSE=False (run.py:27).",
+    "A05 (salted SHA-256 prefix at load, used as CV group): existing keeps raw ids in memory as the groupby key and hashes only for the OOF file with an unsalted sha256[:16] (paperlib.py:282-283, 304).",
+    "A06 (clock hour = h + m/60 + s/3600): existing uses h + m/60, dropping seconds (paperlib.py:82).",
+    "A07 (sleep_time = clock_difference, alternative timestamp_difference): existing has no sleep_time feature at all (paperlib.py:128-159).",
+    "A08 (pandas defaults: std/var ddof=1, bias-corrected kurt/skew, autocorr lag 1, linear quantiles, duplicate median/q50): existing uses np.std/np.var ddof=0 and scipy biased kurtosis/skewness (paperlib.py:98-99, 105-106); lag-1 autocorrelation, linear quantiles and the duplicate median/q50 agree (paperlib.py:100-102, 107-108).",
+    "A09 (split on '/', classes 1-4 and states 1-4 only, short series counted as-is): agrees — data.py:334-352 splits on '/' (and ','), paperlib.py:146-151 counts codes 1-4 only, no length enforcement; existing additionally prefers the CONVERT(... USING utf8) blob columns with plain-name fallback (data.py:27-30, 355-359).",
+    "A10 (R: StratifiedKFold on records; G/N: StratifiedGroupKFold(5, shuffle) by subject): existing primary = StratifiedKFold(5, shuffle) on 141 subject rows after aggregation (paperlib.py:217-219); the day-level arms use StratifiedKFold (leaky) and unshuffled, unstratified GroupKFold (paperlib.py:244-247).",
+    "A01/A24 (seeds 42-46, seed-42 = paper-style run, 5 repeats): existing uses 20260724 + r for r in 0..4 (paperlib.py:218, 271), single seed 20260724 for the diagnostic, and merges repeats into one averaged OOF (paperlib.py:222-224) rather than reporting them separately.",
+    "A11 (macro precision/recall, 0.5 threshold, SVC decision_function): existing reports no precision/recall/F1; only hold-out accuracy at 0.5 (paperlib.py:353-354).",
+    "A12 (seven base models at library defaults): existing fits LightGBM only, with custom regularised HP for the subject model (paperlib.py:181-192).",
+    "A13 (no imputer/scaler; 72 features contain 0 NaN): existing applies fold-fitted median imputation because its 69-day/138-subject features do contain NaN (short series guards, single-day std) (paperlib.py:202-208, 220, 239).",
+    "A14-A17, A19, A20 (TreeExplainer mean |SHAP|, forward path over k=1..72, k*=argmax, inner StratifiedGroupKFold, 16-config grid): existing has no SHAP, no forward selection, no inner loop and no grid (paperlib.py:211-258; no shap dependency).",
+    "A18 (Table-2 values as fixed constants in R and G): existing uses Table-2 values only in the leaky day-level diagnostic and adds class_weight='balanced' (paperlib.py:195-199, 240); its primary model uses different, hand-chosen values (paperlib.py:186-192).",
+    "A21 (per-repeat fold-mean, then mean/SD/95% t-CI across repeats; pooled-OOF as sensitivity): existing reports a single AUC on repeat-averaged OOF probabilities with no SD or CI (paperlib.py:224-225).",
+    "A22 (min_data_in_leaf = min_child_samples alias): same alias used (paperlib.py:197).",
+    "A23 (pinned Python 3.12.8 / lightgbm 4.7.0 / shap 0.52.0 / sklearn 1.9.0): existing pins only ranges (requirements_colab.txt:1-7), so defaults may differ between runs.",
+    "Feature list: existing 69 day-level features (drops sleep_time, sleep_midpoint_time, sleep_period_id) then 138 subject-level mean/std aggregates (paperlib.py:44-62, 142-151, 170-172) vs the new implementation's exact 72 day-level features including sleep_period_id."
+  ]
+}

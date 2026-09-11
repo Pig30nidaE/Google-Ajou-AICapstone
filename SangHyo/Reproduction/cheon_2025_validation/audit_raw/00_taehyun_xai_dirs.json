@@ -1,0 +1,54 @@
+{
+  "implementation": "taehyun_xai_dirs",
+  "is_cheon_reproduction": false,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/analyzer.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/__init__.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/xai/USAGE.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/previous/xai/analyzer.py"
+  ],
+  "cohort": "Not applicable. The package never reads any data file: no read_csv/read_excel/open of AI-Hub partitions, no subject list, no MMSE/cognitive file. `ShapAnalyzer.__init__` receives an already-trained model plus feature names (analyzer.py:59-72) and `explain(X)` receives whatever array the caller passes (analyzer.py:112-129). Both directories are byte-identical (`diff -rq` excluding __pycache__ exits 0), so one audit covers both.",
+  "record_count": "Not applicable. N is simply the row count of the caller-supplied X (analyzer.py:114, 260-264). No merge, dedup or filter code exists anywhere in the 7 files.",
+  "label": "Not applicable. No label column is read or mapped. The package default is a 3-class task: `task=\"multiclass\"`, `n_classes=3` (analyzer.py:65-66), and USAGE.md:42 / :78 document class_names [\"CN\",\"MCI\",\"Dementia\"]. `task=\"binary\"` is accepted but only changes how the SHAP output axis is sliced (analyzer.py:306-307).",
+  "record_construction": "Not applicable. No activity/sleep pairing, date join, or duplicate handling. `_coerce_input` only converts X to ndarray and an optional DataFrame view (analyzer.py:283-296).",
+  "missing_values": "Not applicable. No imputer, dropna, or NaN handling anywhere; X is passed through to shap unchanged (explainers.py:41-43, 67-70).",
+  "features": "Not applicable. Feature names are an opaque list supplied by the caller (analyzer.py:82); the only check is a length match against the SHAP array (outputs.py:43-47). No sleep_time, clock conversion, 1-min MET statistics, 5-min class counts or hypnogram counts are computed. USAGE.md:109 refers to an LSTM input of shape (N, 7, 71), i.e. a 71-feature multiclass ML4 pipeline, not the paper's 72.",
+  "feature_selection": "No forward selection exists. What the package provides is only the SHAP importance step: `shap.TreeExplainer(model)` with default arguments, i.e. tree_path_dependent (explainers.py:39); `shap.GradientExplainer` for Keras models (explainers.py:65); importance = mean |SHAP| over the explained rows plus a mean signed SHAP (outputs.py:50-52); with `combine_classes=False` the per-class mean |SHAP| values are averaged across all classes (analyzer.py:179-186). SHAP is computed on whatever X the caller passes (USAGE.md:45 and :82 show X_test). No k, no ranking-then-refit loop.",
+  "split": "Not applicable. No KFold/StratifiedKFold/GroupKFold, no seeds for splitting (the only `random_state` is for sampling the Keras background set, analyzer.py:259-264), no hold-out, no nesting. Grep for \"Cheon\", \"forward selection\", \"전진 선택\" returns no file under xai/.",
+  "model_and_hyperparameters": "Not applicable. No model is trained; `detect_model_type` only classifies an already-fitted object as \"tree\" or \"keras_sequence\" (detect.py:34-60). Table 2 values (min_data_in_leaf 41, num_leaves 330, n_estimators 1000, learning_rate 0.08) do not appear. No grid search.",
+  "statistics": "Not applicable. No fold scores, no CI, no threshold, no AUC computation in these files.",
+  "reported_results": "None. USAGE.md contains only illustrative example values (e.g. USAGE.md:172 mean_abs_shap 0.0421) and no ROC-AUC or other performance number. No outputs/ or results directory exists under either xai/ folder.",
+  "deviations_from_paper": [
+    {
+      "item": "Scope of the package",
+      "existing_choice": "Generic post-hoc SHAP wrapper (ShapAnalyzer) for the team's ML4 multiclass models (LGBM/RF/XGB and Keras LSTM), used by the V25-V41 binary/multiclass experiment scripts",
+      "paper_or_protocol_says": "Cheon et al. describe a full pipeline: AI-Hub cohort, 72 features, 5-fold CV, LightGBM, SHAP-ordered forward selection, grid search",
+      "evidence": "__init__.py:1-16 exports only ShapAnalyzer and AGGREGATIONS; USAGE.md:3 ('ML4 프로젝트의 SHAP 분석 공용 패키지'); grep shows callers Taehyun/Binary/V26..V41 and Model/Binary/*.py, none inside xai/",
+      "severity": "high"
+    },
+    {
+      "item": "Default task and class count",
+      "existing_choice": "task='multiclass', n_classes=3 with class names CN/MCI/Dementia",
+      "paper_or_protocol_says": "Binary CN=0 vs MCI+Dem=1 (PAPER_PROTOCOL.md Classification task)",
+      "evidence": "analyzer.py:65-66; USAGE.md:41-42",
+      "severity": "low"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "Binary task with an older shap that returns a list of two arrays: `_to_ndarray` stacks the list into shape (2, N, F), `_slice_classes` returns it unchanged for task='binary', and `aggregate_time_axis` then treats axis 1 (the sample axis) as a time axis. `importance_dataframe` subsequently averages over the two class slices, so mean_signed_shap collapses to 0 (class-0 and class-1 SHAP are negatives of each other). mean_abs_shap stays correct. Only affects callers using task='binary' with shap < 0.45-style list output.",
+      "evidence": "explainers.py:81-82 (stack list -> (C,...)); analyzer.py:306-307 (binary returns [raw]); aggregation.py:39-47 (3D treated as (N,T,F)); outputs.py:50-52",
+      "confidence": "low"
+    },
+    {
+      "description": "For tree models the SHAP importance is computed on whatever X the caller passes; the package itself has no notion of train/test folds, so any leakage (ranking on evaluation rows) is decided entirely by the calling script, not here.",
+      "evidence": "analyzer.py:112-122; USAGE.md:45, :82 (examples pass X_test)",
+      "confidence": "high"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "Not a comparable implementation: no cohort (A02), no row-wise pairing (A03), no label file (A04), no feature engineering (A06-A09), no CV (A10), no models (A12), no imputation stance (A13), no forward path (A15-A17), no Table-2 constants (A18), no aggregation rule (A21).",
+    "Only overlap is the SHAP step: shap.TreeExplainer default (tree_path_dependent) and mean |SHAP| importance match A14 (explainers.py:39; outputs.py:50), but the package's single-ranking mode averages mean |SHAP| across all classes (analyzer.py:179-186) whereas A14 uses the positive-class mean |SHAP| in a binary setting.",
+    "Pointer for the orchestrator (not audited here, found only by filename grep): the actual Cheon reproductions under Taehyun are /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/Paper_Reproduction/Cheon_LGBM.py and /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/Taehyun/Paper_Reproduction_Nested/Cheon_LGBM.py (plus their README.md files)."
+  ]
+}

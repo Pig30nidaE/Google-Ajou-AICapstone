@@ -1,0 +1,202 @@
+{
+  "implementation": "sanghyo_xai_paper_reproduction — a six-script pipeline (preprocess -> 7-model baseline -> OOF-SHAP forward selection -> final LightGBM with Table-2 params + in-sample SHAP/DRS -> report -> audit) driven by a Colab notebook. It is a genuine Cheon 2025 reproduction: it targets the 12,183-row / 174-subject binary CN-vs-(MCI+Dem) daily dataset, the Table 1 seven-model comparison, SHAP-ordered forward selection, the Table 2 LightGBM, and the DRS t-test. Abbreviations used for citations below (all under /Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/): SRC=src/xai_paper_reproduction.py; S00..S06=scripts/00_validate_environment.py .. scripts/06_audit_reproduction_outputs.py; COLAB=XAI_Paper_Reproduction_Colab.py; README=README.md; NOTES=PAPER_IMPLEMENTATION_NOTES.md; KO=REPRODUCTION_DETAILS_KO.md; REPORT=outputs/reproduction_report.md; AUDIT=outputs/reproduction_audit.json; PRE=outputs/data/preprocess_summary.json; FCOLS=outputs/data/feature_columns.json; SEL=outputs/feature_selection/selected_features.json; FSM=outputs/feature_selection/forward_selection_metrics.csv; FCV=outputs/final/final_cv_metrics.json; DRS=outputs/final/dementia_risk_score_summary.json. Stage flow: S01 -> make_daily_binary_dataset (SRC:326-383); S02 -> model_registry + evaluate_cv_model (SRC:440-486, 505-538); S03 -> compute_oof_shap_importance + run_forward_selection (SRC:590-687); S04 -> evaluate_cv_model with PAPER_FINAL_PARAMS then final_shap_and_drs (SRC:66-71, 758-882); S05/S06 build REPORT/AUDIT. The notebook runs only the default (record-level, paper-params, no grid) path (COLAB:63, 77, 83; the .ipynb contains no --grouped or --grid-search flags).",
+  "is_cheon_reproduction": true,
+  "entry_files": [
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/src/xai_paper_reproduction.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/01_preprocess_daily_binary.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/02_compare_baseline_models.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/03_shap_forward_selection.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/04_final_lgbm_shap_drs.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/05_make_reproduction_report.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/06_audit_reproduction_outputs.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/scripts/00_validate_environment.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/XAI_Paper_Reproduction_Colab.py",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/XAI_Paper_Reproduction_Colab.ipynb",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/README.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/PAPER_IMPLEMENTATION_NOTES.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/REPRODUCTION_DETAILS_KO.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/reproduction_report.md",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/reproduction_audit.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/data/feature_columns.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/data/preprocess_summary.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/feature_selection/selected_features.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/feature_selection/forward_selection_metrics.csv",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/final/final_cv_metrics.json",
+    "/Users/pig30nidae/Pig30nidaE/AJOU/26-1-summer/Google-AJOU-AI-Capstone/SangHyo/Reproduction/XAI_Paper_Reproduction/outputs/final/dementia_risk_score_summary.json"
+  ],
+  "cohort": "Both AI-Hub partitions are pooled: load_raw_frames reads exactly six files — train_activity.csv, train_sleep.csv, training_label.csv (filtered to the '라벨링데이터/1.걸음걸이' Gait copy), val_activity.csv, val_sleep.csv, val_label.csv (same Gait filter) (SRC:135-144; S00:25-32). Train and val labels/activity/sleep are concatenated with a 'split' tag (SRC:328-345). Result: 174 subjects (141 train + 33 val), 9,705 + 2,478 = 12,183 rows (PRE:2-11; KO:91-98). No MMSE / CognitiveFunction / cognitive-test file is ever opened — only the six paths above are searched (SRC:136-143); the cognitive-function label copy is explicitly not used (KO:83). Diagnosis comes from DIAG_NM in the Gait label file (SRC:156-160). Subject-level breakdown reported as CN 111 / MCI 51 / Dem 12 (KO:131-138). The raw EMAIL column is used verbatim as patient_id (SRC:150-152, 242, 275).",
+  "record_count": "12,183 rows, arising as: activity daily rows (12,183 = every raw activity row, one per subject-day) are the base table; sleep rows are de-duplicated to one per (patient_id, wake-date) keeping the longest (12 rows dropped -> 12,171), then LEFT-joined onto activity on [patient_id, sample_date, split] (SRC:284-289, 347-349; merge_policy default 'left_activity' S01:17-22). 33 activity rows have no sleep match and get all-NaN sleep features (KO:104-108, 253); an 'inner' policy would give 12,150 rows and is rejected because it does not match the paper count (KO:259-260; NOTES:48-49; README:161). Label merge on [patient_id, split] must label every row or it raises (SRC:357-360). Class counts 7,737 / 4,446 match the paper exactly (PRE:4-7; AUDIT paper_row_count / paper_class_counts PASS). Note the count match is engineered via the left join — the 12,183 records are not the 12,183 paired activity+sleep rows; 33 of them carry imputed sleep values.",
+  "label": "Binary: DIAG_NM mapped {CN:0, MCI:1, Dem:1, DEM:1, Dementia:1}; any unmapped value raises (SRC:159-162). Positive class = cognitive impairment (MCI+Dem), matching the paper. Labels deduplicated per patient_id (SRC:164) and joined to daily rows by (patient_id, split) (SRC:357). Positive-class probability = predict_proba[:,1] (SRC:541-552); ROC-AUC computed for class 1 (SRC:562). Histogram labels 'CN' vs 'MCI/Dem' (SRC:894).",
+  "record_construction": "Date join, not row-wise pairing. Activity: sample_date = date(activity_day_start) (SRC:243). Sleep: sample_date = date(sleep_bedtime_end) i.e. the wake-up date (SRC:276-278). Duplicate sleep records for the same (patient_id, wake-date) are resolved by sorting on (end-start) seconds descending and drop_duplicates(keep='first'), i.e. keep the longest (SRC:281-289; KO:212, 233). Then activity.merge(sleep, on=[patient_id, sample_date, split], how='left') (SRC:347-349); columns duplicated in both tables get suffix '_sleepdup' and are dropped (SRC:349, 355-356). Rows sorted by (split, patient_id, sample_date) (SRC:363). Sleep_period_id is retained as a feature (FCOLS:60). The docs acknowledge the paper does not state a matching rule (KO:243-246).",
+  "missing_values": "(1) All feature columns are coerced with pd.to_numeric(errors='coerce') on the whole dataset (SRC:367-368); (2) columns that are all-NaN or have <=1 unique value are dropped using the whole dataset (SRC:370, 386-396) — dropped: activity_day_start_hour, activity_day_end_hour, activity_met_1min_count, sleep_is_longest (KO:264-271); (3) a SimpleImputer(strategy='median') is the first step of every sklearn Pipeline (SRC:429-437; scaled/tree_pipe at SRC:451-463; lgbm_pipeline SRC:497-502) and LR/KNN/SVM/MLP additionally get StandardScaler (SRC:451-457). Because evaluate_cv_model clones the pipeline and fits it on train_idx only (SRC:526-527), the imputer/scaler are fit inside each training fold for all CV metrics. For SHAP ranking, the imputer is fit on the training fold and applied to the validation fold (SRC:610-612, 632-634). For the final DRS model the imputer is fit on all 12,183 rows (SRC:782-783, 811). NaNs originate from the 33 unmatched activity rows (all sleep features) and any coercion failures (KO:108, 280). The paper reports no imputation (PAPER_PROTOCOL preprocessing item 7); the docs call this a reproduction decision (KO:249-255).",
+  "features": "86 features (PRE:12; FCOLS). Composition: 24 raw activity scalars (FCOLS:2-25) + 14 activity-class features (valid_count, count_0..5, ratio_0..5, transition_count; FCOLS:26-39) + 9 MET statistics (mean, std, var, min, max, median, q25, q75, iqr; FCOLS:40-48; the 'count' stat was dropped as constant=1440) + 26 raw sleep scalars incl. sleep_temperature_deviation (FCOLS:49-74) + sleep_bedtime_start_hour / sleep_bedtime_end_hour (FCOLS:75-76) + sleep_time_from_timestamp (FCOLS:77) + 10 hypnogram features (valid_count, count_1..4, ratio_1..4, transition_count; FCOLS:78-87). Versus the paper's 72: PRESENT (68): all 24 activity scalars; all 27 sleep scalars (bedtime start/end as *_hour); sleep_time; 8 of the 12 MET stats (mean, std, variance, min, max, median, quantile_25, quantile_75); activity_class_5min_count_1..4; sleep_hypnogram_5min_count_1..4. ABSENT (4): activity_met_1min_kurtosis, activity_met_1min_skewness, activity_met_1min_autocorrelation, activity_met_1min_quantile_50 (no such column; only 'median') — numeric_stats computes none of these (SRC:195-216). EXTRA not in Figure 2 (18): activity_class_5min_{valid_count, count_0, count_5, ratio_0..ratio_5, transition_count} (10; SRC:219-230 called with labels [0..5] at SRC:254), activity_met_1min_iqr (SRC:214), sleep_hypnogram_5min_{valid_count, ratio_1..4, transition_count} (6; SRC:296), sleep_temperature_deviation (FCOLS:73; the paper drops it). Exact definitions: sleep_time_from_timestamp = (to_datetime(sleep_bedtime_end) - to_datetime(sleep_bedtime_start)).total_seconds(), i.e. true duration in SECONDS from full timestamps, not a difference of converted clock values (SRC:276-281) — this equals sleep_duration exactly, so it is a duplicate column. Bedtime clock conversion: hour + minute/60 + second/3600 of the parsed (tz-aware +09:00) timestamp (SRC:167-169, 279-280). MET 1-min statistics: values parsed by splitting on '/', ignoring empty/'...'/non-float tokens (SRC:176-192), then filtered to finite and != -1 (SRC:197-198); np.std and np.var with numpy default ddof=0 (SRC:207-208); np.percentile([25,75]) with default linear interpolation (SRC:204); np.median (SRC:211); iqr = q75-q25 (SRC:214); no kurtosis, skewness or autocorrelation of any lag. 5-min activity-class counts: exact-equality counts of tokens 0,1,2,3,4,5 after dropping non-finite and -1 tokens; ratio = count/valid_count; transition_count = number of consecutive changes (SRC:219-230, 254). Hypnogram counts: same routine for states 1..4 (SRC:296). Raw 5-min HR, RMSSD and hypnogram strings and raw timestamps are dropped (SRC:260-267, 301-311).",
+  "feature_selection": "Explainer: shap.TreeExplainer(model) with no background data (tree_path_dependent) on the fitted LGBMClassifier extracted from the pipeline (SRC:615-616). Positive-class SHAP extracted from list/3-D outputs (SRC:618, 637-647). Ranking model: default (untuned) LightGBM, params=None (S03:48, 54; SRC:610), random_state = 42 + fold. Data for ranking: out-of-fold — for each of the 5 StratifiedKFold(seed 42) folds a model is fit on the training fold and SHAP is computed on the validation fold's (imputed) rows; |SHAP| rows from all 5 folds are stacked and averaged per feature -> one global mean-|SHAP| ranking over all 12,183 rows (SRC:609-629; saved to outputs/feature_selection/shap_importance_full.csv). Forward selection: for k = 1..min(80, n_features) (default --max-features 80, S03:28; README:99; so k = 81..86 never evaluated) the top-k ranked features are evaluated with 5-fold CV (same seed-42 folds) of default LightGBM (params=None S03:69; SRC:650-687). k* = argmax of pooled-OOF ROC-AUC (S03:79-81) -> k*=28, AUC 0.9038 (SEL:2-10; FSM:29); paper-style top-40 list also stored (S03:82; SEL:41-82). The final stage defaults to --feature-source paper_top40 (S04:48-53, 63-65), i.e. the final model uses the implementation's own ranking truncated at the paper's k=40, not the reproduced k*=28 (FCV:8-9). The ranking is not recomputed per fold anywhere; --use-paper-params-for-ranking exists but was not used (S03:31-35; KO:389).",
+  "split": "Record-level, not subject-level: make_cv default = StratifiedKFold(n_splits=5, shuffle=True, random_state=42) on daily rows (SRC:409-418), used for the baseline comparison (S02:63-71), SHAP ranking (SRC:609), forward selection (SRC:666-674), optional grid search (SRC:725-733) and final CV (S04:106-114) — all with the same seed, hence identical fold membership across stages. A --grouped flag switches to StratifiedGroupKFold(5, shuffle=True, random_state) with groups=patient_id (SRC:412-415; S02:29, S03:30, S04:33) but it is documented as diagnostic only and was never run (no grouped outputs exist; COLAB:63/77/83 and the .ipynb contain no --grouped). One seed (42), no repeats, no nested loop; grid search (if enabled) and the forward path reuse the outer folds. The 33-subject Validation partition is pooled into the CV pool — no hold-out (SRC:330-345). Days of the same subject therefore occur in both training and test folds (acknowledged KO:580-583).",
+  "model_and_hyperparameters": "Table-1 stage (model_registry SRC:440-486; all random_state=42): Logistic regression = imputer+scaler+LogisticRegression(max_iter=3000, solver='lbfgs'); Decision tree = imputer+DecisionTreeClassifier(); KNN = imputer+scaler+KNeighborsClassifier(n_neighbors=5); SVM = imputer+scaler+SVC(kernel='rbf', probability=True); MLP = imputer+scaler+MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, early_stopping=True); Random forest = imputer+RandomForestClassifier(n_estimators=500, n_jobs=-1); LightGBM = imputer+LGBMClassifier(n_jobs=-1, verbosity=-1) (library defaults otherwise). Non-default choices: RF 500 trees, MLP early_stopping/max_iter, LR max_iter, SVC probability=True, scaling for four models (KO:337-345). Final model: PAPER_FINAL_PARAMS = {min_child_samples:41, num_leaves:330, n_estimators:1000, learning_rate:0.08} (SRC:66-71) = Table 2 with the min_data_in_leaf alias (KO:420-425); used by default when --grid-search is absent (S04:100-101), and the shipped outputs used them (FCV:2-7; AUDIT final_params_match_paper PASS). Other LightGBM params default; n_jobs=-1, verbosity=-1, random_state=42 (SRC:493-496). Optional --grid-search (S04:34, 80-99) runs default_lgbm_grid = num_leaves{300,320,330,340} x min_child_samples{31,41,51} x learning_rate{0.05,0.08,0.1} x n_estimators{600,1000} = 72 configs on the same outer folds (SRC:712-755); this is not the paper's search and was not used for the reported numbers (COLAB:83 uses --use-paper-params). No early stopping, no class weights (KO:427-439).",
+  "statistics": "Headline metrics are POOLED out-of-fold metrics: evaluate_cv_model fills pred/prob arrays fold by fold and calls metrics_dict once on all 12,183 OOF predictions (SRC:521-534); per-fold metrics are appended under 'fold_metrics' (SRC:532, 535) but the report and audit use the pooled 'roc_auc' (S05:104-135; S06:151-154). This differs from the paper's Figure-3 definition (mean of 5 fold scores); numerically for the final model fold-mean AUC = (0.9446+0.9439+0.9459+0.9494+0.9547)/5 = 0.9477 vs pooled 0.9478 (FCV:54-117). No confidence interval, SD or repeats (single seed 42). Decision threshold 0.5 on positive-class probability for accuracy/precision/recall/F1 (SRC:529, 788); precision/recall/F1 macro plus positive-class variants (SRC:555-571); SVC scores are Platt probabilities (SRC:475, 541-552). DRS stage: one-sample one-sided t-test (scipy ttest_1samp, alternative='greater') of impaired daily DRS against the CN daily mean (SRC:841-843), plus a subject-mean variant (SRC:844-851), both computed on in-sample SHAP values of a model fit to all rows (SRC:782-816).",
+  "reported_results": "All numbers are record-level StratifiedKFold(5, seed 42), pooled OOF, 86-feature universe. Table-1 stage (REPORT:45-51, 57-63; KO:349-357): LightGBM ROC-AUC 0.9004 (paper 0.9010), acc 0.8299, F1-macro 0.8069; Random forest 0.8897 (0.8835); MLP 0.8849 (0.6348); SVM 0.8731 (0.6249); KNN 0.8524 (0.6595); Logistic regression 0.6952 (0.6067); Decision tree 0.6707 (0.6806). Forward-selection stage (REPORT:67-68; FSM:29,41; SEL:2-10): best k=28 with AUC 0.9038; k=40 gives 0.9000 (paper: k=40, 0.9037). Final stage, Table-2 params on own top-40 (FCV:52-118; REPORT:150-158): pooled OOF ROC-AUC 0.9478 (paper 0.9492), accuracy 0.8798, precision-macro 0.8797, recall-macro 0.8581, F1-macro 0.8668; fold AUCs 0.9446 / 0.9439 / 0.9459 / 0.9494 / 0.9547. In-sample metrics of the final model on its own training data = 1.0 for every metric (REPORT:230-239; DRS:8-17), and final_training_roc.png is in-sample AUC 1.0000 (KO:457-461). DRS (REPORT:245-276; DRS:23-53): CN mean 5.226 (min 0.85, max 13.30, n=7,737), impaired mean 20.799 (min 16.07, max 34.20, n=4,446), t=448.8, p=0.0; subject-level t=80.3, p=1.1e-64 (paper: CN mean 7.59 range 1.06-24.99; impaired mean 15.71 range 1.79-31.28). Final SHAP top-3: sleep_breath_average, sleep_hr_lowest, sleep_hr_average (REPORT:386-388). KO:589-610 declares the reproduction successful and recommends 0.9004 / 0.9038 / 0.9000 / 0.9478 for reporting.",
+  "deviations_from_paper": [
+    {
+      "item": "Feature universe (86 vs 72)",
+      "existing_choice": "86 features: adds activity_class_5min count_0/count_5, six ratios, valid_count, transition_count; hypnogram ratios/valid_count/transition_count; activity_met_1min_iqr; keeps sleep_temperature_deviation. Omits activity_met_1min_kurtosis, _skewness, _autocorrelation, _quantile_50.",
+      "paper_or_protocol_says": "Figure 2 lists exactly 72 variables: 24 activity scalars, 27 sleep scalars, sleep_time, 12 MET statistics (incl. kurtosis, skewness, autocorrelation, quantile_50), class counts 1-4, hypnogram counts 1-4; sleep_temperature_deviation and classes 0/5 are not included (PAPER_PROTOCOL 'Feature engineering').",
+      "evidence": "SRC:195-230, 254, 296; FCOLS (86 entries); PRE:12; KO:167-197, 216-221 ('ratio와 transition count를 추가했다'). Two omitted features (activity_met_1min_kurtosis, activity_met_1min_autocorrelation) are in the paper's Figure-6 top-20.",
+      "severity": "high"
+    },
+    {
+      "item": "Activity-sleep record construction",
+      "existing_choice": "Date join on wake-date with 'keep longest' de-duplication, LEFT join onto activity, 33 rows with all-NaN sleep features later median-imputed; 12 real sleep rows discarded.",
+      "paper_or_protocol_says": "Matching rule NOT REPORTED; the paper has 12,183 records each with sleep and activity variables; sleep_period_id is a feature (no duplicate removal implied).",
+      "evidence": "SRC:276-289, 347-356; KO:100-111, 253-255; NOTES:48-50; README:161.",
+      "severity": "medium"
+    },
+    {
+      "item": "sleep_time definition",
+      "existing_choice": "sleep_time_from_timestamp = (end - start).total_seconds() from full timestamps, in seconds — identical to the existing sleep_duration column.",
+      "paper_or_protocol_says": "'Added a sleep-time variable = sleep end time - sleep start time' after converting the timestamps to 24-h real values (p.164 §3.1); unit and whether computed from converted clock values NOT REPORTED.",
+      "evidence": "SRC:276-281; KO:211, 551.",
+      "severity": "low"
+    },
+    {
+      "item": "MET statistic conventions",
+      "existing_choice": "numpy ddof=0 for std/var; linear percentiles; -1 tokens removed; no kurtosis/skewness/autocorrelation.",
+      "paper_or_protocol_says": "'descriptive statistics (standard deviation, variance, mean, quartiles)' plus kurtosis, skewness, autocorrelation named in Figure 2; conventions NOT REPORTED.",
+      "evidence": "SRC:195-216.",
+      "severity": "medium"
+    },
+    {
+      "item": "Imputation and scaling for the Table-1 models",
+      "existing_choice": "Fold-fit median imputer for all models; StandardScaler for LR, KNN, SVM, MLP.",
+      "paper_or_protocol_says": "Missing-value imputation NOT REPORTED (only removal of the 5-min HR log); scaling NOT REPORTED. The paper's weak LR/SVM/KNN/MLP scores (0.61-0.66) are consistent with unscaled inputs.",
+      "evidence": "SRC:429-463; REPORT:59-61 shows MLP +0.25, SVM +0.25, KNN +0.19 AUC above Table 1; KO:359-364, 567-569 attribute this to scaling.",
+      "severity": "medium"
+    },
+    {
+      "item": "Base-model hyperparameters",
+      "existing_choice": "RF n_estimators=500; MLP max_iter=500 + early_stopping=True; LR max_iter=3000; SVC probability=True; n_jobs=-1.",
+      "paper_or_protocol_says": "Hyperparameters of the seven base models NOT REPORTED (defaults presumed).",
+      "evidence": "SRC:465-485; KO:337-345.",
+      "severity": "low"
+    },
+    {
+      "item": "Metric aggregation",
+      "existing_choice": "Pooled out-of-fold predictions -> one metric per run.",
+      "paper_or_protocol_says": "Performance = (1/5) sum of fold performances (Figure 3, p.165).",
+      "evidence": "SRC:521-534; S05:127-135; FCV:54 vs fold values FCV:65-117 (0.9478 pooled vs 0.9477 fold-mean).",
+      "severity": "low"
+    },
+    {
+      "item": "Forward-selection path and stopping rule",
+      "existing_choice": "Global OOF-SHAP ranking; path evaluated only for k<=80 of 86 features; k*=28 found but the final model is forced to k=40 (paper's number) via --feature-source paper_top40.",
+      "paper_or_protocol_says": "Features added one at a time by SHAP importance; the best-performing set over the path is chosen (p.165 §3.2(2)); the paper's outcome was 40.",
+      "evidence": "S03:28, 79-82; S04:48-53, 63-65; FCV:8-9; SEL:2-10, 83; KO:403-405.",
+      "severity": "medium"
+    },
+    {
+      "item": "Hyperparameter tuning",
+      "existing_choice": "Table 2 values used as constants; optional 72-point grid around them (not run).",
+      "paper_or_protocol_says": "Iterative coarse-to-fine grid search by cross-validated ROC-AUC with the num_leaves trajectory 100-1000 -> 300 -> 320 -> 330; other ranges NOT REPORTED.",
+      "evidence": "SRC:66-71, 741-755; S04:80-101; COLAB:83; KO:440.",
+      "severity": "low"
+    },
+    {
+      "item": "Fold design details",
+      "existing_choice": "StratifiedKFold, shuffle=True, random_state=42, one run.",
+      "paper_or_protocol_says": "Stratification, shuffling, seed and repeats NOT REPORTED.",
+      "evidence": "SRC:416-418; KO:293.",
+      "severity": "low"
+    },
+    {
+      "item": "Sequence-token filtering",
+      "existing_choice": "Tokens equal to -1 and non-finite/non-numeric tokens are silently dropped before counting/statistics.",
+      "paper_or_protocol_says": "Not mentioned; ASSUMPTIONS A09 verified that no inner missing tokens exist.",
+      "evidence": "SRC:181-191, 197-198, 221-222.",
+      "severity": "low"
+    },
+    {
+      "item": "Dementia risk score computed in-sample",
+      "existing_choice": "DRS = sum of positive class-1 SHAP values from a Table-2 LightGBM fit on all 12,183 rows and explained on the same rows (training AUC 1.0); classes perfectly separated (CN max 13.3 < impaired min 16.1).",
+      "paper_or_protocol_says": "Score = sum of positive SHAP values per daily record; the paper's CN and impaired ranges overlap (1.06-24.99 vs 1.79-31.28) and means are 7.59 vs 15.71.",
+      "evidence": "SRC:782-816, 841-843; DRS:8-17, 23-46; KO:585-587.",
+      "severity": "medium"
+    }
+  ],
+  "potential_errors": [
+    {
+      "description": "Feature selection is performed outside the cross-validation loop: a single global SHAP ranking is computed from all 12,183 rows (OOF per fold, but pooled), and the forward-selection curve and the final 0.9478 are then evaluated with the very same seed-42 folds. Every test row's label influenced the ranking through the four fold-models it was trained in, so the FS curve (0.9038 @28, 0.9000 @40) and the final CV AUC are optimistically biased selection-inside-evaluation estimates, contrary to the docs' claim that the ranking 'does not use validation-fold information'.",
+      "evidence": "SRC:609-629 (ranking over all folds), SRC:650-687 and S03:65-75 (path evaluated with the same random_state=42 folds), S04:106-114 (final CV, same folds); KO:385-386 claim.",
+      "confidence": "high"
+    },
+    {
+      "description": "Subject overlap across folds: record-level StratifiedKFold(shuffle=True) places days of the same subject in both training and test folds for every reported number (0.9004, 0.9038, 0.9478). This is paper-faithful by design, but the grouped diagnostic (--grouped) was never executed, so the documents' 'reproduction succeeded' verdict rests solely on leaky record-level CV with no subject-level counterpart.",
+      "evidence": "SRC:416-418; S02:29/S03:30/S04:33 flags; no grouped outputs under outputs/; COLAB:63, 77, 83 and the .ipynb contain no --grouped; KO:580-583 acknowledges the leakage, KO:589-600 still declares success.",
+      "confidence": "high"
+    },
+    {
+      "description": "The DRS validation (t = 448.8, p = 0.0; subject-level t = 80.3) is computed from in-sample SHAP values of a 1000-tree / 330-leaf model that fits its training data perfectly (all training metrics = 1.0). The reported perfect class separation of DRS (CN max 13.3 < impaired min 16.1) is a memorization artifact, not evidence that the risk score generalizes; the paper's overlapping DRS ranges suggest a different setting. The audit script treats p<0.05 as a PASS criterion, which is trivially satisfied.",
+      "evidence": "SRC:782-816, 838-851; DRS:8-17, 23-46; S06:162-166; REPORT:230-262.",
+      "confidence": "high"
+    },
+    {
+      "description": "Record set differs from the paper's presumed pairing: the wake-date join drops 12 genuine sleep rows (duplicate (subject, wake-date)) and leaves 33 activity rows with fully imputed sleep features (fold medians), while the row count 12,183 is preserved only because of the left join. Since 20+ of the final 40 features are sleep features, those 33 rows are essentially synthetic; a date join can also pair a sleep record with a different activity day than the row-wise pairing does.",
+      "evidence": "SRC:276-289, 347-356; KO:104-108; ASSUMPTIONS A03 (row-wise pairing reproduces 12,183 with 0 NaN).",
+      "confidence": "medium"
+    },
+    {
+      "description": "Latent NameError: positive_probability references 'Pipeline' (SRC:544) but Pipeline is only imported inside other functions (SRC:445, 490), never at module scope. The branch is unreachable in the current registry because every estimator exposes predict_proba (SVC has probability=True), but any estimator without predict_proba would crash instead of falling back to decision_function.",
+      "evidence": "SRC:541-552; SRC:445, 490 (local imports); SRC:475.",
+      "confidence": "high"
+    },
+    {
+      "description": "Stale default data path: ProjectPaths sets raw_dir = <package>/../../'128.치매 고위험군 라이프로그' (two levels above the package). From the current location this resolves to .../SangHyo/128.치매 고위험군 라이프로그, which does not exist; the shipped outputs were produced under a different project path (AUDIT paths point to .../AJOU/3-2/기계학습/assignment/TeamProject/training/...). The pipeline cannot be re-run here without --raw-dir, and the README/notebook paths (training/XAI_Paper_Reproduction, docs/) are also stale.",
+      "evidence": "SRC:90-93; AUDIT:8-68; README:30, 68-71; COLAB:34-37.",
+      "confidence": "high"
+    },
+    {
+      "description": "Privacy handling: the raw EMAIL identifier is used verbatim as patient_id and written in clear text to outputs/data/daily_binary_lifelog.csv and outputs/final/dementia_risk_scores.csv (plus the joblib pipeline directory). Not a modeling error, but it distributes subject identifiers with the results.",
+      "evidence": "SRC:150-152, 242, 275, 831-836; S01:33-34.",
+      "confidence": "high"
+    },
+    {
+      "description": "Forward path truncated: --max-features defaults to 80 while 86 features exist, so k = 81..86 are never evaluated; 'best over the path' is over an incomplete path (minor because the plateau is flat, but the plotted curve is not the full-feature curve).",
+      "evidence": "S03:28; SRC:663; FSM last row = 80; README:99.",
+      "confidence": "high"
+    },
+    {
+      "description": "Reproducibility of library defaults: requirements.txt uses only lower bounds (>=), and the folder contains both cpython-312 and cpython-314 bytecode, so the sklearn/LightGBM defaults that the Table-1 numbers depend on are not pinned; n_jobs=-1 without deterministic=True adds minor thread-count variability.",
+      "evidence": "requirements.txt:1-8; src/__pycache__ and scripts/__pycache__ listing; SRC:481-484, 495.",
+      "confidence": "medium"
+    },
+    {
+      "description": "pd.to_numeric(errors='coerce') is applied blindly to all 90 candidate columns, so any parsing failure silently becomes NaN and is then median-imputed; the code never reports how many NaN cells exist per feature (only the 33-row figure is stated in the docs), so silent data loss would go unnoticed.",
+      "evidence": "SRC:367-368; KO:280; no NaN accounting in PRE.",
+      "confidence": "low"
+    }
+  ],
+  "differences_vs_new_implementation": [
+    "A02 (partition pooling): same — both pool Training + Validation to 174 subjects / 12,183 rows (SRC:328-345).",
+    "A03 (record matching): DIFFERENT — existing uses a wake-date join with keep-longest de-duplication and LEFT join (12 sleep rows dropped, 33 rows with NaN sleep) (SRC:276-289, 347-349); new uses row-wise pairing asserted at load, 0 NaN.",
+    "A04 (label file): same source (Gait '1.걸음걸이' label copy, SRC:139/142); existing does not assert the Sleep copy is identical.",
+    "A05 (subject id): DIFFERENT — existing uses raw EMAIL in clear as patient_id and writes it to output CSVs (SRC:150-152, 831-836); new uses a salted SHA-256 prefix.",
+    "A06 (clock conversion): same — local hour + min/60 + sec/3600 (SRC:167-169).",
+    "A07 (sleep_time): DIFFERENT — existing = timestamp difference in seconds (duplicate of sleep_duration) (SRC:281); new default = clock_difference in hours (negative across midnight), timestamp variant only as a flag.",
+    "A08 (MET statistics): DIFFERENT — existing numpy ddof=0 std/var, linear percentiles, no kurtosis/skewness/autocorrelation/quantile_50, extra iqr (SRC:195-216); new pandas ddof=1, Fisher kurtosis, bias-corrected skew, autocorr(lag=1), all 12 columns incl. duplicate median/quantile_50.",
+    "A09 (series counts): DIFFERENT — existing adds classes 0 and 5, ratios, valid_count and transition counts for both series, drops -1 tokens, keeps sleep_temperature_deviation -> 86 features (SRC:219-230, 254, 296; FCOLS); new has exactly the 72 Figure-2 features.",
+    "A10 (folds): same StratifiedKFold(5, shuffle=True, seed 42) for the record-level arm (SRC:416-418); existing offers StratifiedGroupKFold via --grouped but never ran it; new runs G (StratifiedGroupKFold) and N (nested) as first-class experiments.",
+    "A11 (threshold / SVM score): DIFFERENT — existing thresholds predict_proba at 0.5 for all models and scores SVC with Platt probabilities (SRC:475, 529, 541-552); new uses model.predict() hard labels and decision_function for the SVC ROC.",
+    "A12 (base hyperparameters): DIFFERENT — existing RF 500 trees, MLP early_stopping/max_iter 500, LR max_iter 3000, SVC probability=True, n_jobs=-1 (SRC:465-485); new pure library defaults with n_jobs=1.",
+    "A13 (imputation/scaling): DIFFERENT — existing fold-fit median imputer for all models plus StandardScaler for LR/KNN/SVM/MLP (SRC:451-463); new has no imputer and no scaler (0 NaN by construction).",
+    "A14 (SHAP details): same explainer (TreeExplainer, tree_path_dependent) and same aggregation (mean |SHAP| of class 1) (SRC:616-627); DIFFERENT data — existing explains out-of-fold validation rows with 5 fold-models, new explains the rows used for fitting.",
+    "A15 (scope of ranking in R): DIFFERENT mechanism, same leak class — existing pools OOF SHAP from the 5 seed-42 folds into one global ranking (SRC:609-629); new R fits+explains once on all 12,183 rows. Both are global rankings evaluated with the same folds.",
+    "A16 (path model / stopping rule): same default LightGBM along the path and argmax rule (SRC:667, S03:79), but existing caps the path at k<=80 of 86 (S03:28) and then overrides k* with the paper's 40 for the final model (S04:49-53); new uses k* (R, N-inner) with ties -> smallest k.",
+    "A17 / A19 (train-fold-only ranking; nested loop): ABSENT in existing — no fold-local ranking, no inner CV (SRC has no nested construct; grid_search_lgbm reuses outer folds SRC:712-738).",
+    "A18 (Table-2 constants): same (SRC:66-71; S04:100-101); existing additionally ships an unused 72-point grid around Table 2 (SRC:741-755).",
+    "A20 (N-arm hyperparameter candidates): not applicable — existing has no nested arm.",
+    "A21 (aggregation): DIFFERENT — existing reports pooled-OOF metrics from a single run, no SD/CI (SRC:521-534); new reports per-repeat fold means with mean, SD and 95% t-CI across seeds, pooled-OOF only as sensitivity.",
+    "A22 (parameter alias): same — min_data_in_leaf mapped to min_child_samples (SRC:67; KO:420-425).",
+    "A23 (software versions): DIFFERENT — existing unpinned (requirements.txt lower bounds only) vs new pinned environment.txt.",
+    "A24 (repeats): DIFFERENT — existing one seed (42); new 5 seeds (42-46) with seed 42 as the paper-style run.",
+    "A25/A26 (smoke / execution layout): comparable — existing has smoke flags (--n-splits 2, --n-estimators-override, --max-drs-rows, outputs_smoke dir; COLAB:71, 91) and single-process runs.",
+    "Scope: existing additionally implements the DRS stage (positive-SHAP sum, one-sided t-test, subject-level variant) on an in-sample model (SRC:758-882); the new implementation records this stage for completeness only and does not run it."
+  ]
+}

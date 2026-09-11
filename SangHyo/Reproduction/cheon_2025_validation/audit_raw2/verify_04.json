@@ -1,0 +1,141 @@
+{
+  "verdicts": [
+    {
+      "claim": "DEVIATION 1 — Analysis unit / evaluation split: daily features aggregated to one row per subject (mean+std), StratifiedKFold over 141 subject rows; day-level random K-fold kept only as a labelled leaky diagnostic (paperlib.py:166-178, 211-225, 228-258).",
+      "verdict": "confirmed",
+      "reason": "The aggregation and the subject-row CV are exactly as described, and the day-level arm is explicitly labelled leaky. The paper's unit is one subject-day with 5-fold CV over 12,183 records (PAPER_PROTOCOL.md:50-52, :152).",
+      "evidence": "paperlib.py:171 `agg = grouped[wearable].agg([\"mean\", \"std\"])`; paperlib.py:218-219 `skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed + r)` / `for tr, te in skf.split(np.arange(n), y)`; paperlib.py:253 `\"day_random_kfold_roc_auc_LEAKY\"`. PAPER_PROTOCOL.md:152 \"Unit of splitting | Records (days).\""
+    },
+    {
+      "claim": "DEVIATION 2 — Cohort / partitions: Training partition (141 subjects) used for CV, Validation (33) as a one-shot hold-out, never pooled; the paper pools both (174 subjects / 12,183 records) and has no hold-out.",
+      "verdict": "confirmed",
+      "reason": "run.py passes the two partition roots separately; run_experiment builds the daily frame and runs subject_cv on the Training root only, and _validate builds a separate frame from the Validation root. PAPER_PROTOCOL.md:27 states both partitions were pooled and :156 that there is no hold-out.",
+      "evidence": "run.py:123-124 `training_root=str(resolved_data / \"1.Training\"), validation_root=str(resolved_data / \"2.Validation\")`; paperlib.py:291 `train_daily = build_daily_frame(config.training_root, \"train\", ...)`; paperlib.py:337 `val_daily = build_daily_frame(config.validation_root, \"val\", ...)`; eda_summary.json:4-5 `\"n_subjects\": 141, \"n_subject_days\": 9673`; FINAL_REPORT.json:20 `\"n_subjects\": 33`."
+    },
+    {
+      "claim": "DEVIATION 3 — No SHAP, no ranking, no forward selection; all 138 subject / 69 day features used; `shap` not a dependency.",
+      "verdict": "confirmed",
+      "reason": "A case-insensitive grep for 'shap' over paperlib.py, run.py and requirements_colab.txt returns nothing; both model paths receive the full column matrix. The paper's stage is SHAP-ordered forward selection to a top-40 set (PAPER_PROTOCOL.md:120-123).",
+      "evidence": "`grep -in shap paperlib.py run.py requirements_colab.txt` → no matches. paperlib.py:231-232 `cols = _feature_columns(df)` / `X = df[cols].to_numpy(np.float64)`; paperlib.py:292 `subjects, X, feat_names, y = aggregate_to_subject(...)` then :302 `subject_cv(X, y, ...)` with no column subsetting anywhere."
+    },
+    {
+      "claim": "DEVIATION 4 — Hyperparameters: primary model uses custom values (400/15/8/0.03 + subsample/colsample/reg_lambda/balanced); Table-2 values appear only in the leaky diagnostic and with class_weight='balanced' added; no grid search.",
+      "verdict": "confirmed",
+      "reason": "Both parameter dicts are literal and match the reader's transcription; _paper_hp is referenced only inside leakage_diagnostic's day_oof, _subject_hp only in subject_cv and _validate. No grid/search code exists (grep for 'grid' returns nothing).",
+      "evidence": "paperlib.py:189-192 `dict(n_estimators=400, num_leaves=15, min_child_samples=8, learning_rate=0.03, subsample=0.8, subsample_freq=1, colsample_bytree=0.7, reg_lambda=1.0, class_weight=\"balanced\", random_state=0, ...)`; paperlib.py:197-199 `dict(n_estimators=1000, num_leaves=330, min_child_samples=41, learning_rate=0.08, class_weight=\"balanced\", ...)`; paperlib.py:240 `model = _lgbm(_paper_hp()).fit(...)` (inside day_oof only); comment paperlib.py:187-188 \"the paper's num_leaves=330 ... would not split meaningfully here\". PAPER_PROTOCOL.md:139-141 (iterative grid search, Table 2 values)."
+    },
+    {
+      "claim": "DEVIATION 5 — Activity–sleep matching: date join, 23-25 h activity filter, 0-24 h sleep filter, keep-last / keep-longest dedup, inner join; 9,673 of 9,705 Training rows survive; losses not logged.",
+      "verdict": "confirmed",
+      "reason": "Every filter, dedup rule and the one_to_one inner join are in _prepare_sources as described, and paperlib discards the returned audit. The 9,705 baseline is not established by this implementation's code or outputs — it comes from the reference doc and a sibling EDA — but the arithmetic (9,705 → 9,673) is consistent with both.",
+      "evidence": "data.py:702 `& activity_duration_seconds.between(23 * 60 * 60, 25 * 60 * 60)`; data.py:719-720 `& sleep[\"_duration_for_selection\"].gt(0) & ...le(24 * 60 * 60)`; data.py:709 `.drop_duplicates([\"_subject_id\", \"_local_date\"], keep=\"last\")`; data.py:735-741 `activity.merge(sleep, on=[\"_subject_id\",\"_local_date\"], how=\"inner\", ..., validate=\"one_to_one\")`; paperlib.py:133 `aligned, _audit = D._prepare_sources(root, split_key)` (grep shows `_audit` occurs exactly once in the file). Baseline: PAPER_PROTOCOL.md:27 \"9,705 + 2,478 = 12,183\"; ThreeClass_PerformanceLab/EDA_REPORT_KO.md:9 \"Activity 9,705행/141명\". PAPER_PROTOCOL.md:73-74 lists matching and duplicate handling as NOT REPORTED."
+    },
+    {
+      "claim": "DEVIATION 6 — Feature set is 69, not 72: sleep_time never computed, sleep_midpoint_time omitted, sleep_period_id dropped as an identifier.",
+      "verdict": "confirmed",
+      "reason": "Counted the lists directly: 24 activity + 23 sleep + 2 bedtime hours + 12 MET + 4 activity-class + 4 hypnogram = 69. `grep -n sleep_time paperlib.py` returns nothing. The paper's sleep list of 27 (PAPER_PROTOCOL.md:88-93) minus paperlib's 23 leaves exactly sleep_bedtime_end, sleep_bedtime_start (present as converted hours), sleep_midpoint_time and sleep_period_id.",
+      "evidence": "paperlib.py:42-43 comment \"Pure identifiers (sleep_period_id) are dropped even though the paper listed them.\"; paperlib.py:55-62 SLEEP_SCALARS contains sleep_midpoint_at_delta but no sleep_midpoint_time; `grep -n \"sleep_time\" paperlib.py` → no match; PAPER_PROTOCOL.md:96 \"sleep_time — 'Actual sleep duration' (the added end − start variable, §3.1)\"."
+    },
+    {
+      "claim": "DEVIATION 7 — Subject-level std aggregates: 69 extra `__std` columns (plus 69 `__mean`) that do not exist in the paper.",
+      "verdict": "confirmed",
+      "reason": "The aggregation emits mean and std for every wearable column and renames them with the `__stat` suffix; the recorded run has 138 subject-level columns = 69 × 2. The paper has 72 day-level variables only.",
+      "evidence": "paperlib.py:171-172 `agg = grouped[wearable].agg([\"mean\", \"std\"])` / `agg.columns = [f\"{col}__{stat}\" for col, stat in agg.columns]`; eda_summary.json:10 `\"n_features_subject_level\": 138`."
+    },
+    {
+      "claim": "DEVIATION 8 — LightGBM only; none of the paper's seven Table-1 candidate models.",
+      "verdict": "confirmed",
+      "reason": "The only estimator constructor in the file builds an LGBMClassifier, and it is the only model class imported or instantiated anywhere.",
+      "evidence": "paperlib.py:181-183 `def _lgbm(params: dict): import lightgbm as lgb; return lgb.LGBMClassifier(**params)`; no other estimator import in paperlib.py:34-40. PAPER_PROTOCOL.md:130 lists the 7 candidates."
+    },
+    {
+      "claim": "DEVIATION 9 — Score aggregation: one AUC on repeat-averaged OOF probabilities; no per-fold scores, no SD/CI. Paper: mean of the 5 fold scores.",
+      "verdict": "confirmed",
+      "reason": "subject_cv accumulates test-fold probabilities into prob_sum/seen and scores once at the end; no per-fold or per-repeat AUC is ever computed or stored, and FINAL_REPORT.json carries a single scalar.",
+      "evidence": "paperlib.py:222-225 `prob_sum[te] += model.predict_proba(...)[:, 1]` / `seen[te] += 1` / `prob = prob_sum / seen` / `return {\"oof_prob\": prob, \"roc_auc\": float(roc_auc_score(y, prob))}`; FINAL_REPORT.json:12 single value. PAPER_PROTOCOL.md:151 \"Performance = (1/5) Σ Performance_i\"."
+    },
+    {
+      "claim": "DEVIATION 10 — Silent additions: fold-fitted median imputation and class_weight='balanced' in both parameter sets (paper reports neither).",
+      "verdict": "confirmed",
+      "reason": "Imputation is a column-wise nanmedian fitted on the training index only, in all three fitting sites; class_weight='balanced' appears in both HP dicts. PAPER_PROTOCOL.md:68 marks imputation NOT REPORTED and no class weighting is mentioned anywhere in the protocol.",
+      "evidence": "paperlib.py:203-204 `med = np.nanmedian(x, axis=0)` / `return np.where(np.isfinite(med), med, 0.0)`; paperlib.py:220 `med = _impute_fit(X[tr])`; paperlib.py:239 same inside day_oof; paperlib.py:344 `med = _impute_fit(X_train)`; paperlib.py:191 and :198 both contain `class_weight=\"balanced\"`."
+    },
+    {
+      "claim": "DEVIATION 11 — Repeats and seeds: 5 repeats with random_state = 20260724 + r; LightGBM random_state=0 everywhere; paper is a single 5-fold run with seed NOT REPORTED.",
+      "verdict": "confirmed",
+      "reason": "Config seed default is 20260724, run.py sets repeats=5/folds=5 for full mode, and the per-repeat seed is seed + r. Both HP dicts pin random_state=0 (grep shows random_state appears only at 192, 199, 218, 244).",
+      "evidence": "paperlib.py:271 `seed: int = 20260724`; run.py:121 `settings = dict(repeats=1, folds=3) if run_mode == \"smoke\" else dict(repeats=5, folds=5)`; paperlib.py:218 `random_state=seed + r`; paperlib.py:192/199 `random_state=0`. PAPER_PROTOCOL.md:154-155 (seed NOT REPORTED, single run)."
+    },
+    {
+      "claim": "DEVIATION 12 — Conventions: hour = h + m/60 (seconds dropped); np.std/np.var ddof=0; scipy kurtosis/skew biased; lag-1 Pearson autocorrelation; linear quantiles.",
+      "verdict": "confirmed",
+      "reason": "Each convention is visible in the two helper functions. np.std/np.var default to ddof=0, scipy.stats.kurtosis/skew default to bias=True (and kurtosis to Fisher), np.quantile defaults to linear interpolation. These differ from the reference's A08 (pandas ddof=1, bias-corrected).",
+      "evidence": "paperlib.py:82 `return float(local.hour + local.minute / 60.0)`; paperlib.py:98-99 `float(np.std(finite))` / `float(np.var(finite))`; paperlib.py:105-106 `sp_stats.kurtosis(finite)` / `sp_stats.skew(finite)`; paperlib.py:108 `np.corrcoef(finite[:-1], finite[1:])[0, 1]`; paperlib.py:100 `np.quantile(finite, [0.25, 0.5, 0.75])`. ASSUMPTIONS.md:16 (A08) specifies ddof=1 and bias-corrected."
+    },
+    {
+      "claim": "ERROR 1 — Leakage check of the primary path: none found (fold-local imputation, labels from Gait/Sleep copies only, no MMSE, no feature selection, hold-out model sees only Training subjects, subject-level split).",
+      "verdict": "confirmed",
+      "reason": "I re-derived each leg: the only fitted preprocessing is the median, always fitted on the training index; labels come from load_binary_labels which reads only the two label copies and cross-checks them; INCLUDE_MMSE=False so _mmse_features is never called; there is no selection step to leak through; and one row = one subject makes fold overlap impossible. Caveat: this covers label leakage only — see missed_items on the acquisition-feature contract.",
+      "evidence": "paperlib.py:220-222 `med = _impute_fit(X[tr])` then `_impute(X[te], med)`; data.py:311-317 `if not gait.index.equals(sleep.index): raise ...` / `if not np.array_equal(gait.to_numpy(), sleep.to_numpy()): raise ...`; run.py:27 `INCLUDE_MMSE = False`; paperlib.py:157 `if include_mmse:` guards the only MMSE call; paperlib.py:256-257 note labelling the random split as inflated."
+    },
+    {
+      "claim": "ERROR 2 — The 'honest' day-level diagnostic (0.481 / 0.458) is below chance because it uses the Table-2 memorising configuration; 'with the pattern the README expects (~0.71) any reasonable regularised model would score higher'.",
+      "verdict": "unclear",
+      "reason": "The code-verifiable half is confirmed: the GroupKFold arm does use _paper_hp (1000 trees, num_leaves=330, lr=0.08, no early stopping) on the 69 day features. The counterfactual half is not determinable from the code, and this folder's own evidence cuts against it: the heavily regularised subject-level model on the same features scored 0.5214, also near chance, so under-regularisation is not established as the explanation for the sub-chance GroupKFold number.",
+      "evidence": "paperlib.py:240 `model = _lgbm(_paper_hp()).fit(_impute(X[tr], med), y[tr])` inside day_oof, used for both `random_splits` (:245) and `group_splits` (:247); FINAL_REPORT.json:15-16 `0.48105587222509744` / `0.4581932773109244` vs :12 `0.5214285714285715` from the regularised subject model. No experiment in the folder varies the diagnostic's HP."
+    },
+    {
+      "claim": "ERROR 3 — README promises ~0.71 honest subject-level AUC but the only recorded run gives 0.5214; never reconciled; no uncertainty estimate although per-repeat OOF AUCs were available before averaging.",
+      "verdict": "confirmed",
+      "reason": "Both README lines say ~0.71, the recorded run says 0.5214, and no CI/SD is computed anywhere. The reader under-cited: the same stale claim also sits in paperlib.py's own module docstring, so it is not a README-only problem.",
+      "evidence": "README_KO.md:20 \"같은 데이터를 사람 단위로 평가하면 ROC-AUC는 ≈0.71로 내려갑니다\"; README_KO.md:44 \"정직한(누수 방지) 사람 단위 ROC-AUC는 약 0.71\"; paperlib.py:20-21 \"Honest expectation: leakage-free subject-level ROC-AUC is ~0.71\"; FINAL_REPORT.json:12 `0.5214285714285715`; paperlib.py:225 returns a single `roc_auc` with no dispersion."
+    },
+    {
+      "claim": "ERROR 4 — The record-loss audit from _prepare_sources is thrown away, so the output cannot show why days are missing; the Validation daily count is never written.",
+      "verdict": "confirmed",
+      "reason": "`_audit` appears exactly once in paperlib.py (the unpacking) and is never read or serialised; the audit dict that itemises invalid intervals, duplicates and aligned rows is therefore lost. The Validation branch writes only n_subjects.",
+      "evidence": "`grep -n \"_audit\" paperlib.py run.py` → single hit, paperlib.py:133 `aligned, _audit = D._prepare_sources(root, split_key)`; data.py:753-766 audit keys `invalid_activity_interval_rows`, `activity_duplicate_subject_days`, `aligned_daily_rows`, …; paperlib.py:355-357 return dict has `n_subjects`, `roc_auc`, `accuracy_threshold_0.5`, `all_cn_accuracy` and no day count."
+    },
+    {
+      "claim": "ERROR 5 — No cohort-contract assertion runs on this path: the expected 141/33 and 85/56 // 26/7 counts are checked only inside build_subject_dataset (data.py:866-872), which paperlib never calls.",
+      "verdict": "confirmed",
+      "reason": "Substance is right — paperlib touches only _normalise_split, resolve_split_root, _prepare_sources, load_binary_labels and _read_csv, none of which assert cardinality — but the location is misattributed: the assertion block lives in load_subject_sequence_dataset (data.py:865-877) behind a `strict_contract` flag, and build_subject_dataset (data.py:888) only forwards `strict_contract=expected_split is not None`, so even that entry point skips the check when expected_split is None.",
+      "evidence": "data.py:865-869 `if strict_contract:` / `expected_subjects = int(_SPLIT_CONFIG[split_key][\"expected_subjects\"])` / `if len(subject_ids) != expected_subjects: raise AssertionError(...)`; data.py:914 `strict_contract=expected_split is not None`; paperlib.py:131-134 `D._normalise_split` / `D.resolve_split_root` / `D._prepare_sources` / `D.load_binary_labels` are the only data.py entry points used."
+    },
+    {
+      "claim": "ERROR 6 — LightGBM random_state is hard-coded to 0 in both parameter sets, so the 5 repeats vary only through the split; subsample/colsample randomness is identical across repeats.",
+      "verdict": "confirmed",
+      "reason": "Grep confirms random_state occurs at exactly four lines: 192 and 199 (both literal 0) and 218/244 (the splitters). The repeat index r reaches only StratifiedKFold.",
+      "evidence": "paperlib.py:192 `random_state=0, n_jobs=-1, verbose=-1` and paperlib.py:199 identical; paperlib.py:218 `StratifiedKFold(n_splits=folds, shuffle=True, random_state=seed + r)` — `r` appears nowhere else in subject_cv."
+    },
+    {
+      "claim": "ERROR 7 — The day-level GroupKFold diagnostic is unshuffled and unstratified (GroupKFold(5) on subject-sorted rows); per-fold class balance can drift, slightly biasing the pooled-OOF AUC.",
+      "verdict": "confirmed",
+      "reason": "The code fact is exactly as stated — plain GroupKFold with no shuffle and no stratification. Two corrections to the reasoning: sklearn's GroupKFold assigns groups by descending group size to the currently lightest fold, so the result does not depend on the rows being subject-sorted; and the pooled-OOF bias claim is a plausible inference, not something the code establishes.",
+      "evidence": "paperlib.py:246 `group_splits = list(GroupKFold(folds).split(X, y, groups))` — no `shuffle`/`random_state`/stratification argument, and `y` is accepted but unused for balancing; contrast paperlib.py:244 `StratifiedKFold(folds, shuffle=True, random_state=seed)`."
+    },
+    {
+      "claim": "ERROR 8 — _hour parses with utc=True before converting to Asia/Seoul, which is only correct if every raw string carries +09:00; latent rather than observed (A06). Seconds are also discarded.",
+      "verdict": "confirmed",
+      "reason": "The parse-then-convert pattern is as described, and pd.to_datetime(..., utc=True) does localise a tz-naive string to UTC, which would shift a naive KST string by +9 h. data.py uses the identical pattern for the join key, so the same latency applies to date alignment. ASSUMPTIONS A06 records that all timestamps carry +09:00, so the condition currently holds.",
+      "evidence": "paperlib.py:78-82 `ts = pd.to_datetime(value, errors=\"coerce\", utc=True)` … `local = ts.tz_convert(D.LOCAL_TIMEZONE)` / `return float(local.hour + local.minute / 60.0)`; data.py:322-323 `parsed = pd.to_datetime(values, errors=\"coerce\", utc=True)` / `return parsed.dt.tz_convert(LOCAL_TIMEZONE)`; ASSUMPTIONS.md:14 (A06) \"all timestamps carry +09:00\"."
+    },
+    {
+      "claim": "ERROR 9 — activity_met_1min_median and activity_met_1min_quantile_50 are identical columns; after aggregation this yields 4 duplicated columns among the 138, doubling that signal's sampling chance under colsample_bytree=0.7.",
+      "verdict": "confirmed",
+      "reason": "np.median equals np.quantile(x, 0.5) under linear interpolation, so the two day-level columns coincide and their mean/std aggregates coincide too. Two nits: they are 2 redundant columns out of 4 involved (not 4 redundant), and they diverge in one edge case — with exactly one finite MET value, median is set (line 94, unguarded) while quantile_50 stays NaN (guarded by `len(finite) >= 2` at line 97). The colsample remark applies only to the subject model; _paper_hp sets no colsample_bytree.",
+      "evidence": "paperlib.py:94 `out[f\"{prefix}_median\"] = float(np.median(finite))` (outside the guard) vs paperlib.py:97-102 `if len(finite) >= 2:` … `out[f\"{prefix}_quantile_50\"] = float(q50)`; paperlib.py:191 `colsample_bytree=0.7` present in _subject_hp only; ASSUMPTIONS.md:16 (A08) also records median/quantile_50 as identical columns."
+    }
+  ],
+  "missed_items": [
+    "FEATURE CONTRACT — 4 of the 47 daily scalars are never checked for existence, and a missing one silently becomes a constant 0.0 feature. _prepare_sources validates only ACTIVITY_SAFE_SCALARS/SLEEP_SAFE_SCALARS (data.py:659-666), which do NOT contain activity_non_wear, activity_inactivity_alerts, sleep_midpoint_at_delta or sleep_restless. paperlib reads all 47 with `feats[col] = D._numeric(record.get(col))` (paperlib.py:141); a missing column yields None → `float(None)` raises → np.nan (data.py:326-331), so the whole column is NaN, and `_impute_fit` turns an all-NaN column into 0.0 (`np.where(np.isfinite(med), med, 0.0)`, paperlib.py:204). No NaN count is written to any output, so a renamed source column would be undetectable. The reader reported the NaN→median path but not that four feature names are unvalidated.",
+    "ACQUISITION-FEATURE CONFLICT — the reader called ACTIVITY_SCALARS 'exactly the paper's 24' without noting that it re-introduces columns the sibling module's own contract forbids. data.py:43-44 states 'Acquisition-related columns such as activity_non_wear, sleep_period_id, and sleep_is_longest are absent', and `_validate_feature_contract` (data.py:626-643) raises on any name containing 'non_wear' or 'count'. paperlib's 69 features include activity_non_wear (paperlib.py:49) and eight `*_count_*` columns (paperlib.py:148, 151), i.e. this feature set would fail that contract — which is never invoked on this path. Paper-faithful (PAPER_PROTOCOL.md:83 lists activity_non_wear) but it means the model may use a wear-time/compliance signal.",
+    "DAY-LEVEL CLASS COUNTS ARE NEVER REPORTED — the paper's record-level balance is CN 7,737 / impaired 4,446 (PAPER_PROTOCOL.md:36), the single number by which the day-level diagnostic could be compared to the paper. The EDA writes only subject-level counts (`\"class_counts\": {\"CN\": int((y == 0).sum()), \"MCI_DEM\": int((y == 1).sum())}`, paperlib.py:297 → eda_summary.json:6-9 85/56). The 9,673 diagnostic days have no recorded class split anywhere.",
+    "NO GUARD THAT ALL 33 VALIDATION SUBJECTS SURVIVE ALIGNMENT — `_validate` derives its subject list from the aligned Validation frame (paperlib.py:337-338) and then indexes the labels by that list (`y_val.loc[[str(s) for s in v_subjects]]`, paperlib.py:349), so any Validation subject with zero aligned activity/sleep days is silently absent from the hold-out; the count is only reported after the fact (FINAL_REPORT.json:20). The expected 33 / 26-7 contract exists (data.py:119-120) but is never invoked here.",
+    "HOLD-OUT ACCURACY IS BELOW ITS OWN MAJORITY BASELINE — the reader printed both numbers but never stated the comparison, which is the relevant reading against the paper's 0.8262 accuracy: `accuracy_threshold_0.5` = 0.6364 vs `all_cn_accuracy` = 0.7879 (FINAL_REPORT.json:22-23), i.e. the 0.5-threshold classifier is worse than predicting CN for everyone. Code: paperlib.py:353-356 `pred = (prob >= 0.5).astype(int)` / `\"all_cn_accuracy\": float(np.mean(y_val == 0))`.",
+    "THE STALE ~0.71 CLAIM IS IN THE MODULE, NOT ONLY THE README — the reader cited README_KO.md:20 and :44, but paperlib.py's own docstring makes the same unreconciled claim: paperlib.py:20-22 'Honest expectation: leakage-free subject-level ROC-AUC is ~0.71 (the ceiling found across every prior experiment)'. Fixing the README alone would leave the source asserting a figure the only recorded run contradicts by 0.19 AUC.",
+    "FEATURE IDENTITY IS NEVER PERSISTED — `feat_names` is computed (paperlib.py:292) and used for hold-out column alignment (paperlib.py:339-343) but never written to any output; eda_summary.json records only `\"n_features_subject_level\": 138` (line 10). The exact 138-column set of the recorded run cannot be reconstructed from the artifacts, which matters precisely because the set deviates from the paper's 72.",
+    "DIAGNOSTIC FOLD COUNT IS INHERITED FROM RUN MODE — `leakage_diagnostic(train_daily, folds=config.folds, seed=config.seed)` (paperlib.py:310) takes the same folds as the primary CV, so a smoke run (run.py:121 `dict(repeats=1, folds=3)`) silently turns the paper-style day-level arm into a 3-fold split; nothing in FINAL_REPORT.json records the diagnostic's fold count, only `run_mode`.",
+    "SUBJECT-ID HASH IS UNSALTED, VIOLATING THE REFERENCE PRIVACY CONTRACT — the reader listed this as a neutral difference rather than a defect. `_hash` is `hashlib.sha256(str(s).encode()).hexdigest()[:16]` (paperlib.py:282-283), applied at paperlib.py:304 when writing oof_predictions_hashed.csv; ASSUMPTIONS.md:13 (A05) requires a *salted* SHA-256 prefix. Since the raw identifiers are e-mail addresses, an unsalted digest is invertible by enumeration, so the committed OOF file is not de-identified to the project's own standard."
+  ]
+}

@@ -1,0 +1,16 @@
+# Experiment N - G + inner StratifiedGroupKFold for feature-count and hyperparameter selection
+experiment: nested_cv
+output_dir: results/nested_cv
+seeds: [42, 43, 44, 45, 46]          # executed as 5 single-seed processes (run.py --seeds S --output-dir results/nested_cv_seedS) and merged by merge_runs.py
+n_splits: 5                          # outer
+inner_splits: 5
+split_unit: subject
+shuffle: true
+n_threads: 1                         # LightGBM is fastest single-threaded on this data (tuned fit 4 s vs 14 s at 8 threads); runs are parallelised across processes instead
+threshold_rule: model_default
+feature_selection:
+  scope: inner                       # A19: ranking on inner-train, path scored on inner-validation
+  max_k: 72
+hyperparameters:
+  grid: paper_anchored_2x2x2x2       # A20: {library default, Table 2} for each of the 4 tuned parameters (16 configs)
+  also_report_fixed_paper_params: true   # variant N-A: k selected inner, hyperparameters fixed at Table 2
