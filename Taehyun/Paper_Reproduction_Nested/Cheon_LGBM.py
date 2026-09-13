@@ -184,7 +184,11 @@ def process_raw_to_daily_level():
     DROP_COLS = ["EMAIL", "original_label", TARGET_COL, "DIAG_NM", "date"]
     features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]
     
-    all_daily[features] = all_daily[features].fillna(all_daily[features].median())
+    # Paper: "결측치 처리가 불가능한 로그 데이터는 제거"
+    # Drop NaNs to match exact reproduction condition (Plan A)
+    print(f"Data shape before dropping NaNs: {all_daily.shape}")
+    all_daily = all_daily.dropna(subset=features)
+    print(f"Data shape after dropping NaNs: {all_daily.shape}")
     
     X = all_daily[features].values
     y = all_daily[TARGET_COL].astype(int).values

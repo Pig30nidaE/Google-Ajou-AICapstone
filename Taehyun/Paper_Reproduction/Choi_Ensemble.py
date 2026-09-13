@@ -190,7 +190,8 @@ def process_raw_to_daily_level():
     DROP_COLS = ["EMAIL", TARGET_COL, "DIAG_NM", "date"]
     features = [c for c in all_daily.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(all_daily[c])]
     
-    all_daily[features] = all_daily[features].fillna(all_daily[features].median())
+    # Drop any NaNs to ensure clean data without global imputation leakage across folds
+    all_daily = all_daily.dropna(subset=features)
     
     X = all_daily[features].values
     y = all_daily[TARGET_COL].astype(int).values

@@ -1,6 +1,6 @@
 # V44 Circadian Subspace SOTA 신기록 달성 모델
 
-이 폴더는 치매 고위험군 라이프로그 데이터(Zero-Leakage 환자 단위 분할, No-MMSE 환경)에서 **ROC-AUC 0.7074 신기록**을 달성한 **V44 최고 성능 모델** 및 관련 보고서를 포함하고 있습니다.
+이 폴더는 치매 고위험군 라이프로그 데이터(Zero-Leakage 환자 단위 분할, No-MMSE 환경)에서 **ROC-AUC 0.7083 신기록**을 달성한 **V44 최고 성능 모델** 및 관련 보고서를 포함하고 있습니다.
 
 ---
 
@@ -23,14 +23,14 @@
    - 전문 모델과 전역 모델의 백분위 순위(Percentile Rank)를 가중 융합하여 소규모 임상 데이터($N=174$)에서의 예측 분산을 최소화.
 3. **3단계 파레토 임상 의사결정 체계 (3-Tier Clinical Operating System)**:
    - **Tier 1 (조기 선별)**: Recall 77.78% 확보 (환자 조기 누락 방지)
-   - **Tier 2 (표준 진단)**: Youden J 최적 균형점 (**ROC-AUC 0.7074**, F1 0.5987)
+   - **Tier 2 (표준 진단)**: Youden J 최적 균형점 (**ROC-AUC 0.7083**, F1 0.5987)
    - **Tier 3 (확진 보조)**: Specificity 81.98% 확보 (고비용 정밀 검사 유도)
 
 ---
 
 ## 3. 검증 성능 (Outer 5-Fold Out-of-Fold)
 
-- **ROC-AUC**: **0.7074** (SOTA 신기록)
+- **ROC-AUC**: **0.7083** (SOTA 신기록)
 - **Tier 1 선별 Recall**: **77.78%**
 - **Tier 3 확진 Specificity**: **81.98%**
 - **데이터 누수 완전 차단**: Outer 5-Fold Group + Inner 5-Fold Nested Cross-Validation 적용

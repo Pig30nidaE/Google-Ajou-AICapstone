@@ -204,7 +204,8 @@ def process_raw_to_patient_level():
     DROP_COLS = ["EMAIL", "original_label", TARGET_COL, "DIAG_NM"]
     features = [c for c in patient_df.columns if c not in DROP_COLS and pd.api.types.is_numeric_dtype(patient_df[c])]
     
-    patient_df[features] = patient_df[features].fillna(patient_df[features].median())
+    # Drop any NaNs to ensure clean data without global imputation leakage across folds
+    patient_df = patient_df.dropna(subset=features)
     
     X = patient_df[features].values
     y = patient_df[TARGET_COL].astype(int).values

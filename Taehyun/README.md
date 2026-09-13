@@ -46,7 +46,7 @@ RUN_FILE = "실행할/파일.py"
 - `Paper_Reproduction_Nested/KimPark_LR.py`: 피험자 단위 종단 변동성 + Fold 내 RFECV + L2 정규화 LR Nested CV
 
 ### 3. V44 최고 성능 모델 (`V44_Subspace_SOTA/`)
-도메인 특화 피처 서브스페이스 분해 및 랭크 앙상블 기법으로 **ROC-AUC 0.7074 신기록**을 달성한 최신 SOTA 모델입니다.
+도메인 특화 피처 서브스페이스 분해 및 랭크 앙상블 기법으로 **ROC-AUC 0.7083 신기록**을 달성한 최신 SOTA 모델입니다.
 
 - `V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py`: V44 최종 챔피언 파이프라인
 - `V44_Subspace_SOTA/report_binary_v44_circadian_subspace_sota.md`: V44 상세 성과 보고서
@@ -55,7 +55,7 @@ RUN_FILE = "실행할/파일.py"
 
 ## 실행 예시 (`base.ipynb` 기준)
 
-### 1) V44 최고 성능 모델 실행 (SOTA, ROC-AUC 0.7074)
+### 1) V44 최고 성능 모델 실행 (SOTA, ROC-AUC 0.7083)
 ```python
 USER_FOLDER = "Taehyun"
 RUN_FILE = "V44_Subspace_SOTA/V44_Circadian_Subspace_SOTA_Nested.py"
