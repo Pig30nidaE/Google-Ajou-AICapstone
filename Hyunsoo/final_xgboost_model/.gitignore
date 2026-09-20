@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.py[cod]
+data/*.csv
+results_no_weights/
+results_original_weights/
+reproduced_*/
+reproduced_*.csv
+reproduced_*.json

@@ -53,7 +53,7 @@ SHAP는 모델이 어떤 특징을 사용했는지는 보여주지만, 그 특�
 상위 1~4위의 중요도 범위가 서로 겹치므로 세부 순위 자체에 큰 의미를 두기보다,
 이 특징들이 함께 첫 번째 중요도 집단을 이룬다고 보는 것이 안전하다.
 
-![SHAP 특징 중요도](results_xgb_shap_complete/shap_importance.png)
+SHAP 중요도 그림은 재현 코드를 실행하면 로컬에 생성된다.
 
 ## 모델이 사용한 방향
 
@@ -69,7 +69,7 @@ SHAP는 모델이 어떤 특징을 사용했는지는 보여주지만, 그 특�
 | 평균 수면 호흡수 | 높고 낮음의 단순한 한 방향이 없음 | 임상적 고위험 방향을 정의하기 어려움 |
 | 수면 중 심박 하강 비율이 작을수록 MCI·치매 쪽 | 야간 심박 하강이 약한 패턴 | 방향은 가설과 맞을 수 있지만 모델 내 중요도는 낮음 |
 
-![상위 특징의 값과 모델 판단 방향](results_xgb_shap_complete/shap_direction.png)
+특징값과 모델 판단 방향 그림은 재현 코드를 실행하면 로컬에 생성된다.
 
 ### 가장 설득력 있는 임상적 가설
 
@@ -148,9 +148,5 @@ SHAP는 모델이 어떤 특징을 사용했는지는 보여주지만, 그 특�
 
 ## 재현 자료
 
-- [SHAP 중요도 표](results_xgb_shap_complete/shap_importance.csv)
-- [특징값과 SHAP 방향](results_xgb_shap_complete/shap_direction_summary.csv)
-- [특징 구간별 SHAP 값](results_xgb_shap_complete/shap_binned_direction.csv)
-- [특징 간 상관관계](results_xgb_shap_complete/feature_correlations.csv)
-- [피험자별 SHAP 값](results_xgb_shap_complete/subject_shap_values.csv)
 - [재현 코드](xgb_oof_shap_analysis.py)
+- SHAP 표와 그림은 재현 실행 시 생성되며, 참여자 단위 결과는 비식별 확인 전 GitHub에 포함하지 않는다.
