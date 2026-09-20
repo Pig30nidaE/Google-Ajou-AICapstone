@@ -1,95 +1,201 @@
-# Hyunsoo 폴더 안내
+# 최종모델 제안: 14개 장기 라이프로그 특징을 사용하는 단일 XGBoost
 
-이 폴더는 Hyunsoo 개인 작업 공간입니다. 팀 공통 방식에서는 `base.ipynb`에서 다음처럼 지정해 이 폴더 안의 `.py` 파일을 실행합니다.
+## 결론
 
-```python
-USER_FOLDER = "Hyunsoo"
-RUN_FILE = "실행할/파일.py"
+최종 후보로 **14개 장기 라이프로그 요약 특징을 사용하는 단일 XGBoost**를
+제안한다.
+
+기존 모델은 부족한 집단의 가상 데이터를 만드는 SMOTE를 적용하고, 서로 다른
+6개 모델의 결과를 합쳤다. 단일 XGBoost는 가상 데이터를 만들지 않고 모델 하나만
+사용한다. 구조는 훨씬 단순하지만 정상군과 MCI·치매군을 구분하는 성능은 거의
+같았다.
+
+- 단일 XGBoost AUC: **0.7118** (95% 신뢰범위 0.6348~0.7840)
+- 기존 6개 모델 결합 AUC: **0.7150** (0.6397~0.7862)
+- AUC 차이: **−0.0032**
+- 두 모델의 차이는 매우 작았고, 어느 모델이 더 좋다고 확실히 말할 수 없었다.
+- 단일 XGBoost는 기존 모델보다 MCI·치매군을 평균 3.2명 더 찾아냈다.
+
+따라서 이번 모델 변경의 의미는 성능을 크게 높인 것이 아니라, **비슷한 성능을
+유지하면서 가상 데이터 생성과 6개 모델 결합을 제거한 것**이다.
+
+## 기존 모델과 무엇이 달라지는가
+
+| 구분 | 기존 모델 | 제안 모델 |
+|---|---|---|
+| 모델 수 | 6개 모델을 결합 | XGBoost 1개 |
+| 입력 | 특징을 여러 묶음으로 나누어 모델별로 사용 | 14개 특징을 한 번에 사용 |
+| 부족한 집단 처리 | SMOTE로 가상 학습자료 생성 | 가상 자료를 만들지 않음 |
+| 결과 결합 | 6개 결과의 상대적 순위를 계산한 뒤 가중합 | 결합 과정 없음 |
+| 관리 | 6개 모델과 결합 과정을 모두 유지해야 함 | 전처리와 모델 하나만 유지 |
+| 설명 | 최종 판단이 만들어진 과정을 설명하기 어려움 | 한 모델의 특징 기여도를 확인할 수 있음 |
+
+## 기존 모델과의 성능 비교
+
+동일한 174명(정상 111명, MCI·치매 63명)을 같은 조건에서 평가했다. 자료를
+나누는 방법을 다섯 번 바꾸어 확인했으며, 각 사람은 매번 학습에 포함되지 않은
+상태에서 평가됐다.
+
+| 지표 | 단일 XGBoost, 평균 (95% 신뢰범위) | 기존 6개 모델 결합, 평균 (95% 신뢰범위) |
+|---|---:|---:|
+| AUC | **0.7118** (0.6348~0.7840) | 0.7150 (0.6397~0.7862) |
+| Accuracy | **0.6609** (0.6046~0.7161) | 0.6379 (0.5816~0.6954) |
+| Precision | **0.5269** (0.4674~0.5916) | 0.5081 (0.4462~0.5764) |
+| Recall | **0.6730** (0.5810~0.7587) | 0.6222 (0.5238~0.7175) |
+| Specificity | **0.6541** (0.5838~0.7225) | 0.6468 (0.5766~0.7172) |
+| F1-score | **0.5893** (0.5231~0.6518) | 0.5549 (0.4821~0.6241) |
+
+Accuracy, Precision, Specificity, F1-score의 차이는 확실하다고 보기 어려웠다.
+Recall은 단일 XGBoost가 더 높았지만, 여러 지표 중 하나에서 관찰된 결과이므로
+XGBoost가 확실히 우월하다고 단정하지 않는다.
+
+### 평균 혼동행렬
+
+아래 숫자는 다섯 번의 평가 결과를 평균한 값이다. 그래서 사람 수가 소수점으로
+표시된다.
+
+**단일 XGBoost**
+
+| 실제 집단 \ 예측 집단 | 정상 | MCI·치매 |
+|---|---:|---:|
+| 정상 | TN 72.6 | FP 38.4 |
+| MCI·치매 | FN 20.6 | TP 42.4 |
+
+**기존 6개 모델 결합**
+
+| 실제 집단 \ 예측 집단 | 정상 | MCI·치매 |
+|---|---:|---:|
+| 정상 | TN 71.8 | FP 39.2 |
+| MCI·치매 | FN 23.8 | TP 39.2 |
+
+단일 XGBoost는 174명당 평균적으로 기존 모델보다 MCI·치매군을 3.2명 더
+찾았고, 놓친 사람은 3.2명 적었다. 다만 이는 Recall이 높아진 결과를 사람 수로
+다시 표현한 것이며 별개의 추가 근거는 아니다.
+
+## class weight를 적용하면 좋아지는가
+
+`class weight`는 학습할 때 MCI·치매군의 오류를 더 크게 반영하는 방법이다.
+가중치를 1.00부터 3.00까지 0.25씩 높이며 확인했다. 다른 모델 설정과 자료를
+나누는 방법은 바꾸지 않았다.
+
+| MCI·치매군 가중치 | AUC | Accuracy | Precision | Recall | Specificity | F1-score |
+|---:|---:|---:|---:|---:|---:|---:|
+| **1.00, 가중치 없음** | 0.7118 | **0.6609** | **0.5269** | **0.6730** | 0.6541 | **0.5893** |
+| 1.25 | **0.7156** | 0.6506 | 0.5134 | 0.6508 | 0.6505 | 0.5729 |
+| 1.75, 집단수 비율과 유사 | 0.7129 | 0.6598 | 0.5258 | 0.6381 | **0.6721** | 0.5749 |
+| 3.00 | 0.7030 | 0.6460 | 0.5121 | 0.6286 | 0.6559 | 0.5613 |
+
+가중치 1.25에서 AUC가 0.0038 높아졌지만, 이 차이는 우연한 변동과 구분하기
+어려웠다. Accuracy, Precision, Recall, F1-score는 오히려 낮아졌다. 집단수
+비율에 가까운 1.75에서도 AUC는 거의 같고 Recall은 낮았다.
+
+따라서 **class weight에 따른 뚜렷한 개선은 없었으며, 최종모델은 가중치를
+사용하지 않는다.** MCI·치매군을 더 많이 찾는 것이 임상적으로 중요하다면
+학습 가중치를 계속 바꾸기보다, 어느 점수부터 위험군으로 판단할지 기준을 정한
+뒤 새로운 자료에서 확인하는 편이 더 직접적이다.
+
+전체 가중치 결과는
+[`metric_summary.csv`](results_xgb_class_weight_sensitivity/metric_summary.csv)에
+남겨두었다.
+
+## 모델은 어떤 특징을 주로 사용했는가
+
+각 사람을 학습에서 제외한 상태로 SHAP 분석을 시행했다. 가장 중요한 특징은
+수면 시간대 정렬 점수, 날짜별 뒤척임 변동성, 수면 중 최대 심박값 변동성,
+일간 활동 리듬 안정성, 중강도 활동 빈도 변동성이었다. 이름이 `_std`로 끝나는
+장기 변동성 특징이 전체 중요도의 약 52%를 차지했다.
+
+이는 최종모델이 **여러 날에 걸친 수면·심박·활동 패턴의 안정성**을 주로 사용했을
+가능성을 보여준다. 반면 직접 만든 `Circadian_Strain`은 14개 중 14위였고,
+`HR_drop_ratio`는 12위였다.
+
+다만 일주기 관련 특징 다섯 개가 동시에 0인 사람이 33명 있었고, 그 비율도 집단별로
+달랐다. 모델이 생리적 차이와 함께 자료 존재 여부를 학습했을 가능성이 있으므로
+임상적 생체지표로 단정할 수 없다. 자세한 결과는
+[SHAP 분석과 임상적 해석](SHAP_임상해석.md)에 정리했다.
+
+## 최종모델 고정 사양
+
+### 입력 특징 14개
+
+1. `sleep_score_alignment`
+2. `sleep_hr_5min_max_std`
+3. `sleep_awake_std`
+4. `sleep_breath_average`
+5. `activity_score_std`
+6. `activity_class_3_count_std`
+7. `activity_met_min_low_std`
+8. `sleep_restless_std`
+9. `circadian_IV`
+10. `circadian_IS`
+11. `circadian_RA`
+12. `sleep_wake_bouts_avg`
+13. `HR_drop_ratio`
+14. `Circadian_Strain`
+
+두 특징은 다음과 같이 계산한다.
+
+```text
+HR_drop_ratio = (평균 수면 심박수 - 최저 수면 심박수) / (평균 수면 심박수 + 1e-5)
+Circadian_Strain = circadian_IV / (circadian_IS + 1e-5)
 ```
 
-## 이번 변경 요약
+### 전처리와 모델 설정
 
-기존 노트북 원본은 삭제하거나 수정하지 않고, 같은 위치에 실행 가능한 `.py` 변환 파일을 추가했습니다.
+| 단계 | 고정값 |
+|---|---|
+| 결측값 처리 | 학습자료의 중앙값으로 채움. 현재 자료에는 실제 결측값이 없음 |
+| 값의 크기 조정 | 학습자료를 기준으로 극단값의 영향을 줄이는 방식 사용 |
+| 가상자료 생성 | 사용하지 않음 |
+| class weight | 사용하지 않음 |
+| 모델 | `XGBClassifier` |
+| `max_depth` | 3 |
+| `learning_rate` | 0.04 |
+| `n_estimators` | 100 |
+| `subsample` | 0.8 |
+| `colsample_bytree` | 0.8 |
+| `eval_metric` | `auc` |
+| `random_state` | 42 |
+| `n_jobs` | 1 |
 
-| 기존 파일 | 추가된 공유용 Python 파일 | 설명 |
-| --- | --- | --- |
-| `Colab_시작하기.ipynb` | `Colab_시작하기.py` | Colab/Codex 시작용 노트북을 Python 스크립트로 변환 |
-| `previous/privious_LSTM_preprocessing/build_lstm_dataset_colab.ipynb` | `previous/privious_LSTM_preprocessing/build_lstm_dataset_colab.py` | LSTM 데이터셋 생성 Colab 노트북을 Python 스크립트로 변환 |
-| `previous/privious_TreeModel_preprocessing/build_rf_lgbm_binary_daily_colab.ipynb` | `previous/privious_TreeModel_preprocessing/build_rf_lgbm_binary_daily_colab.py` | RF/LGBM용 binary daily 전처리 Colab 노트북을 Python 스크립트로 변환 |
+분류 기준값은 평가 대상의 정답을 보지 않고 학습자료 안에서 정했다. 실제 임상
+적용에서는 MCI·치매군을 놓치지 않는 것이 중요한지, 정상군의 잘못된 위험 판정을
+줄이는 것이 중요한지 먼저 정한 뒤 하나의 기준값을 고정해야 한다.
 
-## 기존 구현 유지 여부
+## 신뢰범위와 해석상 주의점
 
-기존 `.py` 파일은 그대로 유지했습니다.
+95% 신뢰범위는 정상군과 MCI·치매군에서 사람을 다시 뽑아 성능을 계산하는 과정을
+10,000회 반복해 구했다. 이 과정에서 한 사람의 반복 예측을 서로 다른 여러 사람처럼
+계산하지 않았다.
 
-- `previous/privious_LSTM_preprocessing/build_lstm_dataset.py`
-- `previous/privious_TreeModel_preprocessing/build_rf_lgbm_binary_daily.py`
-- `previous/privious_TreeModel_preprocessing/model/LGBM_RF_Model_ver2.py`
+다만 다음 불확실성은 남아 있다.
 
-기존 `.ipynb` 원본도 로컬에는 그대로 있습니다. 다만 `.ipynb`는 `.gitignore` 대상이라 Git 공유 기준에서는 새로 추가된 `.py` 파일을 사용합니다.
+- 같은 자료에서 특징과 모델을 여러 번 검토한 영향
+- 모델을 처음부터 다시 학습할 때 생길 수 있는 변화
+- 다른 병원, 기기, 연령대에서도 같은 성능이 나올지 여부
+- 실제 임상 기준값을 어디에 둘지에 따른 변화
 
-## 실행 예시
+따라서 이번 결과는 **현재 자료에서 정상군과 MCI·치매군을 구분하는 신호가
+남아 있으며, 복잡한 6개 모델 결합의 추가 이점은 확인되지 않았다**는 의미다.
+임상적 유용성이 확정됐다는 뜻은 아니다. 다음 단계에서는 위 설정을 더 바꾸지
+않고 새로운 자료에 한 번 적용해야 한다.
 
-LSTM 전처리 Colab 변환 파일 실행:
+## 논문·보고서용 문장
 
-```python
-USER_FOLDER = "Hyunsoo"
-RUN_FILE = "previous/privious_LSTM_preprocessing/build_lstm_dataset_colab.py"
-```
+> SMOTE를 적용한 6개 모델 결합 방식과 14개 장기 라이프로그 요약 특징을 사용하는
+> 단일 XGBoost를 동일한 조건에서 비교하였다. 단일 XGBoost의 평균 AUC는
+> 0.712(95% 신뢰범위 0.635~0.784)였고, 기존 모델의 평균 AUC 0.715와 거의
+> 같았다. 복잡한 모델 결합으로 얻는 뚜렷한 성능 향상은 확인되지 않았다. 이에
+> 가상자료 생성과 모델 결합 과정이 필요 없고 재현이 쉬운 단일 XGBoost를 최종
+> 후보로 선정하였다. 향후 고정된 설정을 새로운 자료에서 검증해야 한다.
 
-Tree model 전처리 Colab 변환 파일 실행:
+## 결과와 재현 자료
 
-```python
-USER_FOLDER = "Hyunsoo"
-RUN_FILE = "previous/privious_TreeModel_preprocessing/build_rf_lgbm_binary_daily_colab.py"
-```
-
-## 데이터와 결과물
-
-아래 파일들은 로컬 실행에 필요할 수 있지만 Git에는 올리지 않습니다.
-
-- `*.csv`
-- `*.pkl`
-- `__pycache__/`
-- `.DS_Store`
-
-필요한 데이터 파일은 각자 로컬 또는 Google Drive에 준비해두고 실행합니다.
-
-## 최종 모델: `final_dementia_screening_model.py`
-
-Claude Code와의 세션에서 도출한 최종 확정 모델입니다. 문제를 "CN vs MCI+Dementia"가 아니라
-"CN+MCI(정상 취급) vs Dementia 스크리닝"으로 재정의하고, 통계적 이상치(`nia+219@rowan.kr`, 하루
-평균 2.8만보를 걷는 Dementia 환자) 1명을 제외한 뒤, leak-free nested CV(SHAP 랭킹과 threshold 모두
-outer-train 안에서만 결정)로 찾은 단일 피처 `activity_low_std`(저강도 활동시간의 일별 표준편차) +
-로지스틱회귀 모델입니다. 표본이 극히 작은 상황(Dementia 11명)에서는 LightGBM 등 복잡한 모델이나
-피처를 여러 개 섞는 조합이 오히려 분산이 커져 성능이 떨어짐을 확인했고, 가장 단순한 모델이 최종
-선택되었습니다.
-
-**성능 (173명, leak-free nested CV 20회 반복 평균)**:
-
-| ROC-AUC | Accuracy | Precision | Recall(민감도) | Specificity(특이도) | F1 |
-| --- | --- | --- | --- | --- | --- |
-| 0.9087 | 0.8514 | 0.2749 | 0.8136 | 0.8540 | 0.4108 |
-
-Precision이 낮은 것은 모델 결함이 아니라 클래스 불균형(양성 11명 : 음성 162명)의 산술적 한계입니다.
-
-실행 예시:
-
-```python
-USER_FOLDER = "Hyunsoo"
-RUN_FILE = "final_dementia_screening_model.py"
-```
-
-원본 데이터는 Google Drive `GoogleAI_contest/aihub_original_data` 아래 AIHub 원본 폴더 구조
-(`1.Training/{원천데이터,라벨링데이터}`, `2.Validation/{원천데이터,라벨링데이터}`)가 필요합니다.
-
-이 최종 모델까지 오는 과정에서 시도했던 실험 전체(이전 SOTA 수치가 leakage였음을 발견한 과정, 이상치
-탐색, 문제 재정의, 실패한 시도들 포함)는 [`EXPERIMENT_LOG.md`](./EXPERIMENT_LOG.md)에 기록되어 있습니다.
-결과만 보지 말고 "왜 이 방식을 골랐는지"가 궁금하다면 이 로그를 참고하세요.
-
-## 앞으로 작업할 때
-
-- 새 실험 코드는 가능하면 `.py` 파일로 작성합니다.
-- 자기 폴더인 `Hyunsoo/` 안에서만 파일을 수정합니다.
-- 다른 사용자 폴더는 건드리지 않습니다.
-- 노트북으로 실험했다면, 공유 전에는 실행할 코드 셀을 `.py` 파일로 옮겨둡니다.
-
+- [최종모델과 기존 모델의 성능 비교](final_model_requested_metrics.csv)
+- [두 모델의 혼동행렬](xgb_vs_rank6_smote_confusion_matrix.csv)
+- [class weight 전체 결과](results_xgb_class_weight_sensitivity/metric_summary.csv)
+- [class weight 실험 코드](xgb_class_weight_sensitivity.py)
+- [SHAP 분석과 임상적 해석](SHAP_임상해석.md)
+- [SHAP 분석 코드](xgb_oof_shap_analysis.py)
+- [전체 실험 코드](run_experiment.py)
+- [상세 실험 기록](실험결과_노트.md)
