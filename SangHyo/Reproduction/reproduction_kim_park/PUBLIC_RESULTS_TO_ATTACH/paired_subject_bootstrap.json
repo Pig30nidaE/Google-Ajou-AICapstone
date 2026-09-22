@@ -1,0 +1,365 @@
+{
+  "method": "Subjects resampled synchronously across all conditions; metrics computed for each repeat, then averaged across repeats. Percentile intervals use paired subject bootstrap draws.",
+  "n_bootstrap": 2000,
+  "conditions": {
+    "B_strict_tuned": {
+      "roc_auc": {
+        "bootstrap_mean": 0.5417043919720268,
+        "ci95_percentile": [
+          0.4683184742818414,
+          0.6186724225560641
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.5856518518518519,
+        "ci95_percentile": [
+          0.5283796296296297,
+          0.6407561728395061
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.32728733210252037,
+        "ci95_percentile": [
+          0.2472023809523809,
+          0.40455681818181816
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.7045172052586868,
+        "ci95_percentile": [
+          0.6411750962067069,
+          0.763797374961168
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.33487957917911704,
+        "ci95_percentile": [
+          0.23470009524094781,
+          0.4412557150154482
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.32830195785610694,
+        "ci95_percentile": [
+          0.24699860111454408,
+          0.4038105072175577
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.5159022686806036,
+        "ci95_percentile": [
+          0.46494424398006323,
+          0.5661557669873527
+        ]
+      }
+    },
+    "C_strict_fixed": {
+      "roc_auc": {
+        "bootstrap_mean": 0.5197198113627355,
+        "ci95_percentile": [
+          0.44370510668167157,
+          0.5973245345018219
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.5698203703703704,
+        "ci95_percentile": [
+          0.5117283950617284,
+          0.625925925925926
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.29679862938493423,
+        "ci95_percentile": [
+          0.22000000000000003,
+          0.3781953578336556
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.6954540017873109,
+        "ci95_percentile": [
+          0.6322283721282888,
+          0.757763253303255
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.30711595929876534,
+        "ci95_percentile": [
+          0.2102414043434569,
+          0.40938094337330555
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.2989840995293408,
+        "ci95_percentile": [
+          0.21978345027226426,
+          0.3783405819615526
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.4961263155861226,
+        "ci95_percentile": [
+          0.4464817530309558,
+          0.5484372047914868
+        ]
+      }
+    },
+    "F_no_rfe_fixed": {
+      "roc_auc": {
+        "bootstrap_mean": 0.533776225460585,
+        "ci95_percentile": [
+          0.44351000280411096,
+          0.621954672705806
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.5862885802469137,
+        "ci95_percentile": [
+          0.5234567901234567,
+          0.6487654320987655
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.34367277435216864,
+        "ci95_percentile": [
+          0.23518518518518522,
+          0.4521227134146339
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.6979356057507311,
+        "ci95_percentile": [
+          0.6267778361344538,
+          0.763392857142857
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.34328143414828,
+        "ci95_percentile": [
+          0.2343553979798141,
+          0.4648620217684234
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.34073978921062725,
+        "ci95_percentile": [
+          0.24270011547809542,
+          0.440151376244759
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.52080419005145,
+        "ci95_percentile": [
+          0.45695306699099764,
+          0.5850567827672014
+        ]
+      }
+    },
+    "G_global_rfe_fixed": {
+      "roc_auc": {
+        "bootstrap_mean": 0.824796622609491,
+        "ci95_percentile": [
+          0.7540739062287038,
+          0.8873588557470568
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.7920712962962962,
+        "ci95_percentile": [
+          0.7364197530864198,
+          0.8432098765432098
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.5836809812868058,
+        "ci95_percentile": [
+          0.4684168755221387,
+          0.696945652173913
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.8878900299677168,
+        "ci95_percentile": [
+          0.8330618514975346,
+          0.9383928571428571
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.7070712516987834,
+        "ci95_percentile": [
+          0.5793478394587849,
+          0.8296606751984408
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.6366409577433819,
+        "ci95_percentile": [
+          0.5340552820498305,
+          0.7297328826001799
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.7357855056272613,
+        "ci95_percentile": [
+          0.6708223039215687,
+          0.7981826298701298
+        ]
+      }
+    }
+  },
+  "differences": {
+    "G_minus_C_global_selection_effect": {
+      "roc_auc": {
+        "bootstrap_mean": 0.3050768112467555,
+        "ci95_percentile": [
+          0.24953349189296156,
+          0.361356492846886
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.2222509259259259,
+        "ci95_percentile": [
+          0.1728395061728396,
+          0.2740895061728395
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.2868823519018716,
+        "ci95_percentile": [
+          0.175,
+          0.4000000000000001
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.19243602818040587,
+        "ci95_percentile": [
+          0.1386755669032369,
+          0.2485450503584066
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.3999552924000181,
+        "ci95_percentile": [
+          0.30854058884883484,
+          0.5017665515998796
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.3376568582140412,
+        "ci95_percentile": [
+          0.24591804913921833,
+          0.4305238712189053
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.23965919004113875,
+        "ci95_percentile": [
+          0.17976425438596483,
+          0.30276810515873015
+        ]
+      }
+    },
+    "B_minus_C_nested_tuning_effect": {
+      "roc_auc": {
+        "bootstrap_mean": 0.021984580609291256,
+        "ci95_percentile": [
+          -0.006504709274285988,
+          0.0496791770729271
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.01583148148148148,
+        "ci95_percentile": [
+          -0.010509259259259498,
+          0.043209876543209735
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.03048870271758607,
+        "ci95_percentile": [
+          -0.019607843137254888,
+          0.08039454806312767
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.00906320347137595,
+        "ci95_percentile": [
+          -0.023215825123152737,
+          0.04313777563173983
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.027763619880351698,
+        "ci95_percentile": [
+          -0.014942358063333295,
+          0.0703795706561585
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.02931785832676608,
+        "ci95_percentile": [
+          -0.01408181054499802,
+          0.07397208459368543
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.019775953094481005,
+        "ci95_percentile": [
+          -0.009378816851972102,
+          0.0497642949770349
+        ]
+      }
+    },
+    "F_minus_C_no_rfe_effect": {
+      "roc_auc": {
+        "bootstrap_mean": 0.01405641409784944,
+        "ci95_percentile": [
+          -0.024689988152620322,
+          0.05638060101819254
+        ]
+      },
+      "accuracy": {
+        "bootstrap_mean": 0.016468209876543207,
+        "ci95_percentile": [
+          -0.016049382716049387,
+          0.04876543209876528
+        ]
+      },
+      "sensitivity": {
+        "bootstrap_mean": 0.04687414496723441,
+        "ci95_percentile": [
+          -0.017965116279069788,
+          0.11628875968992239
+        ]
+      },
+      "specificity": {
+        "bootstrap_mean": 0.0024816039634203493,
+        "ci95_percentile": [
+          -0.03303626770956326,
+          0.036844476055002365
+        ]
+      },
+      "precision": {
+        "bootstrap_mean": 0.03616547484951466,
+        "ci95_percentile": [
+          -0.015222159363470298,
+          0.0900401761577713
+        ]
+      },
+      "f1": {
+        "bootstrap_mean": 0.04175568968128644,
+        "ci95_percentile": [
+          -0.013605660248696947,
+          0.10076327637890352
+        ]
+      },
+      "balanced_accuracy": {
+        "bootstrap_mean": 0.024677874465327376,
+        "ci95_percentile": [
+          -0.012718782204173948,
+          0.06422952674867922
+        ]
+      }
+    }
+  }
+}

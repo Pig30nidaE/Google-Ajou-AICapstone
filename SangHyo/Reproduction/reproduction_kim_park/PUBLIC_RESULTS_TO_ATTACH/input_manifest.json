@@ -1,0 +1,35 @@
+{
+  "raw_sleep_rows": 12183,
+  "selected_raw_episode_rows": 11398,
+  "daily_rows_all_diagnoses": 12171,
+  "n_subjects": 162,
+  "class_counts": {
+    "CN": 111,
+    "MCI": 51
+  },
+  "n_exp11_candidates_before_fold_filter": 260,
+  "nights": {
+    "sum": 11387,
+    "mean": 70.29012345679013,
+    "min": 35,
+    "max": 122
+  },
+  "input_hashes": {
+    "train_sleep": {
+      "path": "/Users/pig30nidae/Google-Ajou-AI-Capstone/Data/1.Training/SourceData/2.Sleep/train_sleep.csv",
+      "sha256": "5ae5d788c93f4b124c7f1b8dc68eb432aa55c471e4de07008b6411b069169cbb"
+    },
+    "val_sleep": {
+      "path": "/Users/pig30nidae/Google-Ajou-AI-Capstone/Data/2.Validation/SourceData/2.Sleep/val_sleep.csv",
+      "sha256": "8e8cc5e8eec654f42dffe06cd5b54beb3475489de0ac8ae62d993848f9e28f37"
+    },
+    "train_label": {
+      "path": "/Users/pig30nidae/Google-Ajou-AI-Capstone/Data/1.Training/LabelingData/3.CognitiveFunction/training_label.csv",
+      "sha256": "f1b66a9cd4fcdb56ca9b0548364449147522e3e6b7ac2841673c9e97b8a480cd"
+    },
+    "val_label": {
+      "path": "/Users/pig30nidae/Google-Ajou-AI-Capstone/Data/2.Validation/LabelingData/3.CognitiveFunction/val_label.csv",
+      "sha256": "394272a6c7ec9a702b09984f6b33de81d5698b467edde4775a26716080b1b38c"
+    }
+  }
+}

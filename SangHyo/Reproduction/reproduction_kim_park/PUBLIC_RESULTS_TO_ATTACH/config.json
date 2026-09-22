@@ -1,0 +1,46 @@
+{
+  "created_at_utc": "2026-09-21T14:01:28.524249+00:00",
+  "experiment": "YMJ Exp.11 targeted nested-cause audit",
+  "mode": "full",
+  "conditions": [
+    "B_strict_tuned",
+    "C_strict_fixed",
+    "F_no_rfe_fixed",
+    "G_global_rfe_fixed"
+  ],
+  "repeats": 10,
+  "outer_folds": 10,
+  "inner_folds": 5,
+  "base_seed": 42,
+  "threshold": 0.5,
+  "minimum_nights": 35,
+  "fold_local_missing_threshold": 0.2,
+  "rfe_step": 5,
+  "fixed": {
+    "C": 1.0,
+    "class_weight": null,
+    "k": 30
+  },
+  "grid": {
+    "C": [
+      0.1,
+      0.3,
+      1.0,
+      3.0
+    ],
+    "class_weight": [
+      null,
+      "balanced"
+    ],
+    "k": [
+      20,
+      30,
+      50
+    ]
+  },
+  "bootstrap": 2000,
+  "script": {
+    "path": "/Users/pig30nidae/Google-Ajou-AI-Capstone/ymj_nested_cause_experiment.py",
+    "sha256": "3197246dcab0a6206e4e13ce416a00a04c92824b84476923759f118b962f6f68"
+  }
+}

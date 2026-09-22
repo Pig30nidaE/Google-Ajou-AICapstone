@@ -1,0 +1,15 @@
+{
+  "python": "3.12.14 (main, Aug 12 2026, 13:57:54) [Clang 21.0.0 (clang-2100.1.1.101)]",
+  "executable": "/Users/pig30nidae/Google-Ajou-AI-Capstone/.venv/bin/python",
+  "platform": "macOS-26.4-arm64-arm-64bit",
+  "cpu_count": 10,
+  "packages": {
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "tqdm": "4.70.1"
+  },
+  "git_commit": null,
+  "git_dirty_at_run": null
+}

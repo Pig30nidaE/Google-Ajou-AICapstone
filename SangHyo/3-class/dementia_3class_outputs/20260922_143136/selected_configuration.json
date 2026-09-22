@@ -1,0 +1,11 @@
+{
+  "family": "MultinomialLogistic",
+  "view": "summary",
+  "k": "all",
+  "clip_quantile": null,
+  "model_params": {
+    "C": 0.0029737304168642323,
+    "class_weight": "balanced"
+  },
+  "candidate_id": "candidate_02"
+}

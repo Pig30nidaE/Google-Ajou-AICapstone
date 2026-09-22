@@ -1,0 +1,5274 @@
+{
+  "B_strict_tuned": {
+    "Sleep_RMSSD_tbcr": {
+      "selected_models": 97,
+      "selection_frequency": 0.97,
+      "mean": -0.47024203306511275,
+      "sd": 0.31888359906848623,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_tbv": {
+      "selected_models": 95,
+      "selection_frequency": 0.95,
+      "mean": -0.4395149631655483,
+      "sd": 0.28888940634966853,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_kurtosis": {
+      "selected_models": 95,
+      "selection_frequency": 0.95,
+      "mean": -0.4361621357056019,
+      "sd": 0.3738176097315673,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_kurtosis": {
+      "selected_models": 91,
+      "selection_frequency": 0.91,
+      "mean": -0.3840819514545849,
+      "sd": 0.18282974638923075,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mode": {
+      "selected_models": 88,
+      "selection_frequency": 0.88,
+      "mean": -0.36441324747729986,
+      "sd": 0.14265319147987185,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_min": {
+      "selected_models": 87,
+      "selection_frequency": 0.87,
+      "mean": 0.35106750499394956,
+      "sd": 0.19128079493188083,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_tbv": {
+      "selected_models": 83,
+      "selection_frequency": 0.83,
+      "mean": -0.33658804620714344,
+      "sd": 0.153938781957863,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_stv": {
+      "selected_models": 73,
+      "selection_frequency": 0.73,
+      "mean": 0.3429086513187359,
+      "sd": 0.23946961350888707,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_range": {
+      "selected_models": 73,
+      "selection_frequency": 0.73,
+      "mean": 0.39792500018130195,
+      "sd": 0.3217403334138263,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_kurtosis": {
+      "selected_models": 73,
+      "selection_frequency": 0.73,
+      "mean": -0.35580602492916263,
+      "sd": 0.2759025167721143,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_mode": {
+      "selected_models": 68,
+      "selection_frequency": 0.68,
+      "mean": 0.36128642297397945,
+      "sd": 0.2620486792648553,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_tbcr": {
+      "selected_models": 67,
+      "selection_frequency": 0.67,
+      "mean": -0.2864768331501382,
+      "sd": 0.11810121611751857,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_tbv": {
+      "selected_models": 67,
+      "selection_frequency": 0.67,
+      "mean": 0.3544180413761905,
+      "sd": 0.22001595313444852,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_max": {
+      "selected_models": 65,
+      "selection_frequency": 0.65,
+      "mean": 0.3369629894455308,
+      "sd": 0.2697642068959091,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_range": {
+      "selected_models": 59,
+      "selection_frequency": 0.59,
+      "mean": 0.3502901756856658,
+      "sd": 0.27156633756495274,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_max": {
+      "selected_models": 58,
+      "selection_frequency": 0.58,
+      "mean": 0.3504450457677667,
+      "sd": 0.2739814666537668,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_range": {
+      "selected_models": 54,
+      "selection_frequency": 0.54,
+      "mean": 0.25270968508406855,
+      "sd": 0.1025495646926358,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_tbcr": {
+      "selected_models": 53,
+      "selection_frequency": 0.53,
+      "mean": -0.30312621599693634,
+      "sd": 0.2512425058058463,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_trimmed_mean": {
+      "selected_models": 52,
+      "selection_frequency": 0.52,
+      "mean": -0.33571960758235336,
+      "sd": 0.31557811754432047,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_kurtosis": {
+      "selected_models": 52,
+      "selection_frequency": 0.52,
+      "mean": -0.28904915119866453,
+      "sd": 0.20678213522141506,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_mad": {
+      "selected_models": 49,
+      "selection_frequency": 0.49,
+      "mean": 0.312048343610931,
+      "sd": 0.1991218180271191,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_min": {
+      "selected_models": 49,
+      "selection_frequency": 0.49,
+      "mean": 0.2595274051296088,
+      "sd": 0.1282172134475605,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_trimmed_mean": {
+      "selected_models": 43,
+      "selection_frequency": 0.43,
+      "mean": -0.30049661874613964,
+      "sd": 0.1866951278600358,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_tbv": {
+      "selected_models": 42,
+      "selection_frequency": 0.42,
+      "mean": 0.3381030958543882,
+      "sd": 0.2599997490556997,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_mad": {
+      "selected_models": 40,
+      "selection_frequency": 0.4,
+      "mean": -0.3100221915677681,
+      "sd": 0.2561377607073698,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_median": {
+      "selected_models": 40,
+      "selection_frequency": 0.4,
+      "mean": -0.2740253965909683,
+      "sd": 0.137443781897205,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_rcv": {
+      "selected_models": 39,
+      "selection_frequency": 0.39,
+      "mean": -0.27421682108668977,
+      "sd": 0.23337873865259218,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_tbv": {
+      "selected_models": 39,
+      "selection_frequency": 0.39,
+      "mean": -0.5744987316663879,
+      "sd": 0.5217812929963013,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_trimmed_mean": {
+      "selected_models": 38,
+      "selection_frequency": 0.38,
+      "mean": -0.26185575177965,
+      "sd": 0.13273554380612806,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mr": {
+      "selected_models": 35,
+      "selection_frequency": 0.35,
+      "mean": 0.32001628548059774,
+      "sd": 0.25689390468674095,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_mode": {
+      "selected_models": 35,
+      "selection_frequency": 0.35,
+      "mean": 0.28390262319047044,
+      "sd": 0.15847786784200207,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_min": {
+      "selected_models": 32,
+      "selection_frequency": 0.32,
+      "mean": -0.30056125156934643,
+      "sd": 0.19289160334006678,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_median": {
+      "selected_models": 31,
+      "selection_frequency": 0.31,
+      "mean": -0.30763687070915696,
+      "sd": 0.21400204134116543,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_max": {
+      "selected_models": 30,
+      "selection_frequency": 0.3,
+      "mean": -0.27466895299938743,
+      "sd": 0.19752850764067278,
+      "positive_fraction": 0.03333333333333333,
+      "negative_fraction": 0.9666666666666667
+    },
+    "Sleep_bedtime_start_num_range": {
+      "selected_models": 30,
+      "selection_frequency": 0.3,
+      "mean": -0.26411521070486316,
+      "sd": 0.19134040028523983,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_tbcr": {
+      "selected_models": 29,
+      "selection_frequency": 0.29,
+      "mean": 0.30070252780195417,
+      "sd": 0.1937436602048663,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_mode": {
+      "selected_models": 28,
+      "selection_frequency": 0.28,
+      "mean": -0.26419986007897184,
+      "sd": 0.18857662695266691,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_rcv": {
+      "selected_models": 28,
+      "selection_frequency": 0.28,
+      "mean": 0.21041792586672095,
+      "sd": 0.06402348320174163,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_tbv": {
+      "selected_models": 27,
+      "selection_frequency": 0.27,
+      "mean": -0.1997224918964744,
+      "sd": 0.06943990226740854,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_tbcr": {
+      "selected_models": 27,
+      "selection_frequency": 0.27,
+      "mean": -0.3390765814378973,
+      "sd": 0.22031300079152852,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_mr": {
+      "selected_models": 26,
+      "selection_frequency": 0.26,
+      "mean": -0.5073015413900205,
+      "sd": 0.5162560327421526,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_rcv": {
+      "selected_models": 26,
+      "selection_frequency": 0.26,
+      "mean": 0.40896648899393206,
+      "sd": 0.28227105364258925,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_kurtosis": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": -0.23388372773161134,
+      "sd": 0.12586771543305397,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_mr": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": -0.3186465752854464,
+      "sd": 0.20357615499299128,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_tbv": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": 0.2823620154326447,
+      "sd": 0.19219369967281644,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_mr": {
+      "selected_models": 23,
+      "selection_frequency": 0.23,
+      "mean": -0.3706887601627038,
+      "sd": 0.2610593290731565,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_tbcr": {
+      "selected_models": 23,
+      "selection_frequency": 0.23,
+      "mean": 0.2843227228425619,
+      "sd": 0.2085123658686125,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_trimmed_mean": {
+      "selected_models": 21,
+      "selection_frequency": 0.21,
+      "mean": -0.3616889890974482,
+      "sd": 0.36963961762176845,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_median": {
+      "selected_models": 20,
+      "selection_frequency": 0.2,
+      "mean": 0.215935886381401,
+      "sd": 0.07907254513832698,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_tbv": {
+      "selected_models": 20,
+      "selection_frequency": 0.2,
+      "mean": 0.19073866297343156,
+      "sd": 0.09893004357881835,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_max": {
+      "selected_models": 20,
+      "selection_frequency": 0.2,
+      "mean": -0.21882022415535657,
+      "sd": 0.07053872002491499,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_mode": {
+      "selected_models": 19,
+      "selection_frequency": 0.19,
+      "mean": 0.21617866084110451,
+      "sd": 0.10548179612461679,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_range": {
+      "selected_models": 18,
+      "selection_frequency": 0.18,
+      "mean": -0.22166201156458748,
+      "sd": 0.11243172083875949,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_mode": {
+      "selected_models": 18,
+      "selection_frequency": 0.18,
+      "mean": 0.31255546874411094,
+      "sd": 0.25016755122861906,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_mr": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": -0.3257295229396624,
+      "sd": 0.2866570784938366,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_min": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": -0.40991013570912765,
+      "sd": 0.40504298088661,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_rcv": {
+      "selected_models": 16,
+      "selection_frequency": 0.16,
+      "mean": -0.3909552620307224,
+      "sd": 0.44644724121150803,
+      "positive_fraction": 0.0625,
+      "negative_fraction": 0.9375
+    },
+    "TST_range": {
+      "selected_models": 16,
+      "selection_frequency": 0.16,
+      "mean": 0.43686127649147216,
+      "sd": 0.2788766938353988,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_median": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": -0.3315391349811242,
+      "sd": 0.3618989875642758,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_median": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": -0.471486513238694,
+      "sd": 0.3972097224050892,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_tbcr": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": 0.2833141891145951,
+      "sd": 0.15772721250057534,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_tbv": {
+      "selected_models": 13,
+      "selection_frequency": 0.13,
+      "mean": 0.195734243077537,
+      "sd": 0.12290338810197807,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_rcv": {
+      "selected_models": 13,
+      "selection_frequency": 0.13,
+      "mean": 0.3247577070139541,
+      "sd": 0.26184914072609294,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_tbcr": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -1.1169405309289264,
+      "sd": 0.5987159182509726,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_kurtosis": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -0.24493729734142455,
+      "sd": 0.13485392477571248,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_rcv": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -0.20739652368402264,
+      "sd": 0.11121667550920881,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_rcv": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -0.23858752073436298,
+      "sd": 0.07857619651997498,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_tbv": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": 0.33513496066872095,
+      "sd": 0.348240446279545,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_mad": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": -0.5806888333602974,
+      "sd": 0.4127108454223802,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_trimmed_mean": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": 0.2192596152051218,
+      "sd": 0.07313928093105676,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_tbv": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": 0.22900298886558434,
+      "sd": 0.09237759952026997,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_tbv": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.6470215579936938,
+      "sd": 0.3296988054937374,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_mr": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": -0.2880722764831918,
+      "sd": 0.2556696179166943,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_trimmed_mean": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": -0.2939386047081384,
+      "sd": 0.21029916689311676,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_stv": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.6682248353858659,
+      "sd": 0.4658136328363609,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_min": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.24713281555316566,
+      "sd": 0.10940256163404176,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_mode": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": -0.2377067106457694,
+      "sd": 0.11838782776424557,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_rcv": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.1931877792737057,
+      "sd": 0.11658324691657039,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_kurtosis": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.3168299425662266,
+      "sd": 0.25848324986940907,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_min": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": 0.2747081302006361,
+      "sd": 0.25760774409565557,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_kurtosis": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.2398536764916544,
+      "sd": 0.20483630131415484,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_tbcr": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.2510292883573974,
+      "sd": 0.164237455063845,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_range": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.19699045960726677,
+      "sd": 0.03312662204865987,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_min": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.2678230998555684,
+      "sd": 0.18995308250509732,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_kurtosis": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.24750691084048415,
+      "sd": 0.1639966754751021,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_stv": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.19490914230562814,
+      "sd": 0.05955263045128473,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_tbv": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": 0.1389126552067805,
+      "sd": 0.30998247431750736,
+      "positive_fraction": 0.875,
+      "negative_fraction": 0.125
+    },
+    "Sleep_hr_average_kurtosis": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.218544542578433,
+      "sd": 0.09973994335166489,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_range": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.42844859524114504,
+      "sd": 0.2795827389817653,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_range": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.3189909048475973,
+      "sd": 0.2347261513621699,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_stv": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.27866765124668824,
+      "sd": 0.1548817734479929,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_mode": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.24263248848061017,
+      "sd": 0.10674084626670985,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_mr": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": 0.5556883636932733,
+      "sd": 0.58633101958418,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_tbcr": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.4653724945987349,
+      "sd": 0.41264393861573495,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_mad": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.6300259253987631,
+      "sd": 0.31060089987601397,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_tbv": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.09990303204272734,
+      "sd": 0.30290831077902913,
+      "positive_fraction": 0.16666666666666666,
+      "negative_fraction": 0.8333333333333334
+    },
+    "Sleep_bedtime_start_num_kurtosis": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": 0.6334534450153312,
+      "sd": 0.3144198329168829,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_mad": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.6571000767636166,
+      "sd": 0.31225592098527244,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_mode": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": 0.806196928560866,
+      "sd": 0.3429758513141465,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_stv": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": 0.4013535891820111,
+      "sd": 0.2943611860887477,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_mr": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.19933801060258935,
+      "sd": 0.12704465410559218,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mad": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.21934855339079995,
+      "sd": 0.1612393349811043,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_mad": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.4537589028960552,
+      "sd": 0.23685384119360686,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_max": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.28768466906334245,
+      "sd": 0.25060545160730513,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_tbcr": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.5432160222946615,
+      "sd": 0.27253429182526995,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_min": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.20620334308537758,
+      "sd": 0.02904001740683162,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_kurtosis": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.17557578527062967,
+      "sd": 0.025688366824019173,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_min": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.6422349214358091,
+      "sd": 0.5244817731977841,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_stv": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.5500474063174113,
+      "sd": 0.2524903411492387,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_mr": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.12779654285144915,
+      "sd": 0.02126097710017502,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_trimmed_mean": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.5522029969311453,
+      "sd": 0.5499559349349177,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_kurtosis": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.2513775701663673,
+      "sd": 0.19711456482743803,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_mode": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.394589954498889,
+      "sd": 0.3074286120599761,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_rcv": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.3965732197302584,
+      "sd": 0.3417891319456483,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_tbcr": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.2704845252284737,
+      "sd": 0.1432321657924482,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_mad": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.7320695088842827,
+      "sd": 0.5548850602167354,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_kurtosis": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.0929147675778473,
+      "sd": 0.2051557744867911,
+      "positive_fraction": 0.3333333333333333,
+      "negative_fraction": 0.6666666666666666
+    },
+    "HR_drop_ratio_range": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.508440232460769,
+      "sd": 0.21062129466761417,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_trimmed_mean": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.21287614959504653,
+      "sd": 0.052354845148469734,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_kurtosis": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.14761444999386877,
+      "sd": 0.24043762641095262,
+      "positive_fraction": 0.6666666666666666,
+      "negative_fraction": 0.3333333333333333
+    },
+    "NREM_proportion_range": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.38650588328129737,
+      "sd": 0.3247092376708284,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_max": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.1336341300983057,
+      "sd": 0.0330540770256932,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_max": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.4043442431209498,
+      "sd": 0.39003645539677567,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_median": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -1.049449013112176,
+      "sd": 0.6524253694720084,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_rcv": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.5239591375962306,
+      "sd": 0.18106712906108272,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_mode": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.5751856443067292,
+      "sd": 0.24555424800901277,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_mr": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.4321458839552685,
+      "sd": 0.08492774819713164,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_mr": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.7791850335406547,
+      "sd": 0.032973587450010916,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_max": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.884759546332616,
+      "sd": 0.5838699915832273,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_kurtosis": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.0751010660050825,
+      "sd": 0.5139018124577904,
+      "positive_fraction": 0.6666666666666666,
+      "negative_fraction": 0.3333333333333333
+    },
+    "HR_drop_ratio_min": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.12367477101693894,
+      "sd": 0.010549191336344164,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_stv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.7583254933394232,
+      "sd": 0.05168593443085783,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_max": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.3037546073534353,
+      "sd": 0.2063502006979477,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_trimmed_mean": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.16056372115014633,
+      "sd": 0.03566792592513715,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_mode": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.7170810075101391,
+      "sd": 0.21464495394684585,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_mr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.1657430554050865,
+      "sd": 0.04339580002490615,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_range": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.14743269827265362,
+      "sd": 0.023694554456478046,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_mad": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.11793247301068703,
+      "sd": 0.017738323556424986,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_tbcr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.23545594592390368,
+      "sd": 0.1550848585323943,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_rcv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.42274840518509776,
+      "sd": 0.4106322869104801,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_max": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.7549092548529253,
+      "sd": 0.10047414446540896,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_min": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.3779811315179298,
+      "sd": 0.3293447315317561,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_tbv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.8160762864632354,
+      "sd": 0.5009126623386349,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_mad": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.21918184029365584,
+      "sd": 0.11398576171548747,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_rcv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.2784718045348775,
+      "sd": 0.17930266158925742,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_tbv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.7036825723813576,
+      "sd": 0.5065457137233764,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_median": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.12283935850590372,
+      "sd": 0.017382549339487883,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_rcv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -1.2442172824644184,
+      "sd": 0.3299521825132734,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.8627200684954501,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.24844060018290956,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_tbv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.14159336088727242,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.20691374608717733,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.2924525536047708,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.13814506407245378,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_stv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.16255636043658891,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_mode": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.6212635268621262,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_mr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.9348926487832915,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_rcv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.7839576861696256,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.15784298114071144,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5800609214686085,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_mad": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.3366166435210293,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.15784298114071132,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_mr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.15550897449701737,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5519507093461591,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.1477593134390588,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_tbv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.17315433695218477,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.15928386219168883,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.12295748721963061,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 1.1039680139241665,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_stv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.13538362135845164,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_mad": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.5333468634818527,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.6402752266240195,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.4226883180358288,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.716546681955154,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.13951195679090142,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_mad": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.18012898068066313,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.6345798688000808,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_mr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.24749534387707844,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_stv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.6603865170452948,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.2891373343901244,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_mode": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.1482893607363977,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.555490760373928,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_trimmed_mean": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.1159019833857428,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    }
+  },
+  "C_strict_fixed": {
+    "N3_ratio_tbv": {
+      "selected_models": 95,
+      "selection_frequency": 0.95,
+      "mean": -0.845349097449672,
+      "sd": 0.2317764010082725,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_tbcr": {
+      "selected_models": 93,
+      "selection_frequency": 0.93,
+      "mean": -0.9179379134851652,
+      "sd": 0.25947184089276615,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_kurtosis": {
+      "selected_models": 85,
+      "selection_frequency": 0.85,
+      "mean": -0.7333874152816013,
+      "sd": 0.20844521323431434,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_range": {
+      "selected_models": 81,
+      "selection_frequency": 0.81,
+      "mean": 0.7511906547672452,
+      "sd": 0.22564167016916595,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_kurtosis": {
+      "selected_models": 81,
+      "selection_frequency": 0.81,
+      "mean": -0.7323441107081183,
+      "sd": 0.1883375874367953,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_kurtosis": {
+      "selected_models": 76,
+      "selection_frequency": 0.76,
+      "mean": -0.7456765772017905,
+      "sd": 0.20069274312875449,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_min": {
+      "selected_models": 74,
+      "selection_frequency": 0.74,
+      "mean": 0.7790178703509115,
+      "sd": 0.20311349433351686,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_range": {
+      "selected_models": 72,
+      "selection_frequency": 0.72,
+      "mean": 0.6506188965477144,
+      "sd": 0.12254037344890684,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_mr": {
+      "selected_models": 72,
+      "selection_frequency": 0.72,
+      "mean": -0.6589294231673273,
+      "sd": 0.19034954279153646,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_max": {
+      "selected_models": 67,
+      "selection_frequency": 0.67,
+      "mean": 0.7931884732497487,
+      "sd": 0.19592159116728816,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_max": {
+      "selected_models": 64,
+      "selection_frequency": 0.64,
+      "mean": 0.6315327044849023,
+      "sd": 0.11638113092522485,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_tbv": {
+      "selected_models": 63,
+      "selection_frequency": 0.63,
+      "mean": 0.7588615449367053,
+      "sd": 0.2532485670806516,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_stv": {
+      "selected_models": 61,
+      "selection_frequency": 0.61,
+      "mean": 0.7361515949082473,
+      "sd": 0.22342517057013955,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_mode": {
+      "selected_models": 61,
+      "selection_frequency": 0.61,
+      "mean": 0.6428505546899024,
+      "sd": 0.1832988951053837,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_mode": {
+      "selected_models": 55,
+      "selection_frequency": 0.55,
+      "mean": -0.6800272415292935,
+      "sd": 0.15743846531486486,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_tbv": {
+      "selected_models": 54,
+      "selection_frequency": 0.54,
+      "mean": -0.6955096639381232,
+      "sd": 0.21531474967784478,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_trimmed_mean": {
+      "selected_models": 52,
+      "selection_frequency": 0.52,
+      "mean": -0.6838257383916422,
+      "sd": 0.23746645579755576,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_tbv": {
+      "selected_models": 50,
+      "selection_frequency": 0.5,
+      "mean": -0.7080648401425503,
+      "sd": 0.20401166296042444,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_kurtosis": {
+      "selected_models": 47,
+      "selection_frequency": 0.47,
+      "mean": -0.682538605031998,
+      "sd": 0.22312396856222105,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Daily_sleep_count_tbcr": {
+      "selected_models": 45,
+      "selection_frequency": 0.45,
+      "mean": -0.8379348722833575,
+      "sd": 0.17368970530412628,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_mad": {
+      "selected_models": 45,
+      "selection_frequency": 0.45,
+      "mean": -0.628915238341656,
+      "sd": 0.18272459345645484,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_rcv": {
+      "selected_models": 43,
+      "selection_frequency": 0.43,
+      "mean": 0.666840650514565,
+      "sd": 0.2360835235011268,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_tbcr": {
+      "selected_models": 41,
+      "selection_frequency": 0.41,
+      "mean": -0.6103266772695822,
+      "sd": 0.1752959618165282,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_trimmed_mean": {
+      "selected_models": 38,
+      "selection_frequency": 0.38,
+      "mean": -0.6606651617083336,
+      "sd": 0.23357750586862452,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_mad": {
+      "selected_models": 38,
+      "selection_frequency": 0.38,
+      "mean": 0.6594855020854699,
+      "sd": 0.17016484542944146,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_kurtosis": {
+      "selected_models": 35,
+      "selection_frequency": 0.35,
+      "mean": 0.6622861524823637,
+      "sd": 0.1973601142171015,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_range": {
+      "selected_models": 35,
+      "selection_frequency": 0.35,
+      "mean": 0.7249968918653035,
+      "sd": 0.1828535843897853,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_tbcr": {
+      "selected_models": 34,
+      "selection_frequency": 0.34,
+      "mean": -0.6413711418510186,
+      "sd": 0.1559141872227442,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mr": {
+      "selected_models": 33,
+      "selection_frequency": 0.33,
+      "mean": 0.6284208995098214,
+      "sd": 0.18560957163423203,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_median": {
+      "selected_models": 33,
+      "selection_frequency": 0.33,
+      "mean": -0.6570018730457237,
+      "sd": 0.2512040444210081,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_tbcr": {
+      "selected_models": 31,
+      "selection_frequency": 0.31,
+      "mean": -0.5633151110375139,
+      "sd": 0.17298470593938733,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_mr": {
+      "selected_models": 31,
+      "selection_frequency": 0.31,
+      "mean": -0.7658359209445067,
+      "sd": 0.22190964848890973,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_mad": {
+      "selected_models": 30,
+      "selection_frequency": 0.3,
+      "mean": -0.7901713634927997,
+      "sd": 0.20689051133706873,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_tbv": {
+      "selected_models": 29,
+      "selection_frequency": 0.29,
+      "mean": 0.7156906852910621,
+      "sd": 0.20071069559439692,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_range": {
+      "selected_models": 29,
+      "selection_frequency": 0.29,
+      "mean": 0.7476397676473487,
+      "sd": 0.23986364625451498,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_tbcr": {
+      "selected_models": 28,
+      "selection_frequency": 0.28,
+      "mean": 0.660860026106647,
+      "sd": 0.12703284818679458,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_max": {
+      "selected_models": 27,
+      "selection_frequency": 0.27,
+      "mean": -0.6652143312254658,
+      "sd": 0.2169070699091658,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_range": {
+      "selected_models": 27,
+      "selection_frequency": 0.27,
+      "mean": -0.6765078665219396,
+      "sd": 0.21541778932030198,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_tbv": {
+      "selected_models": 26,
+      "selection_frequency": 0.26,
+      "mean": 0.6583520002746337,
+      "sd": 0.1730160308247568,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_mr": {
+      "selected_models": 25,
+      "selection_frequency": 0.25,
+      "mean": -0.6860382039505207,
+      "sd": 0.21678076672268107,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_rcv": {
+      "selected_models": 25,
+      "selection_frequency": 0.25,
+      "mean": -0.6446143173284723,
+      "sd": 0.148568553692551,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_rcv": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": -0.6340321837876993,
+      "sd": 0.17869342251547268,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_stv": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": 0.8130623541218821,
+      "sd": 0.17346061623103384,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_mad": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": -0.6616862909875848,
+      "sd": 0.12739083564885328,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_tbcr": {
+      "selected_models": 24,
+      "selection_frequency": 0.24,
+      "mean": 0.56858788277605,
+      "sd": 0.1818218519707647,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_trimmed_mean": {
+      "selected_models": 23,
+      "selection_frequency": 0.23,
+      "mean": -0.6849430937305847,
+      "sd": 0.1759960085144748,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_mr": {
+      "selected_models": 23,
+      "selection_frequency": 0.23,
+      "mean": 0.5792736400207912,
+      "sd": 0.1760891846409833,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_min": {
+      "selected_models": 21,
+      "selection_frequency": 0.21,
+      "mean": 0.6153756628690824,
+      "sd": 0.14660329125788493,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_median": {
+      "selected_models": 21,
+      "selection_frequency": 0.21,
+      "mean": -0.7228586144436192,
+      "sd": 0.14995255573688063,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_mad": {
+      "selected_models": 19,
+      "selection_frequency": 0.19,
+      "mean": -0.5422804375524675,
+      "sd": 0.23912573521866967,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_min": {
+      "selected_models": 18,
+      "selection_frequency": 0.18,
+      "mean": -0.6268969941604422,
+      "sd": 0.19054584897323606,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_median": {
+      "selected_models": 18,
+      "selection_frequency": 0.18,
+      "mean": -0.6818830906880857,
+      "sd": 0.14754975643360205,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_tbv": {
+      "selected_models": 18,
+      "selection_frequency": 0.18,
+      "mean": 0.6627273924876736,
+      "sd": 0.16635716145021992,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_min": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": 0.559293865876575,
+      "sd": 0.15952201924176973,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_rcv": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": 0.6072709664148707,
+      "sd": 0.15778386293815738,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_mad": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": -0.6409372649493681,
+      "sd": 0.20533479178981182,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_tbcr": {
+      "selected_models": 17,
+      "selection_frequency": 0.17,
+      "mean": 0.5850768806037759,
+      "sd": 0.11257285194712463,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_mode": {
+      "selected_models": 16,
+      "selection_frequency": 0.16,
+      "mean": -0.5883772852225579,
+      "sd": 0.10946643235431588,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_tbv": {
+      "selected_models": 16,
+      "selection_frequency": 0.16,
+      "mean": 0.5216655417847811,
+      "sd": 0.1213404504429368,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_min": {
+      "selected_models": 15,
+      "selection_frequency": 0.15,
+      "mean": 0.5424498669769897,
+      "sd": 0.12587299983000003,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_mode": {
+      "selected_models": 15,
+      "selection_frequency": 0.15,
+      "mean": 0.5483325343508999,
+      "sd": 0.09250720982166044,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_mr": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": -0.5815410239054194,
+      "sd": 0.19039470150831764,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_min": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": -0.6130423637261693,
+      "sd": 0.16695513302916107,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_mr": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": 0.5868034752970919,
+      "sd": 0.2448809249774691,
+      "positive_fraction": 0.9285714285714286,
+      "negative_fraction": 0.07142857142857142
+    },
+    "WASO_mr": {
+      "selected_models": 14,
+      "selection_frequency": 0.14,
+      "mean": -0.7847654397769022,
+      "sd": 0.22934428401934576,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_mode": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": 0.6740005082298303,
+      "sd": 0.11748619820784845,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_mode": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -0.6728205318692521,
+      "sd": 0.1264605068901263,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_mode": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": 0.6723886525036763,
+      "sd": 0.19097306163592265,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_tbv": {
+      "selected_models": 12,
+      "selection_frequency": 0.12,
+      "mean": -0.17584731875210644,
+      "sd": 0.6403817091731775,
+      "positive_fraction": 0.3333333333333333,
+      "negative_fraction": 0.6666666666666666
+    },
+    "HR_drop_per_hour_nrem_median": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": -0.599867757667038,
+      "sd": 0.13268951556886438,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_trimmed_mean": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": -0.5924785147185653,
+      "sd": 0.20886297411785382,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_median": {
+      "selected_models": 11,
+      "selection_frequency": 0.11,
+      "mean": -0.7914190961540108,
+      "sd": 0.15807312943272211,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_mad": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": -0.6274392889011768,
+      "sd": 0.1961073503377621,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_kurtosis": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": -0.6147013719339391,
+      "sd": 0.23809294217162394,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_tbcr": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.6354787317720836,
+      "sd": 0.16346166162915096,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_mode": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.6653903072612015,
+      "sd": 0.15153599372590862,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_tbv": {
+      "selected_models": 10,
+      "selection_frequency": 0.1,
+      "mean": 0.6504250293752009,
+      "sd": 0.17917103106741655,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_mode": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": -0.399472867741294,
+      "sd": 0.36740936123981005,
+      "positive_fraction": 0.1111111111111111,
+      "negative_fraction": 0.8888888888888888
+    },
+    "NREM_proportion_trimmed_mean": {
+      "selected_models": 9,
+      "selection_frequency": 0.09,
+      "mean": 0.5698916422785094,
+      "sd": 0.147056061370404,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_tbcr": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": 0.5253111083981019,
+      "sd": 0.06956359094626825,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_rcv": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": 0.585083788396672,
+      "sd": 0.15791461971753123,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_kurtosis": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.6197815310854489,
+      "sd": 0.0999960842862637,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_mode": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.543413628205832,
+      "sd": 0.13080136190109531,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_median": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.6025987160106662,
+      "sd": 0.14957854486644878,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_rcv": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": -0.6900038580648683,
+      "sd": 0.1896658464019037,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_trimmed_mean": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": 0.5190987218366658,
+      "sd": 0.1146871777386759,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_tbv": {
+      "selected_models": 8,
+      "selection_frequency": 0.08,
+      "mean": 0.5881705491280753,
+      "sd": 0.13972204078718384,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_range": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.6311643310227966,
+      "sd": 0.06484563801725708,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_stv": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.7680855440778197,
+      "sd": 0.15893432437979196,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_stv": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.608672447652023,
+      "sd": 0.1539812193639707,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_min": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.5964271288111334,
+      "sd": 0.16235331792567517,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_mode": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.6226110347745902,
+      "sd": 0.13157340449315785,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_rcv": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": 0.7457133088679099,
+      "sd": 0.18084029878369848,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_rcv": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.6764127193515745,
+      "sd": 0.22117079772669782,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_tbcr": {
+      "selected_models": 7,
+      "selection_frequency": 0.07,
+      "mean": -0.6493085638668015,
+      "sd": 0.12982093830608707,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_tbv": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.6549487602414804,
+      "sd": 0.18413245679268117,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_stv": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.7256476303492615,
+      "sd": 0.19231641585001322,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_tbv": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": 0.48470652205122206,
+      "sd": 0.05472195398216727,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_tbcr": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.5853515302108957,
+      "sd": 0.1326825469013528,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_trimmed_mean": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.7958541419157408,
+      "sd": 0.16542474192491652,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_range": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.5480091282088594,
+      "sd": 0.10780112766714485,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_mode": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.18856311556769087,
+      "sd": 0.5365676285053467,
+      "positive_fraction": 0.3333333333333333,
+      "negative_fraction": 0.6666666666666666
+    },
+    "Sleep_hr_average_tbcr": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": -0.4613119503944505,
+      "sd": 0.6065046212749322,
+      "positive_fraction": 0.16666666666666666,
+      "negative_fraction": 0.8333333333333334
+    },
+    "Sleep_midpoint_time_max": {
+      "selected_models": 6,
+      "selection_frequency": 0.06,
+      "mean": 0.6187057945923443,
+      "sd": 0.269238771734552,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_tbv": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.5845716148669224,
+      "sd": 0.11257123999821174,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_median": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.7349543218944545,
+      "sd": 0.2598210012334151,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_min": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.43871446592729313,
+      "sd": 0.6162380359606932,
+      "positive_fraction": 0.8,
+      "negative_fraction": 0.2
+    },
+    "NREM_proportion_range": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.32469308379894557,
+      "sd": 0.3849085945043619,
+      "positive_fraction": 0.6,
+      "negative_fraction": 0.4
+    },
+    "SE_mode": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.6624051002950748,
+      "sd": 0.1315430847079522,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_tbv": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.5640727148520901,
+      "sd": 0.07864986415933593,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_max": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.38414253655331204,
+      "sd": 0.5158077493634922,
+      "positive_fraction": 0.8,
+      "negative_fraction": 0.2
+    },
+    "SRI_min": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.591520271029377,
+      "sd": 0.10178036456833497,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_stv": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.7437497722640014,
+      "sd": 0.1502212614015402,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_tbv": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.06380220440156817,
+      "sd": 0.6903953300720708,
+      "positive_fraction": 0.4,
+      "negative_fraction": 0.6
+    },
+    "Sleep_hr_average_range": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": 0.529247677813069,
+      "sd": 0.12435967522098845,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_range": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.7161149604953577,
+      "sd": 0.19452218175879674,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_median": {
+      "selected_models": 5,
+      "selection_frequency": 0.05,
+      "mean": -0.6739887507858968,
+      "sd": 0.2943951871497388,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_mr": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.5556995306707634,
+      "sd": 0.13566418563974647,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_mr": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.4772311460775192,
+      "sd": 0.09187318198279254,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_trimmed_mean": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.44882866660106413,
+      "sd": 0.01741052464582863,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_kurtosis": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.49098664920069046,
+      "sd": 0.16479474388648896,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_range": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.477993676286693,
+      "sd": 0.04152027121366242,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_mode": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.6952892274988185,
+      "sd": 0.11112697582257319,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_kurtosis": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.5167637007225795,
+      "sd": 0.13205750858401544,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_tbcr": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.3394074202527501,
+      "sd": 0.6440645923942908,
+      "positive_fraction": 0.75,
+      "negative_fraction": 0.25
+    },
+    "TST_tbv": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.5493443004958126,
+      "sd": 0.2059669820300448,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_rcv": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": -0.5986873506452657,
+      "sd": 0.249236161839611,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_tbv": {
+      "selected_models": 4,
+      "selection_frequency": 0.04,
+      "mean": 0.6862941803495882,
+      "sd": 0.12376800716592211,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_range": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.6018863501642265,
+      "sd": 0.14798848210821378,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_end_num_range": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.5978672816935876,
+      "sd": 0.05772273449034504,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_mad": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.6585278565755965,
+      "sd": 0.1265692504450469,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_min": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.5204099113171664,
+      "sd": 0.2237532658923169,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_mr": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.3466567395324092,
+      "sd": 0.15820367445608657,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_rcv": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": -0.47771783942128626,
+      "sd": 0.08144610081967184,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_min": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.5967914910753921,
+      "sd": 0.11780842652441648,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_max": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.8139785046880023,
+      "sd": 0.09628068324019225,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_stv": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.6122113954460954,
+      "sd": 0.23688325857661097,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_trimmed_mean": {
+      "selected_models": 3,
+      "selection_frequency": 0.03,
+      "mean": 0.5764855184718912,
+      "sd": 0.018393714666497255,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_kurtosis": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.4339066720621503,
+      "sd": 0.07555656366956731,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_mr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.5642957068552676,
+      "sd": 0.2890875504217847,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mad": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.7028034440843807,
+      "sd": 0.12789170196348496,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_max": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.5394782117910565,
+      "sd": 0.10594594158521946,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_max": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.49333001330394516,
+      "sd": 0.02905246012496733,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_max": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.8627117482787956,
+      "sd": 0.04705850223792774,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_rcv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.6195538272381333,
+      "sd": 0.10023979348050831,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_mode": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.4847052399060996,
+      "sd": 0.205924437760552,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_tbcr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.6544614328064613,
+      "sd": 0.09869558089039461,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_tbcr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.6317586838257877,
+      "sd": 0.2332568437821292,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_mad": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.7767961172836844,
+      "sd": 0.1397027321555334,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_kurtosis": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.7453056144248265,
+      "sd": 0.2358269431900199,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_min": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.46408944837969446,
+      "sd": 0.034080742611127465,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_stv": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": 0.5141619027601303,
+      "sd": 0.09741636961229644,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_tbcr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.5885120104895576,
+      "sd": 0.0687871393712936,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_mr": {
+      "selected_models": 2,
+      "selection_frequency": 0.02,
+      "mean": -0.48858631765275096,
+      "sd": 0.07794454188014863,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.5262179112392322,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.7612631210223989,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.52080277428939,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.7094628537742207,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N1_plus_N2_ratio_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.47457996065687724,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.34966835997864115,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.8177840409451482,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_rcv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.8820460410311005,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_mode": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.46232005838716217,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.21349763664741325,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5502889454101726,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_rcv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.5486735895233269,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.4417352494845652,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.21349763664739005,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -1.108354591172619,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_tbv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.8679969244793923,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SE_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.6177704580744903,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_stv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.7413337783893258,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5321072841635264,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "SRI_trimmed_mean": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.6332902304481701,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.822626988413511,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_mr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.6832427296365624,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_end_num_mad": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.6339395161190268,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_max": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.88935985752326,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_stv": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5813302513920673,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_tbcr": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.7280975461272988,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.7249529002253383,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_mad": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.9253260503778484,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_min": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.7385429235528616,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_kurtosis": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.6350038742086989,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_median": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": 0.5714891022778689,
+      "sd": 0.0,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_range": {
+      "selected_models": 1,
+      "selection_frequency": 0.01,
+      "mean": -0.5288430525860965,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    }
+  },
+  "F_no_rfe_fixed": {
+    "Daily_sleep_count_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.12641317877134514,
+      "sd": 0.04367439952949462,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Daily_sleep_count_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.4965614953114857,
+      "sd": 0.09377649820302542,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.11675031614139252,
+      "sd": 0.04345850737004721,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Daily_sleep_count_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.4965614953114857,
+      "sd": 0.09377649820302547,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.06355411031965538,
+      "sd": 0.035564786671459264,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "Daily_sleep_count_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.06355411031965558,
+      "sd": 0.03556478667145929,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "Daily_sleep_count_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2861785933167744,
+      "sd": 0.11272762383501145,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Daily_sleep_count_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.08179918420136532,
+      "sd": 0.06721530008475987,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "Daily_sleep_count_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0,
+      "sd": 0.0,
+      "positive_fraction": 0.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_per_hour_nrem_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12379145908079947,
+      "sd": 0.1332224949056813,
+      "positive_fraction": 0.18,
+      "negative_fraction": 0.82
+    },
+    "HR_drop_per_hour_nrem_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2372383349236411,
+      "sd": 0.12687165434043604,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "HR_drop_per_hour_nrem_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.0467981351709304,
+      "sd": 0.07739233033717649,
+      "positive_fraction": 0.19,
+      "negative_fraction": 0.81
+    },
+    "HR_drop_per_hour_nrem_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.20869372276623147,
+      "sd": 0.110014592837088,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "HR_drop_per_hour_nrem_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.3190382473680699,
+      "sd": 0.14151013668970389,
+      "positive_fraction": 0.98,
+      "negative_fraction": 0.02
+    },
+    "HR_drop_per_hour_nrem_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.17134749555442355,
+      "sd": 0.2202341123689726,
+      "positive_fraction": 0.18,
+      "negative_fraction": 0.82
+    },
+    "HR_drop_per_hour_nrem_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.018029428432348667,
+      "sd": 0.11614944964555453,
+      "positive_fraction": 0.58,
+      "negative_fraction": 0.42
+    },
+    "HR_drop_per_hour_nrem_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09952029134763375,
+      "sd": 0.08735000982202523,
+      "positive_fraction": 0.12,
+      "negative_fraction": 0.88
+    },
+    "HR_drop_per_hour_nrem_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.014188391579388877,
+      "sd": 0.13547173340675364,
+      "positive_fraction": 0.58,
+      "negative_fraction": 0.42
+    },
+    "HR_drop_per_hour_nrem_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.116437342627357,
+      "sd": 0.072754571115061,
+      "positive_fraction": 0.04,
+      "negative_fraction": 0.96
+    },
+    "HR_drop_per_hour_nrem_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.332378547632622,
+      "sd": 0.18259537145463023,
+      "positive_fraction": 0.94,
+      "negative_fraction": 0.06
+    },
+    "HR_drop_per_hour_nrem_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.17510356981754185,
+      "sd": 0.147396145400808,
+      "positive_fraction": 0.12,
+      "negative_fraction": 0.88
+    },
+    "HR_drop_per_hour_nrem_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.29154959267088626,
+      "sd": 0.07543605560424729,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09311897801755752,
+      "sd": 0.14548207759907367,
+      "positive_fraction": 0.23,
+      "negative_fraction": 0.77
+    },
+    "HR_drop_ratio_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.07637613596412272,
+      "sd": 0.11469321131924869,
+      "positive_fraction": 0.71,
+      "negative_fraction": 0.29
+    },
+    "HR_drop_ratio_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.07574703557032453,
+      "sd": 0.09296444571388408,
+      "positive_fraction": 0.21,
+      "negative_fraction": 0.79
+    },
+    "HR_drop_ratio_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.11943815516053365,
+      "sd": 0.13088190775880285,
+      "positive_fraction": 0.84,
+      "negative_fraction": 0.16
+    },
+    "HR_drop_ratio_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.02814487813667408,
+      "sd": 0.11332237811596904,
+      "positive_fraction": 0.61,
+      "negative_fraction": 0.39
+    },
+    "HR_drop_ratio_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.5360818948680989,
+      "sd": 0.20681842770642786,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_ratio_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5133647361981472,
+      "sd": 0.11926805373797378,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.08963206950137133,
+      "sd": 0.09275873337944994,
+      "positive_fraction": 0.19,
+      "negative_fraction": 0.81
+    },
+    "HR_drop_ratio_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1396370689160169,
+      "sd": 0.1155059200212175,
+      "positive_fraction": 0.85,
+      "negative_fraction": 0.15
+    },
+    "HR_drop_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.48388357793314785,
+      "sd": 0.10011982101865222,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.4201506428470764,
+      "sd": 0.17571468734879309,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "HR_drop_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.20429859913826917,
+      "sd": 0.14036928064188456,
+      "positive_fraction": 0.06,
+      "negative_fraction": 0.94
+    },
+    "HR_drop_ratio_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.020898898817518375,
+      "sd": 0.08603001468530727,
+      "positive_fraction": 0.62,
+      "negative_fraction": 0.38
+    },
+    "N1_plus_N2_ratio_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.30905953735084923,
+      "sd": 0.14740447198158693,
+      "positive_fraction": 0.03,
+      "negative_fraction": 0.97
+    },
+    "N1_plus_N2_ratio_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.494205562414895,
+      "sd": 0.11716184372856452,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.03781990912464652,
+      "sd": 0.1446953419739926,
+      "positive_fraction": 0.46,
+      "negative_fraction": 0.54
+    },
+    "N1_plus_N2_ratio_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0926057799481228,
+      "sd": 0.09100333910944448,
+      "positive_fraction": 0.82,
+      "negative_fraction": 0.18
+    },
+    "N1_plus_N2_ratio_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.10804981189416503,
+      "sd": 0.13083715762528564,
+      "positive_fraction": 0.2,
+      "negative_fraction": 0.8
+    },
+    "N1_plus_N2_ratio_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.14865108960463858,
+      "sd": 0.1906084338293499,
+      "positive_fraction": 0.78,
+      "negative_fraction": 0.22
+    },
+    "N1_plus_N2_ratio_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.07307247474986919,
+      "sd": 0.12906982798334132,
+      "positive_fraction": 0.74,
+      "negative_fraction": 0.26
+    },
+    "N1_plus_N2_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.08854955922491543,
+      "sd": 0.11687374606812562,
+      "positive_fraction": 0.76,
+      "negative_fraction": 0.24
+    },
+    "N1_plus_N2_ratio_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.25578553026495743,
+      "sd": 0.09831494820543829,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.08012693793140518,
+      "sd": 0.11133999156713328,
+      "positive_fraction": 0.23,
+      "negative_fraction": 0.77
+    },
+    "N1_plus_N2_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.29108040172651345,
+      "sd": 0.16222404706045745,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "N1_plus_N2_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.35379983509957325,
+      "sd": 0.1663867475719505,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "N1_plus_N2_ratio_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.026201869842459806,
+      "sd": 0.0735007153784204,
+      "positive_fraction": 0.63,
+      "negative_fraction": 0.37
+    },
+    "N3_ratio_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.060330315924310554,
+      "sd": 0.16639979589405068,
+      "positive_fraction": 0.6,
+      "negative_fraction": 0.4
+    },
+    "N3_ratio_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.27005971217240904,
+      "sd": 0.1452955683859754,
+      "positive_fraction": 0.03,
+      "negative_fraction": 0.97
+    },
+    "N3_ratio_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.38358475990619134,
+      "sd": 0.1226895918123598,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0499841359017653,
+      "sd": 0.07373328817003359,
+      "positive_fraction": 0.75,
+      "negative_fraction": 0.25
+    },
+    "N3_ratio_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.4675651409767817,
+      "sd": 0.16390213325009767,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "N3_ratio_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.34720836885173484,
+      "sd": 0.2050000701543104,
+      "positive_fraction": 0.05,
+      "negative_fraction": 0.95
+    },
+    "N3_ratio_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09932207681135749,
+      "sd": 0.12360878833485031,
+      "positive_fraction": 0.18,
+      "negative_fraction": 0.82
+    },
+    "N3_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.7558598176711159,
+      "sd": 0.15843895914653622,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.02650202333942562,
+      "sd": 0.16683029916868589,
+      "positive_fraction": 0.45,
+      "negative_fraction": 0.55
+    },
+    "N3_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.23415621577980353,
+      "sd": 0.09796038042261809,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "N3_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.623338543714551,
+      "sd": 0.19312610720091933,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6979906031681828,
+      "sd": 0.11138535938827747,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "N3_ratio_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.02983613760266562,
+      "sd": 0.06155364928733435,
+      "positive_fraction": 0.66,
+      "negative_fraction": 0.34
+    },
+    "NREM_proportion_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.268403935342762,
+      "sd": 0.10519672898759266,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "NREM_proportion_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.07640123601881481,
+      "sd": 0.08317546751655606,
+      "positive_fraction": 0.16,
+      "negative_fraction": 0.84
+    },
+    "NREM_proportion_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.07743841852203864,
+      "sd": 0.08558667182474029,
+      "positive_fraction": 0.83,
+      "negative_fraction": 0.17
+    },
+    "NREM_proportion_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.10892635236521363,
+      "sd": 0.0815103697942104,
+      "positive_fraction": 0.87,
+      "negative_fraction": 0.13
+    },
+    "NREM_proportion_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09941584774917533,
+      "sd": 0.07735213014354304,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "NREM_proportion_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12333826474737798,
+      "sd": 0.09831837238253278,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "NREM_proportion_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3673427390677574,
+      "sd": 0.10398688536229322,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21361636602196907,
+      "sd": 0.0575367021668497,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_proportion_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1541140900492782,
+      "sd": 0.06725368403434688,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_proportion_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1321583406156294,
+      "sd": 0.059574102912010235,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "NREM_proportion_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09164414925012526,
+      "sd": 0.07723406369630387,
+      "positive_fraction": 0.89,
+      "negative_fraction": 0.11
+    },
+    "NREM_proportion_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.19499413847103983,
+      "sd": 0.08256527651182023,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "NREM_proportion_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.20544657618533727,
+      "sd": 0.06507630669193114,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.268403935342762,
+      "sd": 0.10519672898759266,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "NREM_ratio_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.07640123601881481,
+      "sd": 0.08317546751655606,
+      "positive_fraction": 0.16,
+      "negative_fraction": 0.84
+    },
+    "NREM_ratio_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.07743841852203864,
+      "sd": 0.08558667182474029,
+      "positive_fraction": 0.83,
+      "negative_fraction": 0.17
+    },
+    "NREM_ratio_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.10892635236521363,
+      "sd": 0.0815103697942104,
+      "positive_fraction": 0.87,
+      "negative_fraction": 0.13
+    },
+    "NREM_ratio_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09941584774917533,
+      "sd": 0.07735213014354304,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "NREM_ratio_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12333826474737798,
+      "sd": 0.09831837238253278,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "NREM_ratio_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3673427390677574,
+      "sd": 0.10398688536229322,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21361636602196907,
+      "sd": 0.0575367021668497,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "NREM_ratio_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1541140900492782,
+      "sd": 0.06725368403434688,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "NREM_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1321583406156294,
+      "sd": 0.059574102912010235,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "NREM_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09164414925012526,
+      "sd": 0.07723406369630387,
+      "positive_fraction": 0.89,
+      "negative_fraction": 0.11
+    },
+    "NREM_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.19499413847103983,
+      "sd": 0.08256527651182023,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "NREM_ratio_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.20544657618533727,
+      "sd": 0.06507630669193114,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2684039353427535,
+      "sd": 0.1051967289875936,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "REM_ratio_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.07640123601881856,
+      "sd": 0.08317546751655631,
+      "positive_fraction": 0.16,
+      "negative_fraction": 0.84
+    },
+    "REM_ratio_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09941584774917471,
+      "sd": 0.077352130143543,
+      "positive_fraction": 0.93,
+      "negative_fraction": 0.07
+    },
+    "REM_ratio_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.108926352365214,
+      "sd": 0.08151036979421036,
+      "positive_fraction": 0.13,
+      "negative_fraction": 0.87
+    },
+    "REM_ratio_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.07743841852203735,
+      "sd": 0.08558667182474039,
+      "positive_fraction": 0.17,
+      "negative_fraction": 0.83
+    },
+    "REM_ratio_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.16279032758414572,
+      "sd": 0.13488133161156382,
+      "positive_fraction": 0.88,
+      "negative_fraction": 0.12
+    },
+    "REM_ratio_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3673427390677578,
+      "sd": 0.10398688536229324,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "REM_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21361636602196715,
+      "sd": 0.05753670216684948,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "REM_ratio_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3459009116591462,
+      "sd": 0.1419071160536715,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "REM_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.13215834061563175,
+      "sd": 0.05957410291201035,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "REM_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09164414925011684,
+      "sd": 0.07723406369630514,
+      "positive_fraction": 0.89,
+      "negative_fraction": 0.11
+    },
+    "REM_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.19499413847103222,
+      "sd": 0.08256527651182172,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "REM_ratio_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2054465761853392,
+      "sd": 0.06507630669193114,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.04149204726887582,
+      "sd": 0.1763407522713578,
+      "positive_fraction": 0.57,
+      "negative_fraction": 0.43
+    },
+    "SE_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.46659514609750696,
+      "sd": 0.09336225746704808,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SE_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.05880161132258836,
+      "sd": 0.14814578029429804,
+      "positive_fraction": 0.36,
+      "negative_fraction": 0.64
+    },
+    "SE_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.26300622809083263,
+      "sd": 0.1272714151760794,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "SE_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.026099547034746574,
+      "sd": 0.1089355951482698,
+      "positive_fraction": 0.41,
+      "negative_fraction": 0.59
+    },
+    "SE_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.26069394124632095,
+      "sd": 0.15170319589282125,
+      "positive_fraction": 0.94,
+      "negative_fraction": 0.06
+    },
+    "SE_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.016496149111576354,
+      "sd": 0.13950318466558256,
+      "positive_fraction": 0.64,
+      "negative_fraction": 0.36
+    },
+    "SE_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0009276231776067265,
+      "sd": 0.12059203911513836,
+      "positive_fraction": 0.51,
+      "negative_fraction": 0.49
+    },
+    "SE_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.03191847091292143,
+      "sd": 0.09810822329165379,
+      "positive_fraction": 0.41,
+      "negative_fraction": 0.59
+    },
+    "SE_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.025728908792606777,
+      "sd": 0.09296190724054722,
+      "positive_fraction": 0.38,
+      "negative_fraction": 0.62
+    },
+    "SE_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.0724681394618197,
+      "sd": 0.152448517583592,
+      "positive_fraction": 0.34,
+      "negative_fraction": 0.66
+    },
+    "SE_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.24080844710002164,
+      "sd": 0.15869207181661826,
+      "positive_fraction": 0.91,
+      "negative_fraction": 0.09
+    },
+    "SE_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3974728521565275,
+      "sd": 0.07970518687771867,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2369580089079176,
+      "sd": 0.16534134528361027,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "SRI_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.011699388029979553,
+      "sd": 0.14070154182789585,
+      "positive_fraction": 0.49,
+      "negative_fraction": 0.51
+    },
+    "SRI_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.06437065347475107,
+      "sd": 0.18638717663479992,
+      "positive_fraction": 0.67,
+      "negative_fraction": 0.33
+    },
+    "SRI_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.11262745730362728,
+      "sd": 0.14305417131089382,
+      "positive_fraction": 0.17,
+      "negative_fraction": 0.83
+    },
+    "SRI_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.19820030730895447,
+      "sd": 0.10654524775510178,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "SRI_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.20695018439322277,
+      "sd": 0.176089664467583,
+      "positive_fraction": 0.13,
+      "negative_fraction": 0.87
+    },
+    "SRI_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.7797686788918015,
+      "sd": 0.15131251144478405,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.19569520376652552,
+      "sd": 0.11253367751991544,
+      "positive_fraction": 0.04,
+      "negative_fraction": 0.96
+    },
+    "SRI_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3044933968691905,
+      "sd": 0.09999483299561258,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2944797637091399,
+      "sd": 0.1504328419731806,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "SRI_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.11928952583749154,
+      "sd": 0.1570311699339502,
+      "positive_fraction": 0.8,
+      "negative_fraction": 0.2
+    },
+    "SRI_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.34588078050907256,
+      "sd": 0.1943453639996285,
+      "positive_fraction": 0.95,
+      "negative_fraction": 0.05
+    },
+    "SRI_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.08089330312334513,
+      "sd": 0.09064285823359355,
+      "positive_fraction": 0.81,
+      "negative_fraction": 0.19
+    },
+    "Sleep_RMSSD_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.13526667298565123,
+      "sd": 0.15442414173725094,
+      "positive_fraction": 0.19,
+      "negative_fraction": 0.81
+    },
+    "Sleep_RMSSD_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.023907797975497483,
+      "sd": 0.0809996938885226,
+      "positive_fraction": 0.32,
+      "negative_fraction": 0.68
+    },
+    "Sleep_RMSSD_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.06998182466672326,
+      "sd": 0.08894717106493272,
+      "positive_fraction": 0.21,
+      "negative_fraction": 0.79
+    },
+    "Sleep_RMSSD_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12546275607199067,
+      "sd": 0.08155917483380011,
+      "positive_fraction": 0.06,
+      "negative_fraction": 0.94
+    },
+    "Sleep_RMSSD_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.335119305266729,
+      "sd": 0.10378161139842228,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.14892973903495224,
+      "sd": 0.13849341020938538,
+      "positive_fraction": 0.83,
+      "negative_fraction": 0.17
+    },
+    "Sleep_RMSSD_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.10625624163745322,
+      "sd": 0.0948565592497465,
+      "positive_fraction": 0.88,
+      "negative_fraction": 0.12
+    },
+    "Sleep_RMSSD_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.18716484929235688,
+      "sd": 0.10750168262900187,
+      "positive_fraction": 0.05,
+      "negative_fraction": 0.95
+    },
+    "Sleep_RMSSD_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.3569984812583113,
+      "sd": 0.1695630589642927,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.2367579532643486,
+      "sd": 0.06858618552821096,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.9170689186441808,
+      "sd": 0.1183938011220928,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.33897561926215347,
+      "sd": 0.100307417461248,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.037063854927626254,
+      "sd": 0.07290576011936589,
+      "positive_fraction": 0.3,
+      "negative_fraction": 0.7
+    },
+    "Sleep_bedtime_end_num_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21203806763393931,
+      "sd": 0.16824315267556827,
+      "positive_fraction": 0.89,
+      "negative_fraction": 0.11
+    },
+    "Sleep_bedtime_end_num_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.015073269229303266,
+      "sd": 0.1258878653538728,
+      "positive_fraction": 0.56,
+      "negative_fraction": 0.44
+    },
+    "Sleep_bedtime_end_num_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.25403039170776864,
+      "sd": 0.11980913878102666,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "Sleep_bedtime_end_num_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.17975392452610583,
+      "sd": 0.08841473117875519,
+      "positive_fraction": 0.03,
+      "negative_fraction": 0.97
+    },
+    "Sleep_bedtime_end_num_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2285689100553876,
+      "sd": 0.1806843463539093,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "Sleep_bedtime_end_num_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.08169536479801782,
+      "sd": 0.18432382576745177,
+      "positive_fraction": 0.29,
+      "negative_fraction": 0.71
+    },
+    "Sleep_bedtime_end_num_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.14714615055505323,
+      "sd": 0.12517986855198196,
+      "positive_fraction": 0.86,
+      "negative_fraction": 0.14
+    },
+    "Sleep_bedtime_end_num_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.14306039269572388,
+      "sd": 0.08686286875237707,
+      "positive_fraction": 0.08,
+      "negative_fraction": 0.92
+    },
+    "Sleep_bedtime_end_num_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.23818150787134987,
+      "sd": 0.1269611887779704,
+      "positive_fraction": 0.05,
+      "negative_fraction": 0.95
+    },
+    "Sleep_bedtime_end_num_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.0652758789660898,
+      "sd": 0.09610925861274386,
+      "positive_fraction": 0.25,
+      "negative_fraction": 0.75
+    },
+    "Sleep_bedtime_end_num_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.14194079771230247,
+      "sd": 0.20546077754415173,
+      "positive_fraction": 0.23,
+      "negative_fraction": 0.77
+    },
+    "Sleep_bedtime_end_num_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.11274033925161545,
+      "sd": 0.2167945323887682,
+      "positive_fraction": 0.31,
+      "negative_fraction": 0.69
+    },
+    "Sleep_bedtime_end_num_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.15344111948296602,
+      "sd": 0.09271494669048051,
+      "positive_fraction": 0.05,
+      "negative_fraction": 0.95
+    },
+    "Sleep_bedtime_start_num_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.2930532287431503,
+      "sd": 0.23771581767696376,
+      "positive_fraction": 0.88,
+      "negative_fraction": 0.12
+    },
+    "Sleep_bedtime_start_num_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3623967129960059,
+      "sd": 0.10373305739950679,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.06252076590652664,
+      "sd": 0.14414373827071988,
+      "positive_fraction": 0.3,
+      "negative_fraction": 0.7
+    },
+    "Sleep_bedtime_start_num_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.19087677206045608,
+      "sd": 0.10286472263521844,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "Sleep_bedtime_start_num_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.4159614379219239,
+      "sd": 0.1752440246914853,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "Sleep_bedtime_start_num_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.11486238201543036,
+      "sd": 0.19194172661382577,
+      "positive_fraction": 0.26,
+      "negative_fraction": 0.74
+    },
+    "Sleep_bedtime_start_num_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3875382792078545,
+      "sd": 0.10893231959368609,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3305487522953077,
+      "sd": 0.1357457599621589,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "Sleep_bedtime_start_num_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.0341527006200688,
+      "sd": 0.09790486620038748,
+      "positive_fraction": 0.67,
+      "negative_fraction": 0.33
+    },
+    "Sleep_bedtime_start_num_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.003159738951295335,
+      "sd": 0.09182876399046463,
+      "positive_fraction": 0.49,
+      "negative_fraction": 0.51
+    },
+    "Sleep_bedtime_start_num_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09842946001022522,
+      "sd": 0.17874499399378688,
+      "positive_fraction": 0.78,
+      "negative_fraction": 0.22
+    },
+    "Sleep_bedtime_start_num_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.466633308922158,
+      "sd": 0.1117901004935853,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.18850136438999743,
+      "sd": 0.09496512915630548,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Sleep_breath_average_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6383468823862494,
+      "sd": 0.13713489414247576,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.10351298513823787,
+      "sd": 0.08456910911812382,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "Sleep_breath_average_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.023499868341198785,
+      "sd": 0.139504962245888,
+      "positive_fraction": 0.45,
+      "negative_fraction": 0.55
+    },
+    "Sleep_breath_average_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1063574615314038,
+      "sd": 0.058675826819198744,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "Sleep_breath_average_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.10553220499505526,
+      "sd": 0.08449695786218604,
+      "positive_fraction": 0.91,
+      "negative_fraction": 0.09
+    },
+    "Sleep_breath_average_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.23641981321072333,
+      "sd": 0.14440829716657883,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "Sleep_breath_average_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.36793974806360685,
+      "sd": 0.12001847771286363,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.18989535652046818,
+      "sd": 0.14066606516085498,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "Sleep_breath_average_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1274598563702776,
+      "sd": 0.08680854449879138,
+      "positive_fraction": 0.07,
+      "negative_fraction": 0.93
+    },
+    "Sleep_breath_average_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.07999330000058269,
+      "sd": 0.08848308793861949,
+      "positive_fraction": 0.83,
+      "negative_fraction": 0.17
+    },
+    "Sleep_breath_average_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5822796405183164,
+      "sd": 0.22831156374294995,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_breath_average_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.11014159739029708,
+      "sd": 0.19462647374376946,
+      "positive_fraction": 0.26,
+      "negative_fraction": 0.74
+    },
+    "Sleep_breath_average_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1609418201300469,
+      "sd": 0.06924024186614705,
+      "positive_fraction": 0.98,
+      "negative_fraction": 0.02
+    },
+    "Sleep_duration_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.406034049965705,
+      "sd": 0.18517236727412661,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Sleep_duration_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12054456187956349,
+      "sd": 0.10479399629673622,
+      "positive_fraction": 0.16,
+      "negative_fraction": 0.84
+    },
+    "Sleep_duration_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5097441698508812,
+      "sd": 0.11557192195270143,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.009751973821851709,
+      "sd": 0.13234983941673117,
+      "positive_fraction": 0.49,
+      "negative_fraction": 0.51
+    },
+    "Sleep_duration_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.19726927029749222,
+      "sd": 0.13129974987246518,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "Sleep_duration_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.023217883674798802,
+      "sd": 0.20013120500357975,
+      "positive_fraction": 0.52,
+      "negative_fraction": 0.48
+    },
+    "Sleep_duration_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.05103191586742176,
+      "sd": 0.1020256699033881,
+      "positive_fraction": 0.65,
+      "negative_fraction": 0.35
+    },
+    "Sleep_duration_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.3838442927751961,
+      "sd": 0.10124024048171634,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.2083806804757254,
+      "sd": 0.10374380437165297,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1992797222554313,
+      "sd": 0.07854787283437445,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Sleep_duration_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12579486993939215,
+      "sd": 0.13751204242140336,
+      "positive_fraction": 0.16,
+      "negative_fraction": 0.84
+    },
+    "Sleep_duration_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.30327938824211054,
+      "sd": 0.13668089448468948,
+      "positive_fraction": 0.97,
+      "negative_fraction": 0.03
+    },
+    "Sleep_duration_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.017218878657421575,
+      "sd": 0.07670660189478491,
+      "positive_fraction": 0.46,
+      "negative_fraction": 0.54
+    },
+    "Sleep_hr_average_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.02704858760706693,
+      "sd": 0.14293749512046783,
+      "positive_fraction": 0.41,
+      "negative_fraction": 0.59
+    },
+    "Sleep_hr_average_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.42439988184219324,
+      "sd": 0.1533422688859983,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.08170561172533403,
+      "sd": 0.07439984497016928,
+      "positive_fraction": 0.14,
+      "negative_fraction": 0.86
+    },
+    "Sleep_hr_average_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.14398444151528988,
+      "sd": 0.05550378340711906,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Sleep_hr_average_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3682288312289088,
+      "sd": 0.08271630831627488,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_average_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09114587568830539,
+      "sd": 0.10428347619860538,
+      "positive_fraction": 0.2,
+      "negative_fraction": 0.8
+    },
+    "Sleep_hr_average_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.39124306643838325,
+      "sd": 0.15627346595478214,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Sleep_hr_average_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.22294221474875203,
+      "sd": 0.11228716991301625,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Sleep_hr_average_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.033093906398816805,
+      "sd": 0.09983937637818324,
+      "positive_fraction": 0.29,
+      "negative_fraction": 0.71
+    },
+    "Sleep_hr_average_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.047136903252328735,
+      "sd": 0.08492918312457706,
+      "positive_fraction": 0.73,
+      "negative_fraction": 0.27
+    },
+    "Sleep_hr_average_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.09732708681935918,
+      "sd": 0.19410573391465488,
+      "positive_fraction": 0.28,
+      "negative_fraction": 0.72
+    },
+    "Sleep_hr_average_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6196726037872808,
+      "sd": 0.17334883442271493,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.159275514867127,
+      "sd": 0.05168714345661944,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Sleep_hr_lowest_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.5076467393448205,
+      "sd": 0.07817975504754657,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.004949193769533719,
+      "sd": 0.14030298457852383,
+      "positive_fraction": 0.48,
+      "negative_fraction": 0.52
+    },
+    "Sleep_hr_lowest_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.050323186653288624,
+      "sd": 0.07540841271628963,
+      "positive_fraction": 0.27,
+      "negative_fraction": 0.73
+    },
+    "Sleep_hr_lowest_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.18035801140622218,
+      "sd": 0.07141657435044636,
+      "positive_fraction": 0.98,
+      "negative_fraction": 0.02
+    },
+    "Sleep_hr_lowest_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.22656865360041986,
+      "sd": 0.10691791406128871,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "Sleep_hr_lowest_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.299872166941792,
+      "sd": 0.11316947580532359,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.7284200366801956,
+      "sd": 0.1771792890368642,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.2633184639716482,
+      "sd": 0.1035234082103456,
+      "positive_fraction": 0.01,
+      "negative_fraction": 0.99
+    },
+    "Sleep_hr_lowest_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.23848087788549663,
+      "sd": 0.09603202593014078,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.004630337607682227,
+      "sd": 0.09275143047578079,
+      "positive_fraction": 0.5,
+      "negative_fraction": 0.5
+    },
+    "Sleep_hr_lowest_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.5214123241857653,
+      "sd": 0.16838587347372097,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_hr_lowest_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.30150144235137144,
+      "sd": 0.1355892359774235,
+      "positive_fraction": 0.98,
+      "negative_fraction": 0.02
+    },
+    "Sleep_hr_lowest_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.013155448080226513,
+      "sd": 0.06479733718307626,
+      "positive_fraction": 0.66,
+      "negative_fraction": 0.34
+    },
+    "Sleep_midpoint_time_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.030507533916782688,
+      "sd": 0.13805566161076924,
+      "positive_fraction": 0.41,
+      "negative_fraction": 0.59
+    },
+    "Sleep_midpoint_time_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.025594340761674314,
+      "sd": 0.11495780190406707,
+      "positive_fraction": 0.36,
+      "negative_fraction": 0.64
+    },
+    "Sleep_midpoint_time_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.29774364639536016,
+      "sd": 0.09641001975307206,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.25537956879148643,
+      "sd": 0.10525987382800289,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "Sleep_midpoint_time_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.3448701544628399,
+      "sd": 0.1361381472996447,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "Sleep_midpoint_time_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6237945094739394,
+      "sd": 0.1756959612402774,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.08732748171967106,
+      "sd": 0.11929699717250322,
+      "positive_fraction": 0.75,
+      "negative_fraction": 0.25
+    },
+    "Sleep_midpoint_time_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1679521069359241,
+      "sd": 0.10241494929559829,
+      "positive_fraction": 0.95,
+      "negative_fraction": 0.05
+    },
+    "Sleep_midpoint_time_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.452473219444739,
+      "sd": 0.12610666540179974,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.2662826373973975,
+      "sd": 0.09106280668755988,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.0958572034136625,
+      "sd": 0.12785895405767048,
+      "positive_fraction": 0.23,
+      "negative_fraction": 0.77
+    },
+    "Sleep_midpoint_time_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.24305807188847608,
+      "sd": 0.1617074905404407,
+      "positive_fraction": 0.95,
+      "negative_fraction": 0.05
+    },
+    "Sleep_midpoint_time_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.10574426118038936,
+      "sd": 0.0862593706544309,
+      "positive_fraction": 0.11,
+      "negative_fraction": 0.89
+    },
+    "TST_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.9121451364878966,
+      "sd": 0.21221247291829817,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.17753926236187986,
+      "sd": 0.0991403638216929,
+      "positive_fraction": 0.95,
+      "negative_fraction": 0.05
+    },
+    "TST_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21626341307680338,
+      "sd": 0.15674879014993223,
+      "positive_fraction": 0.89,
+      "negative_fraction": 0.11
+    },
+    "TST_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3674144438854571,
+      "sd": 0.0987919460088922,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.19445343467724768,
+      "sd": 0.12480760568913622,
+      "positive_fraction": 0.05,
+      "negative_fraction": 0.95
+    },
+    "TST_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.4670031211535467,
+      "sd": 0.21222140394984784,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "TST_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.1364265415582223,
+      "sd": 0.16397776628757166,
+      "positive_fraction": 0.24,
+      "negative_fraction": 0.76
+    },
+    "TST_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.32175951970327654,
+      "sd": 0.12876691052745837,
+      "positive_fraction": 0.99,
+      "negative_fraction": 0.01
+    },
+    "TST_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1314925222196679,
+      "sd": 0.10987584487371085,
+      "positive_fraction": 0.92,
+      "negative_fraction": 0.08
+    },
+    "TST_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.203871303313592,
+      "sd": 0.09526807319168903,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3148292861534324,
+      "sd": 0.16563792506356162,
+      "positive_fraction": 0.04,
+      "negative_fraction": 0.96
+    },
+    "TST_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.21462550290529664,
+      "sd": 0.12703900141115335,
+      "positive_fraction": 0.94,
+      "negative_fraction": 0.06
+    },
+    "TST_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.044478613708911256,
+      "sd": 0.06896986916705375,
+      "positive_fraction": 0.27,
+      "negative_fraction": 0.73
+    },
+    "WASO_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.13288245413077107,
+      "sd": 0.1784269591967011,
+      "positive_fraction": 0.21,
+      "negative_fraction": 0.79
+    },
+    "WASO_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.3128273491401003,
+      "sd": 0.11566253119644068,
+      "positive_fraction": 0.02,
+      "negative_fraction": 0.98
+    },
+    "WASO_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.01193964754763432,
+      "sd": 0.11559423502614352,
+      "positive_fraction": 0.56,
+      "negative_fraction": 0.44
+    },
+    "WASO_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.1627264487472896,
+      "sd": 0.09695409776181459,
+      "positive_fraction": 0.95,
+      "negative_fraction": 0.05
+    },
+    "WASO_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6696100570478133,
+      "sd": 0.16753123356414773,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "WASO_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.17166396339007156,
+      "sd": 0.19016961980173067,
+      "positive_fraction": 0.84,
+      "negative_fraction": 0.16
+    },
+    "WASO_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.14523376268905397,
+      "sd": 0.11377709337460677,
+      "positive_fraction": 0.12,
+      "negative_fraction": 0.88
+    },
+    "WASO_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.12147028493347238,
+      "sd": 0.12467568417056996,
+      "positive_fraction": 0.2,
+      "negative_fraction": 0.8
+    },
+    "WASO_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.14494132751171304,
+      "sd": 0.15427196244341904,
+      "positive_fraction": 0.19,
+      "negative_fraction": 0.81
+    },
+    "WASO_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.028792815510139524,
+      "sd": 0.11517291687345717,
+      "positive_fraction": 0.59,
+      "negative_fraction": 0.41
+    },
+    "WASO_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.2837118256467146,
+      "sd": 0.1626909751599161,
+      "positive_fraction": 0.96,
+      "negative_fraction": 0.04
+    },
+    "WASO_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.09704058545660041,
+      "sd": 0.10068311299938672,
+      "positive_fraction": 0.85,
+      "negative_fraction": 0.15
+    },
+    "WASO_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.22652129583572642,
+      "sd": 0.07066019804718497,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    }
+  },
+  "G_global_rfe_fixed": {
+    "Daily_sleep_count_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6428033182723505,
+      "sd": 0.07469924991393512,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6428033182723505,
+      "sd": 0.0746992499139351,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Daily_sleep_count_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.9278939793902645,
+      "sd": 0.11211205796705975,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.4462463766094916,
+      "sd": 0.11569475733293819,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6527099119894523,
+      "sd": 0.1108324683547233,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "HR_drop_per_hour_nrem_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.30546559281344776,
+      "sd": 0.0967856499263067,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "HR_drop_ratio_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.6564837884913799,
+      "sd": 0.10322394315911908,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N1_plus_N2_ratio_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.37058527669165664,
+      "sd": 0.07977808853131836,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5247209078586497,
+      "sd": 0.10421606987274734,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "N3_ratio_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.8491428435136538,
+      "sd": 0.10957344420841364,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "SRI_mr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6875394346921075,
+      "sd": 0.1447983252522685,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_stv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.4200337534592951,
+      "sd": 0.11618057765528295,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_RMSSD_tbcr": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.9442031859024071,
+      "sd": 0.19242365491730962,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_RMSSD_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.7938566057324137,
+      "sd": 0.13420906430328655,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.557948393460657,
+      "sd": 0.165412181804129,
+      "positive_fraction": 0.98,
+      "negative_fraction": 0.02
+    },
+    "Sleep_bedtime_start_num_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.4711312986538427,
+      "sd": 0.11233190343726332,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_bedtime_start_num_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5410309604889678,
+      "sd": 0.12760606644136185,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_bedtime_start_num_trimmed_mean": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.9570176633034658,
+      "sd": 0.0949646550832195,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_breath_average_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6152186946791509,
+      "sd": 0.0878175658350129,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.7351024099795584,
+      "sd": 0.1428859824141895,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_duration_max": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.8707048952126626,
+      "sd": 0.13174957311669125,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_duration_range": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5946296271374704,
+      "sd": 0.12913560372565147,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_average_tbv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5251255595848292,
+      "sd": 0.09868908277456638,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_hr_lowest_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.7050729031629359,
+      "sd": 0.13090329708119874,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "Sleep_midpoint_time_mode": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5879370708255707,
+      "sd": 0.09409085354428173,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "Sleep_midpoint_time_rcv": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.5085451038035392,
+      "sd": 0.12262295971474985,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    },
+    "TST_kurtosis": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.5628991073270224,
+      "sd": 0.12477490375240564,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "TST_median": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.7370830480372803,
+      "sd": 0.13465292751736346,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_mad": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": -0.6971104650848887,
+      "sd": 0.1282658668816942,
+      "positive_fraction": 0.0,
+      "negative_fraction": 1.0
+    },
+    "WASO_min": {
+      "selected_models": 100,
+      "selection_frequency": 1.0,
+      "mean": 0.7747580445820986,
+      "sd": 0.09448999326474283,
+      "positive_fraction": 1.0,
+      "negative_fraction": 0.0
+    }
+  }
+}
