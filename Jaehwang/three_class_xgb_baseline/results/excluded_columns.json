@@ -1,0 +1,950 @@
+[
+  {
+    "column": "EMAIL",
+    "reason": "identifier_or_split_metadata"
+  },
+  {
+    "column": "activity_average_met",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_cal_active",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_cal_total",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_daily_movement",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_high",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactive",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactivity_alerts",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_low",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_medium",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_high",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_inactive",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_low",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_medium",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_non_wear",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_rest",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_meet_daily_targets",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_move_every_hour",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_recovery_time",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_stay_active",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_training_frequency",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_training_volume",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_steps",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_total",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_awake",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_duration",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_efficiency",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_average",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_lowest",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_midpoint_at_delta",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_midpoint_time",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_onset_latency",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_period_id",
+    "reason": "identifier_or_split_metadata"
+  },
+  {
+    "column": "sleep_rem",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_restless",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_deep",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_disturbances",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_efficiency",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_latency",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_rem",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_total",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_temperature_delta",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_temperature_deviation",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_total",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_start_hour",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_end_hour",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_time_calculated",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_0_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_0_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_1_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_1_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_2_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_2_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_3_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_3_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_4_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_4_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_5_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_5_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_rest_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactive_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_active_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_not_worn_ratio",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_valid_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_mean",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_var",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_max",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_median",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_q25",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_q75",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_iqr",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_mean",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_var",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_max",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_median",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_q25",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_q75",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_iqr",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_valid_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_mean",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_var",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_max",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_median",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_q25",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_q75",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_iqr",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_valid_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep_count_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep_ratio_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light_count_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light_ratio_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rem_count_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rem_ratio_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_awake_count_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_awake_ratio_5min",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_stage_transition_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hypnogram_valid_count",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_average_met_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_cal_active_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_cal_total_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_daily_movement_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_high_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactive_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactivity_alerts_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_low_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_medium_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_high_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_inactive_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_min_medium_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_non_wear_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_rest_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_meet_daily_targets_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_move_every_hour_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_recovery_time_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_stay_active_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_training_frequency_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_score_training_volume_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_steps_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_total_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_breath_average_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_duration_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_efficiency_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_average_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_lowest_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_midpoint_at_delta_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_midpoint_time_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_onset_latency_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_period_id_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rem_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_alignment_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_deep_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_disturbances_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_efficiency_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_latency_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_rem_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_score_total_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_temperature_delta_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_temperature_deviation_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_total_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_start_hour_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_end_hour_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_time_calculated_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_0_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_0_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_1_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_1_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_2_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_2_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_3_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_4_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_4_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_5_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_5_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_rest_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_inactive_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_active_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_not_worn_ratio_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_class_valid_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_mean_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_std_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_var_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_max_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_median_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_q25_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_q75_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "activity_met_1min_iqr_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_mean_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_std_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_var_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_median_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_q25_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_q75_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_iqr_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_5min_valid_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_mean_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_std_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_var_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_max_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_median_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_q25_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_q75_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_iqr_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rmssd_5min_valid_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep_count_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_deep_ratio_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light_count_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_light_ratio_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rem_count_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_rem_ratio_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_awake_count_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_awake_ratio_5min_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_stage_transition_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hypnogram_valid_count_std",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "DIAG_NM",
+    "reason": "diagnostic_information"
+  },
+  {
+    "column": "original_label",
+    "reason": "target_or_label"
+  },
+  {
+    "column": "label",
+    "reason": "target_or_label"
+  },
+  {
+    "column": "circadian_L5",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "circadian_M10",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "cosinor_mesor",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "cosinor_amplitude",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "cosinor_acrophase",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_1_1",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_1_2",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_1_3",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_1_4",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_2_1",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_2_2",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_2_3",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_2_4",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_3_1",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_3_2",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_3_3",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_3_4",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_4_1",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_4_2",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_4_3",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_trans_4_4",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_mean_raw",
+    "reason": "not_in_fixed_domain_features"
+  },
+  {
+    "column": "sleep_hr_std_raw",
+    "reason": "not_in_fixed_domain_features"
+  }
+]

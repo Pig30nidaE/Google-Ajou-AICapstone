@@ -1,0 +1,26 @@
+.venv/
+__pycache__/
+outputs/
+!.gitignore
+!requirements.lock.txt
+
+# Share aggregate results only; subject predictions, splits and models stay local.
+!results/
+results/*
+!results/README.md
+!results/REPORT.md
+!results/metrics.json
+!results/summary_metrics.json
+!results/fold_metrics.csv
+!results/classification_report.json
+!results/classification_report.csv
+!results/classification_report.txt
+!results/confusion_matrix.csv
+!results/confusion_matrix.png
+!results/bootstrap_ci.csv
+!results/derived_feature_audit.csv
+!results/excluded_columns.json
+!results/excluded_columns.csv
+!results/environment.lock.txt
+!results/input_integrity.json
+!results/COMPLETE.json

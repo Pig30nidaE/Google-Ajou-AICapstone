@@ -1,0 +1,76 @@
+{
+  "aggregation": "pooled_subject_oof",
+  "n_subjects": 174,
+  "accuracy": 0.6149425287356322,
+  "macro_f1": 0.5481478429649161,
+  "balanced_accuracy": 0.5936671966083731,
+  "macro_ovr_auc": 0.724562125606283,
+  "recall_CN": 0.6486486486486487,
+  "recall_MCI": 0.5490196078431373,
+  "recall_Dementia": 0.5833333333333334,
+  "conditional_bootstrap_95_ci": [
+    {
+      "metric": "accuracy",
+      "estimate": 0.6149425287356322,
+      "ci_low": 0.5459770114942529,
+      "ci_high": 0.6839080459770115,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "macro_f1",
+      "estimate": 0.5481478429649161,
+      "ci_low": 0.459076193654707,
+      "ci_high": 0.6338031832927753,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "balanced_accuracy",
+      "estimate": 0.5936671966083731,
+      "ci_low": 0.48418896838014486,
+      "ci_high": 0.6988661455573221,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "macro_ovr_auc",
+      "estimate": 0.724562125606283,
+      "ci_low": 0.6368306826645141,
+      "ci_high": 0.8056759306314277,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "recall_CN",
+      "estimate": 0.6486486486486487,
+      "ci_low": 0.5585585585585585,
+      "ci_high": 0.7297297297297297,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "recall_MCI",
+      "estimate": 0.5490196078431373,
+      "ci_low": 0.4117647058823529,
+      "ci_high": 0.6666666666666666,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    },
+    {
+      "metric": "recall_Dementia",
+      "estimate": 0.5833333333333334,
+      "ci_low": 0.3333333333333333,
+      "ci_high": 0.8333333333333334,
+      "repetitions": 2000,
+      "method": "subject_stratified_percentile",
+      "scope": "conditional_on_fixed_oof_predictions"
+    }
+  ]
+}
